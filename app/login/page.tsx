@@ -9,13 +9,41 @@ import { useRouter } from 'next/navigation';
 export default function LoginPage() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
     const router = useRouter();
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setError('');
         if (email && password) {
-            // Direct user to dashboard
-            router.push('/');
+            setLoading(true);
+            try {
+                const response = await fetch('http://localhost:8080/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password }),
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to login');
+                }
+
+                // Store the token (using localStorage for simplicity)
+                localStorage.setItem('access_token', data.token);
+                // Optionally store user details
+                if (data.user) {
+                    localStorage.setItem('user', JSON.stringify(data.user));
+                }
+
+                router.push('/');
+            } catch (err: any) {
+                setError(err.message);
+            } finally {
+                setLoading(false);
+            }
         }
     };
 
@@ -58,11 +86,18 @@ export default function LoginPage() {
                         />
                     </div>
 
+                    {error && (
+                        <div className="text-red-500 text-sm bg-red-500/10 p-3 rounded-lg border border-red-500/20">
+                            {error}
+                        </div>
+                    )}
+
                     <button
                         type="submit"
-                        className="w-full py-3.5 bg-zen-primary hover:bg-zen-primary-hover text-white rounded-xl font-medium transition-colors duration-200 flex items-center justify-center group">
-                        Sign In
-                        <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                        disabled={loading}
+                        className="w-full py-3.5 bg-zen-primary hover:bg-zen-primary-hover disabled:opacity-70 disabled:cursor-not-allowed text-white rounded-xl font-medium transition-colors duration-200 flex items-center justify-center group">
+                        {loading ? 'Signing In...' : 'Sign In'}
+                        {!loading && <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />}
                     </button>
                 </form>
 

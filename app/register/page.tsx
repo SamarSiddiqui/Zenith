@@ -10,13 +10,42 @@ export default function RegisterPage() {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
     const router = useRouter();
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setError('');
         if (name && email && password) {
-            // Direct user to dashboard
-            router.push('/');
+            setLoading(true);
+            try {
+                const response = await fetch('http://localhost:8080/api/signup', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password }),
+                    // Note: 'name' is collected but your backend currently only expects email & password. 
+                    // To store name, you'd need to add it to the backend User model and SignupRequest!
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to create account');
+                }
+
+                // Store the token
+                localStorage.setItem('access_token', data.token);
+                if (data.user) {
+                    localStorage.setItem('user', JSON.stringify(data.user));
+                }
+
+                router.push('/');
+            } catch (err: any) {
+                setError(err.message);
+            } finally {
+                setLoading(false);
+            }
         }
     };
 
@@ -71,11 +100,18 @@ export default function RegisterPage() {
                         />
                     </div>
 
+                    {error && (
+                        <div className="text-red-500 text-sm bg-red-500/10 p-3 rounded-lg border border-red-500/20">
+                            {error}
+                        </div>
+                    )}
+
                     <button
                         type="submit"
-                        className="w-full py-3.5 bg-zen-primary hover:bg-zen-primary-hover text-white rounded-xl font-medium transition-colors duration-200 flex items-center justify-center group">
-                        Create Account
-                        <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                        disabled={loading}
+                        className="w-full py-3.5 bg-zen-primary hover:bg-zen-primary-hover disabled:opacity-70 disabled:cursor-not-allowed text-white rounded-xl font-medium transition-colors duration-200 flex items-center justify-center group">
+                        {loading ? 'Creating Account...' : 'Create Account'}
+                        {!loading && <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />}
                     </button>
                 </form>
 
