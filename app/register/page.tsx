@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { authApi } from '@/lib/api/auth';
 
 export default function RegisterPage() {
     const [name, setName] = useState('');
@@ -20,26 +21,8 @@ export default function RegisterPage() {
         if (name && email && password) {
             setLoading(true);
             try {
-                const response = await fetch('http://localhost:8080/api/signup', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, password }),
-                    // Note: 'name' is collected but your backend currently only expects email & password. 
-                    // To store name, you'd need to add it to the backend User model and SignupRequest!
-                });
-
-                const data = await response.json();
-
-                if (!response.ok) {
-                    throw new Error(data.error || 'Failed to create account');
-                }
-
-                // Store the token
-                localStorage.setItem('access_token', data.token);
-                if (data.user) {
-                    localStorage.setItem('user', JSON.stringify(data.user));
-                }
-
+                // Note: 'name' is collected but backend currently only expects email & password.
+                await authApi.signup({ email, password });
                 router.push('/');
             } catch (err: any) {
                 setError(err.message);

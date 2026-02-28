@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { authApi } from '@/lib/api/auth';
 
 export default function LoginPage() {
     const [email, setEmail] = useState('');
@@ -19,25 +20,7 @@ export default function LoginPage() {
         if (email && password) {
             setLoading(true);
             try {
-                const response = await fetch('http://localhost:8080/api/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, password }),
-                });
-
-                const data = await response.json();
-
-                if (!response.ok) {
-                    throw new Error(data.error || 'Failed to login');
-                }
-
-                // Store the token (using localStorage for simplicity)
-                localStorage.setItem('access_token', data.token);
-                // Optionally store user details
-                if (data.user) {
-                    localStorage.setItem('user', JSON.stringify(data.user));
-                }
-
+                await authApi.login({ email, password });
                 router.push('/');
             } catch (err: any) {
                 setError(err.message);
