@@ -7,12 +7,31 @@ import { StatusCircle, StatusType } from '../components/StatusCircle';
 import { Target, Calendar, TrendingUp, Activity } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Layout } from '../components/Layout';
-
-// Mock user context
-const MOCK_USER = { name: 'Alex' };
+import { getProfile } from '../lib/api/profile';
+import { authApi } from '../lib/api/auth';
 
 export default function DashboardPage() {
-  const userName = MOCK_USER.name;
+  const [userName, setUserName] = React.useState('');
+  const [isLoading, setIsLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const data = await getProfile();
+        if (data.profile && data.profile.display_name) {
+          setUserName(data.profile.display_name);
+        } else {
+          setUserName(authApi.getUser()?.email?.split('@')[0] || 'User');
+        }
+      } catch (error) {
+        console.error("Failed to load profile", error);
+        setUserName(authApi.getUser()?.email?.split('@')[0] || 'User');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadProfile();
+  }, []);
   const today = new Date();
   const dateOptions: Intl.DateTimeFormatOptions = {
     weekday: 'long',
@@ -56,14 +75,24 @@ export default function DashboardPage() {
     },
   ];
 
+  if (isLoading) {
+    return (
+      <Layout userName={userName || 'User'}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-zen-bg">
+          <img src="/svgZenith.svg" alt="Loading Zenith..." className="w-24 h-24 animate-pulse opacity-80" />
+        </div>
+      </Layout>
+    );
+  }
+
   return (
-    <Layout userName={userName}>
+    <Layout userName={userName || 'User'}>
       <PageTransition>
         <div className="space-y-8">
           {/* Header */}
-          <div className="mb-8">
-            <h1 className="font-heading text-4xl md:text-5xl text-zen-text-primary mb-2">
-              {getGreeting()}, {userName}
+          <div className="mb-8 block">
+            <h1 className="font-heading text-4xl md:text-5xl text-zen-text-primary mb-2 transition-opacity duration-300">
+              {getGreeting()},{` ${userName}`}
             </h1>
             <p className="text-zen-text-secondary text-lg">{formattedDate}</p>
           </div>
@@ -133,8 +162,8 @@ export default function DashboardPage() {
                     <div className="ml-4">
                       <h3
                         className={`font-medium ${habit.status === 'completed'
-                            ? 'text-zen-text-muted line-through'
-                            : 'text-zen-text-primary'
+                          ? 'text-zen-text-muted line-through'
+                          : 'text-zen-text-primary'
                           }`}>
                         {habit.name}
                       </h3>
