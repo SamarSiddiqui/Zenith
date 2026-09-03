@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import { LayoutDashboard, Target, Settings, LogOut } from 'lucide-react';
+import { LayoutDashboard, CalendarRange, Stethoscope, HeartPulse, Settings, LogOut } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -18,14 +18,24 @@ export function Sidebar({ userName, isOpen = true, onCloseMobile }: SidebarProps
 
     const navItems = [
         {
-            id: '/',
+            id: '/dashboard',
             label: 'Dashboard',
             icon: LayoutDashboard,
         },
         {
             id: '/habits',
-            label: 'Habits',
-            icon: Target,
+            label: 'Habits Planner',
+            icon: CalendarRange,
+        },
+        {
+            id: '/diagnosis',
+            label: 'Diagnosis & Retro',
+            icon: Stethoscope,
+        },
+        {
+            id: '/recovery',
+            label: 'Recovery Mode',
+            icon: HeartPulse,
         },
         {
             id: '/settings',
