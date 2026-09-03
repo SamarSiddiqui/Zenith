@@ -100,7 +100,7 @@ export default function DashboardPage() {
           {/* Today's Focus Section */}
           <div className="mt-12">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="font-heading text-2xl text-zen-text-primary">Today's Focus</h2>
+              <h2 className="font-heading text-2xl text-zen-text-primary">Today&apos;s Focus</h2>
               <button className="text-sm text-zen-primary hover:text-zen-primary-hover font-medium">
                 View all
               </button>
@@ -133,8 +133,8 @@ export default function DashboardPage() {
                     <div className="ml-4">
                       <h3
                         className={`font-medium ${habit.status === 'completed'
-                            ? 'text-zen-text-muted line-through'
-                            : 'text-zen-text-primary'
+                          ? 'text-zen-text-muted line-through'
+                          : 'text-zen-text-primary'
                           }`}>
                         {habit.name}
                       </h3>
