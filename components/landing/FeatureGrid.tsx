@@ -12,6 +12,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import { Reveal } from '../visuals/Reveal';
+import { RoadmapTeaser } from './RoadmapTeaser';
 
 const featuredFeature = {
   icon: Search,
@@ -142,6 +143,8 @@ export function FeatureGrid() {
           </Reveal>
         ))}
       </ul>
+
+      <RoadmapTeaser />
     </section>
   );
 }
