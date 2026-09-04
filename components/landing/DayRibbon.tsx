@@ -112,8 +112,10 @@ export function DayRibbon() {
               You don&apos;t have 24 hours. You have the gaps.
             </h2>
             <p className="mt-4 text-base leading-relaxed text-muted">
-              Every other tracker plans against a blank day. Zenith plans against yours — and
-              re-plans the moment it changes.
+              Every other tracker plans against a blank, artificial 24-hour day — inducing guilt when life happens. Zenith plans against your real working hours, respecting work, commutes, and rest, and re-plans the moment your day changes.
+            </p>
+            <p className="mt-2 text-xs italic text-sage-deep">
+              Because missing a habit at 11:59 PM after a 10-hour shift isn&apos;t a failure of willpower — it&apos;s a failure of schedule design.
             </p>
           </div>
 
