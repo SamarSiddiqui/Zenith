@@ -32,6 +32,10 @@ export function HealthShowcase() {
           <p className="mt-4 text-base leading-relaxed text-muted">
             Health, preferred time, and risk in one score — then the schedule evidence behind it.
           </p>
+          <div className="mt-4 inline-flex flex-wrap items-center gap-2 rounded-xl border border-line bg-surface px-4 py-2 text-xs text-muted shadow-sm">
+            <span className="font-medium text-ink">How it&apos;s calculated:</span>
+            <span className="font-mono text-sage-deep">Health = consistency + preferred-time match + recent risk</span>
+          </div>
         </Reveal>
 
         <div className="mt-12 grid gap-12 lg:grid-cols-[0.95fr_1fr] lg:items-center">
