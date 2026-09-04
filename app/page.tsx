@@ -10,6 +10,8 @@ import { HealthShowcase } from '../components/landing/HealthShowcase';
 import { StreakVsHealth } from '../components/landing/StreakVsHealth';
 import { DayRibbon } from '../components/landing/DayRibbon';
 import { IdentityClose } from '../components/landing/IdentityClose';
+import { SocialProof } from '../components/landing/SocialProof';
+import { TrustFAQ } from '../components/landing/TrustFAQ';
 import { EnsoBackdrop } from '../components/landing/EnsoBackdrop';
 import { CountUp } from '../components/visuals/CountUp';
 
@@ -29,7 +31,9 @@ export default function LandingPage() {
           <nav className="hidden items-center gap-8 md:flex" aria-label="Main">
             {[
               ['Features', '#features'],
-              ['Philosophy', '#philosophy']
+              ['Philosophy', '#philosophy'],
+              ['Proof', '#proof'],
+              ['FAQ', '#faq']
             ].map(([label, href]) => (
               <a
                 key={label}
@@ -166,6 +170,10 @@ export default function LandingPage() {
       <FeatureGrid />
 
       <IdentityClose />
+
+      <SocialProof />
+
+      <TrustFAQ />
 
       <footer className="mx-auto flex w-full max-w-6xl flex-col gap-3 px-5 py-10 text-xs text-faint sm:flex-row sm:items-center sm:justify-between lg:px-10">
         <span className="font-serif text-base text-ink">Zenith</span>
