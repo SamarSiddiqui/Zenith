@@ -92,7 +92,21 @@ export default function LandingPage() {
                 />
               </a>
             </div>
-            <dl className="mt-12 flex flex-wrap gap-x-10 gap-y-5 border-t border-line pt-7">
+
+            {/* Early Differentiator Teaser (Feature 6) */}
+            <div className="mt-7">
+              <a
+                href="#chapter-01"
+                className="group inline-flex items-center gap-2 rounded-full border border-sage/30 bg-sage-wash/70 px-4 py-2 text-xs font-medium text-sage-deep transition-all duration-150 ease-out hover:border-sage hover:bg-sage-wash"
+              >
+                <span className="rounded-full bg-sage px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white">
+                  Why Zenith
+                </span>
+                <span>Same 22 days, different system: why streaks break when life happens &rarr;</span>
+              </a>
+            </div>
+
+            <dl className="mt-9 flex flex-wrap gap-x-10 gap-y-5 border-t border-line pt-7">
               {heroStats.map((stat) => (
                 <div key={stat.label}>
                   <dt className="sr-only">{stat.label}</dt>
