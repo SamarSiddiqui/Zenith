@@ -114,7 +114,12 @@ export function StreakVsHealth() {
   return (
     <section id="chapter-01" className="mx-auto w-full max-w-6xl scroll-mt-20 px-5 py-20 lg:px-10 lg:py-28">
       <Reveal className="max-w-2xl">
-        <p className="text-xs uppercase tracking-[0.18em] text-faint">Chapter 01 · The problem</p>
+        <div className="flex items-center gap-3">
+          <p className="text-xs uppercase tracking-[0.18em] text-faint">Chapter 01 · The problem</p>
+          <span className="rounded-full border border-line bg-surface px-2.5 py-0.5 text-[11px] font-medium text-muted">
+            The Core Differentiator
+          </span>
+        </div>
         <h2 className="mt-3 font-serif text-3xl text-ink md:text-4xl">
           A streak has one bad week in it. Then it&apos;s over.
         </h2>
