@@ -11,7 +11,7 @@ const HABIT_TAGS = [
 ];
 
 /**
- * Ambient hairline rings & orbiting habit nodes behind the hero.
+ * Ambient hairline rings & orbiting habit nodes centered behind the hero.
  * Powered by GSAP continuous timelines and subtle floating motion.
  */
 export function EnsoBackdrop() {
@@ -60,7 +60,7 @@ export function EnsoBackdrop() {
         // Pulse dashed ring opacity
         if (pulseRingRef.current) {
           gsap.to(pulseRingRef.current, {
-            strokeOpacity: 0.6,
+            strokeOpacity: 0.5,
             duration: 3.5,
             repeat: -1,
             yoyo: true,
@@ -108,8 +108,8 @@ export function EnsoBackdrop() {
 
   return (
     <div ref={containerRef} className="pointer-events-none absolute inset-0 -z-10 overflow-hidden" aria-hidden>
-      {/* Top right main Enso wheel */}
-      <div className="absolute -right-40 -top-32 h-[680px] w-[680px] opacity-70 lg:-right-20">
+      {/* Centered main Enso wheel */}
+      <div className="absolute left-1/2 top-1/2 h-[680px] w-[680px] -translate-x-1/2 -translate-y-1/2 opacity-45 sm:h-[760px] sm:w-[760px]">
         <svg ref={outerRingRef} viewBox="0 0 400 400" className="h-full w-full">
           <circle cx="200" cy="200" r="196" fill="none" stroke="var(--color-line)" strokeWidth="1" />
           <circle
@@ -119,7 +119,7 @@ export function EnsoBackdrop() {
             r="152"
             fill="none"
             stroke="var(--color-sage)"
-            strokeOpacity="0.25"
+            strokeOpacity="0.2"
             strokeWidth="1.5"
             strokeDasharray="3 9"
           />
@@ -130,15 +130,14 @@ export function EnsoBackdrop() {
         <div ref={orbitGroupRef} className="absolute inset-0 flex items-center justify-center">
           {HABIT_TAGS.map((tag) => {
             const rad = (tag.angle * Math.PI) / 180;
-            const radius = 152; // matches middle dashed ring radius in SVG space
-            // Offset from center in % space roughly
-            const x = Math.cos(rad) * (radius * 0.72);
-            const y = Math.sin(rad) * (radius * 0.72);
+            const radius = 160; // matches dashed ring radius in SVG space
+            const x = Math.cos(rad) * (radius * 0.95);
+            const y = Math.sin(rad) * (radius * 0.95);
 
             return (
               <div
                 key={tag.label}
-                className="orbit-tag absolute rounded-full border border-sage/30 bg-surface/90 px-3 py-1 text-[11px] font-medium text-sage-deep shadow-xs backdrop-blur-xs"
+                className="orbit-tag absolute rounded-full border border-sage/30 bg-surface/90 px-3 py-1 text-[11px] font-medium text-sage-deep shadow-xs backdrop-blur-xs hidden sm:block"
                 style={{
                   transform: `translate(${x}px, ${y}px)`
                 }}
@@ -150,8 +149,8 @@ export function EnsoBackdrop() {
         </div>
       </div>
 
-      {/* Bottom left subtle ring motif */}
-      <div className="absolute -left-32 bottom-0 h-[420px] w-[420px] opacity-50">
+      {/* Subtle secondary ring motif */}
+      <div className="absolute -left-32 bottom-0 h-[420px] w-[420px] opacity-35">
         <svg ref={innerRingRef} viewBox="0 0 400 400" className="h-full w-full">
           <circle
             cx="200"
@@ -162,10 +161,11 @@ export function EnsoBackdrop() {
             strokeWidth="1"
             strokeDasharray="3 14"
           />
-          <circle cx="200" cy="200" r="130" fill="none" stroke="var(--color-sage)" strokeWidth="1" strokeOpacity="0.3" />
+          <circle cx="200" cy="200" r="130" fill="none" stroke="var(--color-sage)" strokeWidth="1" strokeOpacity="0.25" />
         </svg>
       </div>
     </div>
   );
 }
+
 
