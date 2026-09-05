@@ -8,25 +8,33 @@ import {
   Minimize2,
   AlertTriangle,
   Play,
-  Pause
+  Pause,
+  Sparkles,
+  Zap
 } from 'lucide-react';
 
-const SCENE_MS = 3600;
+const SCENE_MS = 4200;
 
 const scenes = [
   {
     day: 'Day 1',
-    caption: 'Four habits, all inside the working window.',
+    status: 'Optimal Window',
+    statusTone: 'sage',
+    caption: 'Four habits completed smoothly inside your usable working window.',
     marks: ['done', 'done', 'done', 'done'] as const
   },
   {
     day: 'Day 4',
-    caption: 'Workday ran to 8:40 PM. Second miss in a row.',
+    status: 'Schedule Overrun',
+    statusTone: 'clay',
+    caption: 'Workday ran to 8:40 PM. Zenith detects a 2-day consecutive risk.',
     marks: ['done', 'done', 'done', 'miss'] as const
   },
   {
     day: 'Day 5',
-    caption: 'Shrunk, not skipped. Health recovering.',
+    status: 'Health Recovered',
+    statusTone: 'sage',
+    caption: 'Shrunk to 15 min. Health score recovered without resetting momentum.',
     marks: ['done', 'done', 'done', 'shrunk'] as const
   }
 ];
@@ -51,7 +59,7 @@ export function Storyboard() {
 
   return (
     <div
-      className="rounded-3xl border border-line bg-surface p-6 shadow-calm sm:p-8"
+      className="rounded-3xl border border-line bg-surface p-6 shadow-calm sm:p-8 hover:border-sage/40 transition-colors"
       onMouseEnter={() => {
         hovering.current = true;
       }}
@@ -61,7 +69,19 @@ export function Storyboard() {
     >
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-xs uppercase tracking-[0.18em] text-faint">Live product demo</p>
+          <div className="flex items-center gap-2">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-faint">Live Zenith Simulator</p>
+            <span
+              className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                scene.statusTone === 'clay'
+                  ? 'bg-clay-wash text-clay border border-clay/30'
+                  : 'bg-sage-wash text-sage-deep border border-sage/30'
+              }`}
+            >
+              {scene.status}
+            </span>
+          </div>
+
           <div className="mt-1 h-9 overflow-hidden">
             <AnimatePresence mode="wait">
               <motion.h3
@@ -88,8 +108,8 @@ export function Storyboard() {
                 aria-selected={i === index}
                 aria-label={s.day}
                 onClick={() => setIndex(i)}
-                className="group relative h-1.5 overflow-hidden rounded-full bg-line transition-[width] duration-200 ease-out"
-                style={{ width: i === index ? 32 : 10 }}
+                className="group relative h-2 overflow-hidden rounded-full bg-line transition-[width] duration-200 ease-out"
+                style={{ width: i === index ? 34 : 10 }}
               >
                 {i === index && (
                   <motion.span
@@ -126,14 +146,14 @@ export function Storyboard() {
           <div key={labels[i]} className="text-center">
             <motion.div
               key={`${index}-${i}`}
-              initial={{ opacity: 0, scale: 0.96 }}
+              initial={{ opacity: 0, scale: 0.94 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.22, delay: i * 0.05, ease: [0.23, 1, 0.32, 1] }}
               className={`mx-auto flex h-12 w-12 items-center justify-center rounded-full border ${
                 mark === 'miss'
                   ? 'border-clay/40 bg-clay-wash text-clay'
                   : mark === 'shrunk'
-                  ? 'border-sage bg-sage text-white'
+                  ? 'border-sage bg-sage text-white shadow-xs'
                   : 'border-sage/40 bg-sage-wash text-sage-deep'
               }`}
             >
@@ -145,12 +165,12 @@ export function Storyboard() {
                 <Check className="h-5 w-5" strokeWidth={2} aria-hidden />
               )}
             </motion.div>
-            <p className="mt-2 text-[11px] text-muted">{labels[i]}</p>
+            <p className="mt-2 text-[11px] font-medium text-muted">{labels[i]}</p>
           </div>
         ))}
       </div>
 
-      <p className="mt-5 text-sm text-muted">{scene.caption}</p>
+      <p className="mt-5 text-sm leading-relaxed text-muted">{scene.caption}</p>
 
       <div className="mt-5 min-h-[132px]">
         <AnimatePresence mode="wait">
@@ -161,7 +181,7 @@ export function Storyboard() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.24, ease: [0.23, 1, 0.32, 1] }}
-              className="rounded-2xl border border-clay/30 bg-clay-wash p-5"
+              className="rounded-2xl border border-clay/30 bg-clay-wash p-5 shadow-xs"
             >
               <div className="flex gap-3">
                 <motion.span
@@ -172,20 +192,26 @@ export function Storyboard() {
                   <AlertTriangle className="h-4 w-4" strokeWidth={2} aria-hidden />
                 </motion.span>
                 <div>
-                  <p className="text-sm leading-relaxed text-ink">
-                    Workout habit at risk — 2 consecutive misses. Want to shrink today&apos;s
-                    workout to 15 minutes?
+                  <p className="text-sm font-semibold leading-relaxed text-ink">
+                    Workout habit at risk — 2 consecutive misses. Want to shrink today&apos;s workout to 15 minutes?
                   </p>
-                  <p className="mt-2 text-xs font-medium text-clay/90">
-                    Why: Work ran past 8:40 PM, shrinking available window below 45 minutes.
+                  <p className="mt-1.5 text-xs text-clay/90">
+                    <span className="font-semibold">Why:</span> Work ran past 8:40 PM, shrinking available window below 45 minutes.
                   </p>
                   <div className="mt-3 flex flex-wrap gap-2">
-                    <span className="rounded-full bg-ink px-3 py-1.5 text-xs font-medium text-white">
-                      Shrink to 15 min
-                    </span>
-                    <span className="rounded-full border border-line bg-surface px-3 py-1.5 text-xs text-muted">
+                    <button
+                      onClick={() => setIndex(2)}
+                      className="inline-flex items-center gap-1.5 rounded-full bg-sage px-3.5 py-1.5 text-xs font-semibold text-white shadow-xs transition-transform hover:scale-105 active:scale-95"
+                    >
+                      <Zap className="h-3 w-3" />
+                      Shrink to 15 min (Test Action)
+                    </button>
+                    <button
+                      onClick={() => setIndex(0)}
+                      className="rounded-full border border-line bg-surface px-3 py-1.5 text-xs text-muted hover:text-ink transition-colors"
+                    >
                       Not today
-                    </span>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -198,23 +224,31 @@ export function Storyboard() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.24, ease: [0.23, 1, 0.32, 1] }}
-              className="rounded-2xl border border-line bg-sage-wash p-5"
+              className="rounded-2xl border border-sage/40 bg-sage-wash/80 p-5 shadow-xs"
             >
-              <p className="text-sm text-ink">Habit saved with the 15-minute version.</p>
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-semibold text-ink flex items-center gap-1.5">
+                  <Sparkles className="h-4 w-4 text-sage-deep" />
+                  Habit saved with 15-minute fallback!
+                </p>
+                <span className="rounded bg-surface border border-sage/30 px-2 py-0.5 text-[10px] font-bold text-sage-deep uppercase tracking-wider">
+                  No Reset
+                </span>
+              </div>
               <div className="mt-3 flex items-center gap-3">
-                <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white">
+                <div className="h-2 flex-1 overflow-hidden rounded-full bg-surface border border-line">
                   <motion.div
-                    className="h-full rounded-full bg-sage"
+                    className="h-full rounded-full bg-sage-deep"
                     initial={{ width: '54%' }}
                     animate={{ width: '88%' }}
-                    transition={{ duration: 0.6, ease: [0.23, 1, 0.32, 1] }}
+                    transition={{ duration: 0.8, ease: [0.23, 1, 0.32, 1] }}
                   />
                 </div>
-                <span className="font-serif text-xl text-sage-deep">88%</span>
+                <span className="font-serif text-xl font-bold text-sage-deep">88%</span>
               </div>
               <p className="mt-2 text-xs text-muted">Habit health restored from 54% to 88%.</p>
               <p className="mt-2 text-xs font-medium text-sage-deep">
-                Why: Shrinking preserves identity consistency without overwhelming your exhausted evening schedule.
+                <span className="font-semibold">Why:</span> Shrinking preserves identity consistency without overwhelming your exhausted evening schedule.
               </p>
             </motion.div>
           )}
@@ -225,14 +259,14 @@ export function Storyboard() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2, ease: 'easeOut' }}
-              className="rounded-2xl border border-line bg-canvas p-5"
+              className="rounded-2xl border border-line bg-canvas p-5 shadow-xs"
             >
-              <p className="text-sm text-ink">All four habits fit inside 9:00 AM – 7:00 PM.</p>
-              <p className="mt-2 text-xs text-muted">
-                Zenith is watching timing, not just checkmarks.
+              <p className="text-sm font-semibold text-ink">All four habits fit inside 9:00 AM – 7:00 PM.</p>
+              <p className="mt-1 text-xs text-muted">
+                Zenith is watching timing & energy windows, not just binary checkmarks.
               </p>
               <p className="mt-2.5 text-xs font-medium text-sage-deep">
-                Why: Habits are mapped into open gaps between calendar commitments during your optimal energy window.
+                <span className="font-semibold">Why:</span> Habits are mapped into open gaps between calendar commitments during your optimal energy window.
               </p>
             </motion.div>
           )}
@@ -241,3 +275,4 @@ export function Storyboard() {
     </div>
   );
 }
+
