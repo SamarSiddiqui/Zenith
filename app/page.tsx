@@ -4,7 +4,6 @@ import React, { useRef } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { ArrowUpRight } from 'lucide-react';
-import { Storyboard } from '../components/landing/Storyboard';
 import { FeatureGrid } from '../components/landing/FeatureGrid';
 import { HealthShowcase } from '../components/landing/HealthShowcase';
 import { StreakVsHealth } from '../components/landing/StreakVsHealth';
@@ -17,14 +16,13 @@ import { CountUp } from '../components/visuals/CountUp';
 import { useGSAPTimeline } from '../hooks/useGSAPTimeline';
 
 const heroStats: Array<{ value: React.ReactNode; label: string }> = [
-  { value: <><CountUp value={2} /> days</>, label: 'Average early warning' },
-  { value: <CountUp value={84} suffix="%" />, label: 'Median habit health' },
-  { value: <><CountUp value={4} />x</>, label: 'More recoveries than restarts' }
+  { value: <><CountUp value={2} /> days</>, label: 'Early warning' },
+  { value: <CountUp value={84} suffix="%" />, label: 'Median health' },
+  { value: <><CountUp value={4} />x</>, label: 'Recovery rate' }
 ];
 
 export default function LandingPage() {
   const heroRef = useRef<HTMLElement>(null);
-  const floatCardRef = useRef<HTMLDivElement>(null);
 
   useGSAPTimeline((gsap) => {
     if (!heroRef.current) return gsap.timeline();
@@ -33,18 +31,8 @@ export default function LandingPage() {
     tl.fromTo(
       heroRef.current.querySelectorAll('.gsap-hero-anim'),
       { opacity: 0, y: 18 },
-      { opacity: 1, y: 0, duration: 0.55, stagger: 0.08 }
+      { opacity: 1, y: 0, duration: 0.6, stagger: 0.1 }
     );
-
-    if (floatCardRef.current) {
-      gsap.to(floatCardRef.current, {
-        y: -6,
-        duration: 2.5,
-        repeat: -1,
-        yoyo: true,
-        ease: 'sine.easeInOut'
-      });
-    }
 
     return tl;
   }, []);
@@ -86,91 +74,70 @@ export default function LandingPage() {
         </div>
       </header>
 
-      {/* Hero */}
-      <section ref={heroRef} className="relative mx-auto w-full max-w-6xl px-5 pb-16 pt-14 lg:px-10 lg:pb-24 lg:pt-24">
+      {/* Option 1: Zen Single-Column Editorial Hero */}
+      <section ref={heroRef} className="relative mx-auto w-full max-w-6xl px-5 pb-20 pt-20 lg:px-10 lg:pb-32 lg:pt-32">
         <EnsoBackdrop />
-        <div className="grid items-center gap-12 lg:grid-cols-[1.05fr_1fr] lg:gap-16">
-          <div>
-            <h1 className="gsap-hero-anim font-serif text-5xl leading-[1.05] text-ink md:text-6xl">
-              Build habits that survive real life.
-            </h1>
-            <p className="gsap-hero-anim mt-6 max-w-xl text-lg leading-relaxed text-muted">
-              Zenith notices when your consistency is falling off — before you do. Built around
-              your usable working hours.
-            </p>
-            <div className="gsap-hero-anim mt-9 flex flex-wrap items-center gap-3">
-              <motion.div whileHover={{ y: -2 }} whileTap={{ scale: 0.98 }} transition={{ duration: 0.14, ease: 'easeOut' }}>
-                <Link
-                  href="/dashboard"
-                  className="inline-block rounded-full bg-sage px-7 py-3.5 text-sm font-medium text-white transition-colors duration-150 ease-out hover:bg-sage-deep"
-                >
-                  Start building free
-                </Link>
-              </motion.div>
-              <a
-                href="#philosophy"
-                className="group inline-flex items-center gap-1.5 rounded-full border border-line bg-surface px-6 py-3.5 text-sm font-medium text-ink transition-colors duration-150 ease-out hover:bg-sidebar"
-              >
-                Explore the philosophy
-                <ArrowUpRight
-                  className="h-4 w-4 transition-transform duration-150 ease-out group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
-                  strokeWidth={1.75}
-                  aria-hidden
-                />
-              </a>
-            </div>
 
-            {/* Early Differentiator Teaser (Feature 6) */}
-            <div className="gsap-hero-anim mt-7">
-              <a
-                href="#chapter-01"
-                className="group inline-flex items-center gap-2 rounded-full border border-sage/30 bg-sage-wash/70 px-4 py-2 text-xs font-medium text-sage-deep transition-all duration-150 ease-out hover:border-sage hover:bg-sage-wash"
-              >
-                <span className="rounded-full bg-sage px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white">
-                  Why Zenith
-                </span>
-                <span>Same 22 days, different system: why streaks break when life happens &rarr;</span>
-              </a>
-            </div>
-
-            <dl className="gsap-hero-anim mt-9 flex flex-wrap gap-x-10 gap-y-5 border-t border-line pt-7">
-              {heroStats.map((stat) => (
-                <div key={stat.label}>
-                  <dt className="sr-only">{stat.label}</dt>
-                  <dd>
-                    <span className="block font-serif text-2xl text-ink">{stat.value}</span>
-                    <span className="mt-0.5 block text-xs text-muted">{stat.label}</span>
-                  </dd>
-                </div>
-              ))}
-            </dl>
+        <div className="mx-auto flex max-w-3xl flex-col items-center text-center">
+          {/* Subtle Category Pill */}
+          <div className="gsap-hero-anim mb-6">
+            <span className="inline-flex items-center gap-2 rounded-full border border-sage/30 bg-sage-wash/80 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-sage-deep shadow-xs">
+              <span className="h-1.5 w-1.5 rounded-full bg-sage-deep animate-pulse" />
+              Behavioral Consistency Engine
+            </span>
           </div>
 
-          <div className="gsap-hero-anim relative">
-            {/* Floating Micro-Preview Badge */}
-            <div
-              ref={floatCardRef}
-              className="absolute -top-4 -left-3 z-10 hidden rounded-full border border-sage/30 bg-surface/95 px-3.5 py-1.5 shadow-md backdrop-blur sm:flex items-center gap-2.5"
+          {/* Headline */}
+          <h1 className="gsap-hero-anim font-serif text-5xl leading-[1.06] text-ink md:text-7xl tracking-tight">
+            Build habits that survive real life.
+          </h1>
+
+          {/* Subtitle */}
+          <p className="gsap-hero-anim mt-6 max-w-2xl text-lg leading-relaxed text-muted md:text-xl font-normal">
+            The behavioral consistency system designed for real schedules — catching schedule fatigue before your streak breaks.
+          </p>
+
+          {/* Primary CTA */}
+          <div className="gsap-hero-anim mt-10 flex flex-wrap items-center justify-center gap-4">
+            <motion.div whileHover={{ y: -2 }} whileTap={{ scale: 0.98 }} transition={{ duration: 0.14, ease: 'easeOut' }}>
+              <Link
+                href="/dashboard"
+                className="inline-flex items-center gap-2 rounded-full bg-sage px-8 py-4 text-base font-medium text-white shadow-sm transition-colors duration-150 ease-out hover:bg-sage-deep"
+              >
+                Start building free
+              </Link>
+            </motion.div>
+            <a
+              href="#philosophy"
+              className="group inline-flex items-center gap-1.5 rounded-full border border-line bg-surface px-7 py-4 text-base font-medium text-ink transition-colors duration-150 ease-out hover:bg-sidebar"
             >
-              <span className="relative flex h-2.5 w-2.5">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-sage opacity-75"></span>
-                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-sage"></span>
-              </span>
-              <div className="text-xs">
-                <span className="font-semibold text-ink">Zenith Index: 84%</span>
-                <span className="ml-2 rounded bg-sage-wash px-1.5 py-0.5 text-[10px] font-semibold text-sage-deep uppercase tracking-wider">
-                  Optimal
-                </span>
-              </div>
-            </div>
-
-            <Storyboard />
+              Explore the philosophy
+              <ArrowUpRight
+                className="h-4 w-4 transition-transform duration-150 ease-out group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
+                strokeWidth={1.75}
+                aria-hidden
+              />
+            </a>
           </div>
+
+          {/* Hairline Stat Strip */}
+          <dl className="gsap-hero-anim mt-14 flex flex-wrap items-center justify-center gap-x-8 gap-y-4 border-t border-line/70 pt-8 text-center">
+            {heroStats.map((stat, i) => (
+              <React.Fragment key={stat.label}>
+                {i > 0 && <span className="text-line hidden sm:inline">•</span>}
+                <div className="flex items-baseline gap-2">
+                  <span className="font-serif text-2xl font-semibold text-ink">{stat.value}</span>
+                  <span className="text-xs text-muted">{stat.label}</span>
+                </div>
+              </React.Fragment>
+            ))}
+          </dl>
         </div>
 
+        {/* Chapter Quick Navigation */}
         <nav
           aria-label="Chapters"
-          className="gsap-hero-anim mt-16 grid gap-px overflow-hidden rounded-2xl border border-line bg-line sm:grid-cols-4"
+          className="gsap-hero-anim mt-20 grid gap-px overflow-hidden rounded-2xl border border-line bg-line sm:grid-cols-4 shadow-xs"
         >
           {[
             ['01', 'Why streaks break', '#chapter-01'],
@@ -181,12 +148,12 @@ export default function LandingPage() {
             <a
               key={num}
               href={href}
-              className="group flex items-center gap-3 bg-canvas px-5 py-4 transition-colors duration-150 ease-out hover:bg-surface"
+              className="group flex items-center justify-center gap-3 bg-canvas px-5 py-4.5 transition-colors duration-150 ease-out hover:bg-surface"
             >
               <span className="font-serif text-lg text-faint transition-colors duration-150 ease-out group-hover:text-sage-deep">
                 {num}
               </span>
-              <span className="text-sm text-muted transition-colors duration-150 ease-out group-hover:text-ink">
+              <span className="text-sm font-medium text-muted transition-colors duration-150 ease-out group-hover:text-ink">
                 {label}
               </span>
             </a>
