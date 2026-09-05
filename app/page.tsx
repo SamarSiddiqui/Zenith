@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useRef } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { ArrowUpRight } from 'lucide-react';
@@ -14,6 +14,7 @@ import { SocialProof } from '../components/landing/SocialProof';
 import { TrustFAQ } from '../components/landing/TrustFAQ';
 import { EnsoBackdrop } from '../components/landing/EnsoBackdrop';
 import { CountUp } from '../components/visuals/CountUp';
+import { useGSAPTimeline } from '../hooks/useGSAPTimeline';
 
 const heroStats: Array<{ value: React.ReactNode; label: string }> = [
   { value: <><CountUp value={2} /> days</>, label: 'Average early warning' },
@@ -22,6 +23,32 @@ const heroStats: Array<{ value: React.ReactNode; label: string }> = [
 ];
 
 export default function LandingPage() {
+  const heroRef = useRef<HTMLElement>(null);
+  const floatCardRef = useRef<HTMLDivElement>(null);
+
+  useGSAPTimeline((gsap) => {
+    if (!heroRef.current) return gsap.timeline();
+    const tl = gsap.timeline({ defaults: { ease: 'power2.out' } });
+
+    tl.fromTo(
+      heroRef.current.querySelectorAll('.gsap-hero-anim'),
+      { opacity: 0, y: 18 },
+      { opacity: 1, y: 0, duration: 0.55, stagger: 0.08 }
+    );
+
+    if (floatCardRef.current) {
+      gsap.to(floatCardRef.current, {
+        y: -6,
+        duration: 2.5,
+        repeat: -1,
+        yoyo: true,
+        ease: 'sine.easeInOut'
+      });
+    }
+
+    return tl;
+  }, []);
+
   return (
     <div className="min-h-full w-full bg-canvas text-ink">
       {/* Header */}
@@ -60,22 +87,18 @@ export default function LandingPage() {
       </header>
 
       {/* Hero */}
-      <section className="relative mx-auto w-full max-w-6xl px-5 pb-16 pt-14 lg:px-10 lg:pb-24 lg:pt-24">
+      <section ref={heroRef} className="relative mx-auto w-full max-w-6xl px-5 pb-16 pt-14 lg:px-10 lg:pb-24 lg:pt-24">
         <EnsoBackdrop />
         <div className="grid items-center gap-12 lg:grid-cols-[1.05fr_1fr] lg:gap-16">
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
-          >
-            <h1 className="font-serif text-5xl leading-[1.05] text-ink md:text-6xl">
+          <div>
+            <h1 className="gsap-hero-anim font-serif text-5xl leading-[1.05] text-ink md:text-6xl">
               Build habits that survive real life.
             </h1>
-            <p className="mt-6 max-w-xl text-lg leading-relaxed text-muted">
+            <p className="gsap-hero-anim mt-6 max-w-xl text-lg leading-relaxed text-muted">
               Zenith notices when your consistency is falling off — before you do. Built around
               your usable working hours.
             </p>
-            <div className="mt-9 flex flex-wrap items-center gap-3">
+            <div className="gsap-hero-anim mt-9 flex flex-wrap items-center gap-3">
               <motion.div whileHover={{ y: -2 }} whileTap={{ scale: 0.98 }} transition={{ duration: 0.14, ease: 'easeOut' }}>
                 <Link
                   href="/dashboard"
@@ -98,7 +121,7 @@ export default function LandingPage() {
             </div>
 
             {/* Early Differentiator Teaser (Feature 6) */}
-            <div className="mt-7">
+            <div className="gsap-hero-anim mt-7">
               <a
                 href="#chapter-01"
                 className="group inline-flex items-center gap-2 rounded-full border border-sage/30 bg-sage-wash/70 px-4 py-2 text-xs font-medium text-sage-deep transition-all duration-150 ease-out hover:border-sage hover:bg-sage-wash"
@@ -110,7 +133,7 @@ export default function LandingPage() {
               </a>
             </div>
 
-            <dl className="mt-9 flex flex-wrap gap-x-10 gap-y-5 border-t border-line pt-7">
+            <dl className="gsap-hero-anim mt-9 flex flex-wrap gap-x-10 gap-y-5 border-t border-line pt-7">
               {heroStats.map((stat) => (
                 <div key={stat.label}>
                   <dt className="sr-only">{stat.label}</dt>
@@ -121,23 +144,33 @@ export default function LandingPage() {
                 </div>
               ))}
             </dl>
-          </motion.div>
+          </div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: 0.08, ease: [0.23, 1, 0.32, 1] }}
-          >
+          <div className="gsap-hero-anim relative">
+            {/* Floating Micro-Preview Badge */}
+            <div
+              ref={floatCardRef}
+              className="absolute -top-4 -left-3 z-10 hidden rounded-full border border-sage/30 bg-surface/95 px-3.5 py-1.5 shadow-md backdrop-blur sm:flex items-center gap-2.5"
+            >
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-sage opacity-75"></span>
+                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-sage"></span>
+              </span>
+              <div className="text-xs">
+                <span className="font-semibold text-ink">Zenith Index: 84%</span>
+                <span className="ml-2 rounded bg-sage-wash px-1.5 py-0.5 text-[10px] font-semibold text-sage-deep uppercase tracking-wider">
+                  Optimal
+                </span>
+              </div>
+            </div>
+
             <Storyboard />
-          </motion.div>
+          </div>
         </div>
 
-        <motion.nav
+        <nav
           aria-label="Chapters"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.16, ease: [0.23, 1, 0.32, 1] }}
-          className="mt-16 grid gap-px overflow-hidden rounded-2xl border border-line bg-line sm:grid-cols-4"
+          className="gsap-hero-anim mt-16 grid gap-px overflow-hidden rounded-2xl border border-line bg-line sm:grid-cols-4"
         >
           {[
             ['01', 'Why streaks break', '#chapter-01'],
@@ -158,7 +191,7 @@ export default function LandingPage() {
               </span>
             </a>
           ))}
-        </motion.nav>
+        </nav>
       </section>
 
       <StreakVsHealth />
