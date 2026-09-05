@@ -8,11 +8,25 @@ import {
   Activity,
   Minimize2,
   Search,
-  HeartPulse
+  HeartPulse,
+  Sparkles
 } from 'lucide-react';
 import { Reveal } from '../visuals/Reveal';
+import { RoadmapTeaser } from './RoadmapTeaser';
 
-const features = [
+const featuredFeature = {
+  icon: Search,
+  badge: 'Core Innovation',
+  title: 'Schedule-tied root cause diagnosis',
+  body: 'Zenith cross-references your calendar commitments against habit completion to pinpoint exact contextual triggers. Causes, not guilt.',
+  examples: [
+    '“73% of your missed workouts happen on days you work past 7:00 PM.”',
+    '“81% of late-night reading skips correlate with >9-hour workday length.”'
+  ],
+  stat: '73% – 81% root cause accuracy'
+};
+
+const secondaryFeatures = [
   {
     icon: Hourglass,
     title: 'Working-hours core window',
@@ -38,12 +52,6 @@ const features = [
     stat: '15 min → 2 min'
   },
   {
-    icon: Search,
-    title: 'Schedule-tied root cause',
-    body: '“73% of your missed workouts happen on days you work past 7 PM.” Causes, not guilt.',
-    stat: '73% explained'
-  },
-  {
     icon: HeartPulse,
     title: 'Adaptive recovery mode',
     body: 'Step-down routines — 5 min, then 10, then full — that rebuild momentum instead of restarting it.',
@@ -66,15 +74,52 @@ export function FeatureGrid() {
         </p>
       </Reveal>
 
-      <ul className="mt-12 grid gap-x-10 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
-        {features.map(({ icon: Icon, title, body, stat }, i) => (
+      {/* Featured #1 Card: Schedule-tied root cause */}
+      <Reveal className="mt-12">
+        <div className="group relative overflow-hidden rounded-3xl border border-sage/50 bg-sage-wash/50 p-8 shadow-calm transition-all duration-200 hover:border-sage hover:bg-sage-wash lg:p-10">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-sage/40 bg-surface px-3 py-1 text-xs font-semibold uppercase tracking-wider text-sage-deep">
+              <Sparkles className="h-3.5 w-3.5" />
+              {featuredFeature.badge}
+            </span>
+            <span className="rounded-full border border-sage/40 bg-surface px-3 py-1 text-xs font-medium text-sage-deep">
+              {featuredFeature.stat}
+            </span>
+          </div>
+
+          <div className="mt-6 grid gap-8 lg:grid-cols-[1.1fr_1fr] lg:items-center">
+            <div>
+              <div className="flex items-center gap-3 text-sage-deep">
+                <featuredFeature.icon className="h-6 w-6" strokeWidth={2} />
+                <h3 className="font-serif text-2xl text-ink md:text-3xl">{featuredFeature.title}</h3>
+              </div>
+              <p className="mt-4 text-base leading-relaxed text-muted">
+                {featuredFeature.body}
+              </p>
+            </div>
+
+            <div className="space-y-3 rounded-2xl border border-line bg-surface p-5">
+              <p className="text-xs uppercase tracking-wider text-faint font-medium">Real correlation engine output</p>
+              {featuredFeature.examples.map((ex) => (
+                <div key={ex} className="rounded-xl border border-line bg-canvas p-3 text-xs italic text-ink">
+                  {ex}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </Reveal>
+
+      {/* Remaining 5 Features */}
+      <ul className="mt-8 grid gap-x-8 gap-y-8 sm:grid-cols-2 lg:grid-cols-3">
+        {secondaryFeatures.map(({ icon: Icon, title, body, stat }, i) => (
           <Reveal as="li" key={title} delay={i * 0.04} className="group relative flex flex-col pt-6">
             <span className="absolute inset-x-0 top-0 h-px bg-line" aria-hidden />
             <motion.div
               initial="rest"
               whileHover="hover"
               animate="rest"
-              className="flex flex-1 flex-col"
+              className="flex flex-1 flex-col rounded-2xl border border-transparent p-4 transition-all duration-150 group-hover:border-line group-hover:bg-surface"
             >
               <motion.span
                 className="absolute left-0 top-0 h-px bg-sage"
@@ -98,6 +143,8 @@ export function FeatureGrid() {
           </Reveal>
         ))}
       </ul>
+
+      <RoadmapTeaser />
     </section>
   );
 }

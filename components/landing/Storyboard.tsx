@@ -176,6 +176,9 @@ export function Storyboard() {
                     Workout habit at risk — 2 consecutive misses. Want to shrink today&apos;s
                     workout to 15 minutes?
                   </p>
+                  <p className="mt-2 text-xs font-medium text-clay/90">
+                    Why: Work ran past 8:40 PM, shrinking available window below 45 minutes.
+                  </p>
                   <div className="mt-3 flex flex-wrap gap-2">
                     <span className="rounded-full bg-ink px-3 py-1.5 text-xs font-medium text-white">
                       Shrink to 15 min
@@ -210,6 +213,9 @@ export function Storyboard() {
                 <span className="font-serif text-xl text-sage-deep">88%</span>
               </div>
               <p className="mt-2 text-xs text-muted">Habit health restored from 54% to 88%.</p>
+              <p className="mt-2 text-xs font-medium text-sage-deep">
+                Why: Shrinking preserves identity consistency without overwhelming your exhausted evening schedule.
+              </p>
             </motion.div>
           )}
           {index === 0 && (
@@ -224,6 +230,9 @@ export function Storyboard() {
               <p className="text-sm text-ink">All four habits fit inside 9:00 AM – 7:00 PM.</p>
               <p className="mt-2 text-xs text-muted">
                 Zenith is watching timing, not just checkmarks.
+              </p>
+              <p className="mt-2.5 text-xs font-medium text-sage-deep">
+                Why: Habits are mapped into open gaps between calendar commitments during your optimal energy window.
               </p>
             </motion.div>
           )}

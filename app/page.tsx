@@ -10,6 +10,8 @@ import { HealthShowcase } from '../components/landing/HealthShowcase';
 import { StreakVsHealth } from '../components/landing/StreakVsHealth';
 import { DayRibbon } from '../components/landing/DayRibbon';
 import { IdentityClose } from '../components/landing/IdentityClose';
+import { SocialProof } from '../components/landing/SocialProof';
+import { TrustFAQ } from '../components/landing/TrustFAQ';
 import { EnsoBackdrop } from '../components/landing/EnsoBackdrop';
 import { CountUp } from '../components/visuals/CountUp';
 
@@ -29,7 +31,9 @@ export default function LandingPage() {
           <nav className="hidden items-center gap-8 md:flex" aria-label="Main">
             {[
               ['Features', '#features'],
-              ['Philosophy', '#philosophy']
+              ['Philosophy', '#philosophy'],
+              ['Proof', '#proof'],
+              ['FAQ', '#faq']
             ].map(([label, href]) => (
               <a
                 key={label}
@@ -92,7 +96,21 @@ export default function LandingPage() {
                 />
               </a>
             </div>
-            <dl className="mt-12 flex flex-wrap gap-x-10 gap-y-5 border-t border-line pt-7">
+
+            {/* Early Differentiator Teaser (Feature 6) */}
+            <div className="mt-7">
+              <a
+                href="#chapter-01"
+                className="group inline-flex items-center gap-2 rounded-full border border-sage/30 bg-sage-wash/70 px-4 py-2 text-xs font-medium text-sage-deep transition-all duration-150 ease-out hover:border-sage hover:bg-sage-wash"
+              >
+                <span className="rounded-full bg-sage px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white">
+                  Why Zenith
+                </span>
+                <span>Same 22 days, different system: why streaks break when life happens &rarr;</span>
+              </a>
+            </div>
+
+            <dl className="mt-9 flex flex-wrap gap-x-10 gap-y-5 border-t border-line pt-7">
               {heroStats.map((stat) => (
                 <div key={stat.label}>
                   <dt className="sr-only">{stat.label}</dt>
@@ -152,6 +170,10 @@ export default function LandingPage() {
       <FeatureGrid />
 
       <IdentityClose />
+
+      <SocialProof />
+
+      <TrustFAQ />
 
       <footer className="mx-auto flex w-full max-w-6xl flex-col gap-3 px-5 py-10 text-xs text-faint sm:flex-row sm:items-center sm:justify-between lg:px-10">
         <span className="font-serif text-base text-ink">Zenith</span>
