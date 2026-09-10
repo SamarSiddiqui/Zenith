@@ -2,217 +2,219 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import {
-  Sun,
-  Moon,
-  Clock,
-  Sparkles,
-  CheckCircle2,
-  AlertTriangle,
-  ArrowRight,
-  Shield,
-  Zap,
-  TrendingUp,
-} from 'lucide-react';
-import { HealthRing } from '../visuals/HealthRing';
+import { Sun, Moon, Sparkles, Feather, Compass, CheckCircle2 } from 'lucide-react';
 
-export function AuthVisualShowcase() {
-  const [activeTab, setActiveTab] = useState<'window' | 'recovery'>('window');
-  const [circadianProgress, setCircadianProgress] = useState(64);
+interface AuthVisualShowcaseProps {
+  variant?: 'circadian' | 'genesis';
+  quotePrimary?: string;
+  quoteSecondary?: string;
+}
 
-  // Micro animation loop for circadian progress
+export function AuthVisualShowcase({
+  variant = 'circadian',
+  quotePrimary = "Streaks measure obedience.",
+  quoteSecondary = "Identity measures direction.",
+}: AuthVisualShowcaseProps) {
+  const [pulse, setPulse] = useState(0);
+
   useEffect(() => {
     const interval = setInterval(() => {
-      setCircadianProgress((prev) => (prev >= 90 ? 45 : prev + 1));
-    }, 400);
+      setPulse((prev) => (prev + 1) % 100);
+    }, 60);
     return () => clearInterval(interval);
   }, []);
 
   return (
-    <div className="flex flex-col justify-center space-y-6 select-none">
-      {/* Brand Header */}
-      <div>
-        <div className="inline-flex items-center gap-2 rounded-full border border-sage/30 bg-sage-wash/80 px-3.5 py-1 text-xs font-semibold uppercase tracking-wider text-sage-deep shadow-xs">
-          <span className="h-1.5 w-1.5 rounded-full bg-sage animate-ping" />
-          Circadian Consistency System
-        </div>
+    <div className="relative flex flex-col items-center justify-center p-4 lg:p-8 select-none">
+      {/* Ambient background glow */}
+      <div className="absolute h-72 w-72 rounded-full bg-sage/10 blur-3xl pointer-events-none -z-10" />
 
-        <h1 className="mt-3 font-serif text-3xl xl:text-4xl text-ink leading-tight">
-          Consistency designed for your biological rhythm.
-        </h1>
-        <p className="mt-2 text-xs text-muted leading-relaxed max-w-md">
-          Never sacrifice momentum to rigid streak counters. Manage habits within your living energy window.
-        </p>
-      </div>
+      {variant === 'circadian' ? (
+        /* ================= LOGIN VARIANT: CIRCADIAN CLOCK DIAL ================= */
+        <div className="relative flex items-center justify-center w-72 h-72 sm:w-80 sm:h-80">
+          {/* Outer Hairline Compass Ring */}
+          <div className="absolute inset-0 rounded-full border border-line/50" />
+          
+          {/* Subtle Dash Coordinates */}
+          <div className="absolute inset-2 rounded-full border border-dashed border-line/30" />
 
-      {/* Interactive Visual Toggle Pills */}
-      <div className="flex gap-2">
-        <button
-          type="button"
-          onClick={() => setActiveTab('window')}
-          className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-medium transition-all ${
-            activeTab === 'window'
-              ? 'bg-surface text-ink shadow-calm border border-line font-semibold'
-              : 'text-muted hover:text-ink bg-transparent'
-          }`}
-        >
-          <Clock className="h-3.5 w-3.5 text-sage-deep" />
-          <span>Working Window Gauge</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab('recovery')}
-          className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-medium transition-all ${
-            activeTab === 'recovery'
-              ? 'bg-surface text-ink shadow-calm border border-line font-semibold'
-              : 'text-muted hover:text-ink bg-transparent'
-          }`}
-        >
-          <Zap className="h-3.5 w-3.5 text-sand" />
-          <span>Health vs Streak Engine</span>
-        </button>
-      </div>
+          {/* Dynamic Circadian Glowing Arc */}
+          <svg className="absolute inset-0 w-full h-full -rotate-90 pointer-events-none" viewBox="0 0 100 100">
+            <circle
+              cx="50"
+              cy="50"
+              r="42"
+              fill="none"
+              stroke="var(--color-line)"
+              strokeWidth="1.5"
+              strokeOpacity="0.4"
+            />
+            <motion.circle
+              cx="50"
+              cy="50"
+              r="42"
+              fill="none"
+              stroke="var(--color-sage)"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeDasharray="264"
+              initial={{ strokeDashoffset: 264 }}
+              animate={{ strokeDashoffset: 95 }}
+              transition={{ duration: 1.8, ease: [0.23, 1, 0.32, 1] }}
+            />
+          </svg>
 
-      {/* Main Showcase Visual Card */}
-      <motion.div
-        key={activeTab}
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-        className="rounded-3xl border border-line bg-surface/90 p-5 shadow-calm backdrop-blur-md space-y-4 relative overflow-hidden"
-      >
-        {activeTab === 'window' ? (
-          <>
-            {/* Visual 1: Circadian Working Window */}
-            <div className="flex items-center justify-between border-b border-line/60 pb-3">
-              <div className="flex items-center gap-2">
-                <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-sage-wash text-sage-deep">
-                  <Sun className="h-3.5 w-3.5 text-sand animate-spin-slow" />
-                </span>
-                <div>
-                  <h4 className="text-xs font-bold text-ink">Circadian Working Window</h4>
-                  <p className="text-[11px] text-faint font-mono">09:00 AM — 07:00 PM</p>
-                </div>
-              </div>
-              <span className="rounded-full bg-sage-wash px-2.5 py-0.5 text-[11px] font-semibold text-sage-deep font-mono border border-sage/20">
-                6.4h Remaining
+          {/* Orbiting Celestial Marker (Sun) */}
+          <motion.div
+            className="absolute w-full h-full pointer-events-none"
+            animate={{ rotate: 360 }}
+            transition={{ duration: 32, ease: 'linear', repeat: Infinity }}
+          >
+            <div className="absolute top-1.5 left-1/2 -translate-x-1/2 flex items-center justify-center">
+              <span className="relative flex h-5 w-5 items-center justify-center rounded-full bg-surface shadow-xs border border-sage/40">
+                <span className="h-2 w-2 rounded-full bg-sage animate-ping opacity-75" />
+                <span className="absolute h-2 w-2 rounded-full bg-sage" />
               </span>
             </div>
+          </motion.div>
 
-            {/* Visual Dial Progress Bar */}
-            <div className="space-y-2 py-1">
-              <div className="flex items-center justify-between text-[11px] text-muted font-mono">
-                <span className="flex items-center gap-1">
-                  <Sun className="h-3 w-3 text-sand" /> 09:00 AM
-                </span>
-                <span className="text-sage-deep font-semibold">Active Focus Phase</span>
-                <span className="flex items-center gap-1">
-                  <Moon className="h-3 w-3 text-sage" /> 07:00 PM
-                </span>
-              </div>
+          {/* Inner Sanctuary Disc */}
+          <div className="relative flex flex-col items-center justify-center rounded-full w-48 h-48 sm:w-56 sm:h-56 bg-surface/80 border border-line/60 shadow-calm backdrop-blur-md p-6 text-center">
+            <span className="text-[10px] uppercase font-mono tracking-widest text-faint">
+              Circadian Window
+            </span>
 
-              {/* Progress track with daytime sun gradient */}
-              <div className="relative h-3 w-full rounded-full bg-canvas overflow-hidden border border-line/50 p-0.5">
-                <motion.div
-                  className="h-full rounded-full bg-gradient-to-r from-sand via-sage to-sage-deep"
-                  style={{ width: `${circadianProgress}%` }}
-                />
-              </div>
+            <span className="mt-1 font-serif text-3xl sm:text-4xl text-ink font-normal tracking-tight">
+              6.4<span className="text-sm font-sans font-light text-muted ml-0.5">hrs</span>
+            </span>
+
+            <span className="mt-1 text-[11px] text-sage-deep font-medium bg-sage-wash/80 px-2.5 py-0.5 rounded-full border border-sage/20">
+              Active Focus
+            </span>
+
+            <div className="mt-3 flex items-center gap-3 text-[10px] text-faint font-mono border-t border-line/50 pt-2.5">
+              <span className="flex items-center gap-1">
+                <Sun className="h-2.5 w-2.5 text-sand" /> 09:00
+              </span>
+              <span>—</span>
+              <span className="flex items-center gap-1">
+                <Moon className="h-2.5 w-2.5 text-sage" /> 19:00
+              </span>
+            </div>
+          </div>
+
+          {/* Floating Minimalist Tags */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="absolute -top-3 right-0 rounded-full border border-line/60 bg-surface/90 px-3 py-1 shadow-xs backdrop-blur-xs flex items-center gap-1.5 text-[11px] text-ink font-mono"
+          >
+            <Sparkles className="h-3 w-3 text-sage-deep" />
+            <span>Zero Guilt</span>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+            className="absolute -bottom-3 left-0 rounded-full border border-line/60 bg-surface/90 px-3 py-1 shadow-xs backdrop-blur-xs flex items-center gap-1.5 text-[11px] text-muted font-mono"
+          >
+            <span className="h-1.5 w-1.5 rounded-full bg-sage" />
+            <span>Micro-Recovery</span>
+          </motion.div>
+        </div>
+      ) : (
+        /* ================= REGISTER VARIANT: HABIT GENESIS & FIRST LINE ================= */
+        <div className="relative flex items-center justify-center w-72 h-72 sm:w-80 sm:h-80">
+          {/* Concentric Growth Ripple Geometry */}
+          <div className="absolute inset-0 rounded-full border border-line/40 animate-pulse" />
+          <div className="absolute inset-5 rounded-full border border-line/50" />
+          <div className="absolute inset-10 rounded-full border border-dashed border-sage/30" />
+
+          {/* Smooth Golden Arc SVG: "The First Honest Line" */}
+          <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 100 100">
+            <defs>
+              <linearGradient id="genesisGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="var(--color-sand)" />
+                <stop offset="50%" stopColor="var(--color-sage)" />
+                <stop offset="100%" stopColor="var(--color-sage-deep)" />
+              </linearGradient>
+            </defs>
+            <motion.path
+              d="M 20,50 A 30,30 0 1,1 80,50 A 20,20 0 1,1 50,70"
+              fill="none"
+              stroke="url(#genesisGrad)"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              initial={{ pathLength: 0 }}
+              animate={{ pathLength: 1 }}
+              transition={{ duration: 2.2, ease: [0.23, 1, 0.32, 1] }}
+            />
+          </svg>
+
+          {/* Inner Genesis Seed Disc */}
+          <div className="relative flex flex-col items-center justify-center rounded-full w-48 h-48 sm:w-56 sm:h-56 bg-surface/85 border border-line/70 shadow-calm backdrop-blur-md p-6 text-center">
+            <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-sage-wash text-sage-deep border border-sage/30 mb-1">
+              <Feather className="h-3.5 w-3.5 stroke-[1.75]" />
             </div>
 
-            {/* Mini Habit Cards within Window */}
-            <div className="grid grid-cols-2 gap-2.5 pt-1">
-              <div className="rounded-2xl border border-sage/30 bg-sage-wash/50 p-3">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-[11px] font-semibold text-ink truncate">Deep Focus Sprint</span>
-                  <CheckCircle2 className="h-3.5 w-3.5 text-sage-deep shrink-0" />
-                </div>
-                <div className="flex items-center justify-between text-[10px] text-muted font-mono">
-                  <span>45 mins</span>
-                  <span className="text-sage-deep font-bold">96% Health</span>
-                </div>
-              </div>
+            <span className="text-[10px] uppercase font-mono tracking-widest text-faint">
+              Genesis Origin
+            </span>
 
-              <div className="rounded-2xl border border-line bg-canvas/80 p-3">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-[11px] font-semibold text-ink truncate">Breath & Reset</span>
-                  <span className="flex h-2 w-2 rounded-full bg-sand animate-pulse" />
-                </div>
-                <div className="flex items-center justify-between text-[10px] text-muted font-mono">
-                  <span>15 mins</span>
-                  <span className="text-ink font-semibold">In window</span>
-                </div>
-              </div>
-            </div>
-          </>
-        ) : (
-          <>
-            {/* Visual 2: Streak vs Health Comparison */}
-            <div className="flex items-center justify-between border-b border-line/60 pb-3">
-              <div className="flex items-center gap-2">
-                <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-sage-wash text-sage-deep">
-                  <TrendingUp className="h-3.5 w-3.5 text-sage" />
-                </span>
-                <div>
-                  <h4 className="text-xs font-bold text-ink">Streak vs Cumulative Health</h4>
-                  <p className="text-[11px] text-faint">How Zenith protects your momentum</p>
-                </div>
-              </div>
-            </div>
+            <span className="mt-0.5 font-serif text-2xl sm:text-3xl text-ink font-normal tracking-tight">
+              Day 01
+            </span>
 
-            {/* Side-by-side Visual Comparison */}
-            <div className="grid grid-cols-2 gap-3 pt-1">
-              {/* Conventional Streak App (Fragile) */}
-              <div className="rounded-2xl border border-clay/30 bg-clay-wash/50 p-3.5 space-y-2">
-                <div className="flex items-center gap-1.5 text-[11px] font-bold text-clay uppercase tracking-wider font-mono">
-                  <AlertTriangle className="h-3.5 w-3.5" />
-                  <span>Fragile Streak</span>
-                </div>
-                <div className="flex items-baseline gap-1.5">
-                  <span className="text-lg font-serif font-bold text-ink line-through opacity-60">24 Days</span>
-                  <ArrowRight className="h-3 w-3 text-clay" />
-                  <span className="text-lg font-serif font-bold text-clay">0 Days</span>
-                </div>
-                <p className="text-[10px] text-clay/90 leading-tight">
-                  1 missed day wipes all historical consistency to zero.
-                </p>
-              </div>
+            <span className="mt-1 text-[11px] text-sage-deep font-medium bg-sage-wash/80 px-2.5 py-0.5 rounded-full border border-sage/20">
+              Honest Foundation
+            </span>
 
-              {/* Zenith Cumulative Model (Resilient) */}
-              <div className="rounded-2xl border border-sage/40 bg-sage-wash/60 p-3.5 space-y-2">
-                <div className="flex items-center gap-1.5 text-[11px] font-bold text-sage-deep uppercase tracking-wider font-mono">
-                  <Sparkles className="h-3.5 w-3.5" />
-                  <span>Zenith Health</span>
-                </div>
-                <div className="flex items-baseline gap-1.5">
-                  <span className="text-lg font-serif font-bold text-ink">92%</span>
-                  <ArrowRight className="h-3 w-3 text-sage-deep" />
-                  <span className="text-lg font-serif font-bold text-sage-deep">89%</span>
-                </div>
-                <p className="text-[10px] text-sage-deep leading-tight">
-                  Auto-converts into a 5-min micro-step. Zero guilt.
-                </p>
-              </div>
+            <div className="mt-2.5 flex items-center gap-2 text-[10px] text-faint font-mono border-t border-line/50 pt-2">
+              <span className="text-sage-deep font-semibold">1% Compounding</span>
             </div>
-          </>
+          </div>
+
+          {/* Floating Genesis Badges */}
+          <motion.div
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.3 }}
+            className="absolute top-2 -left-2 rounded-full border border-line/60 bg-surface/90 px-3 py-1 shadow-xs backdrop-blur-xs flex items-center gap-1.5 text-[11px] text-ink font-mono"
+          >
+            <Compass className="h-3 w-3 text-sage-deep" />
+            <span>Clean Slate</span>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, x: 10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.5 }}
+            className="absolute -bottom-2 right-0 rounded-full border border-line/60 bg-surface/90 px-3 py-1 shadow-xs backdrop-blur-xs flex items-center gap-1.5 text-[11px] text-sage-deep font-mono"
+          >
+            <CheckCircle2 className="h-3 w-3 text-sage" />
+            <span>Identity First</span>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Poetic Zen Philosophy Quotes */}
+      <motion.div
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        className="mt-8 text-center max-w-sm space-y-1.5"
+      >
+        <h3 className="font-serif text-xl sm:text-2xl text-ink leading-tight">
+          {quotePrimary}
+        </h3>
+        {quoteSecondary && (
+          <p className="font-serif text-lg sm:text-xl text-sage-deep italic font-normal">
+            {quoteSecondary}
+          </p>
         )}
       </motion.div>
-
-      {/* Floating Micro-Pill Ribbons */}
-      <div className="flex flex-wrap gap-2 pt-1">
-        <div className="inline-flex items-center gap-1.5 rounded-2xl border border-line bg-surface/80 px-3 py-1.5 text-[11px] font-medium text-ink shadow-xs">
-          <Shield className="h-3.5 w-3.5 text-sage-deep" />
-          <span>Zero-Guilt Engine</span>
-        </div>
-        <div className="inline-flex items-center gap-1.5 rounded-2xl border border-line bg-surface/80 px-3 py-1.5 text-[11px] font-medium text-ink shadow-xs">
-          <Sparkles className="h-3.5 w-3.5 text-sand" />
-          <span>Micro-Recovery Protocol</span>
-        </div>
-        <div className="inline-flex items-center gap-1.5 rounded-2xl border border-line bg-surface/80 px-3 py-1.5 text-[11px] font-medium text-ink shadow-xs">
-          <Clock className="h-3.5 w-3.5 text-sage-deep" />
-          <span>Circadian Closes</span>
-        </div>
-      </div>
     </div>
   );
 }

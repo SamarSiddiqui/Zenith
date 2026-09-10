@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User, Mail, Lock, Eye, EyeOff, ArrowRight, AlertCircle, Loader2, CheckCircle2 } from 'lucide-react';
+import { User, Mail, Lock, Eye, EyeOff, ArrowRight, AlertCircle, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { AuthLayout } from '../../components/auth/AuthLayout';
@@ -30,7 +30,7 @@ export default function RegisterPage() {
 
     if (score <= 1) return { score: 1, label: 'Weak', color: 'bg-clay' };
     if (score <= 2) return { score: 2, label: 'Fair', color: 'bg-sand' };
-    if (score >= 3) return { score: 3, label: 'Strong & Serene', color: 'bg-sage' };
+    if (score >= 3) return { score: 3, label: 'Serene', color: 'bg-sage' };
     return { score: 1, label: 'Weak', color: 'bg-clay' };
   }, [password]);
 
@@ -39,7 +39,7 @@ export default function RegisterPage() {
     setError(null);
 
     if (!name.trim()) {
-      setError('Please provide your full name.');
+      setError('Please provide your name.');
       return;
     }
     if (!email.trim() || !password) {
@@ -51,7 +51,7 @@ export default function RegisterPage() {
       return;
     }
     if (!agreedTerms) {
-      setError('Please agree to the Terms of Service to continue.');
+      setError('Please accept terms to continue.');
       return;
     }
 
@@ -68,18 +68,21 @@ export default function RegisterPage() {
 
   return (
     <AuthLayout
-      title="Begin your journey"
-      subtitle="Establish your circadian working window and track mindful consistency."
+      title="Begin journey"
+      subtitle="Establish your circadian habit rhythms."
+      visualVariant="genesis"
+      quotePrimary="Every habit starts as one honest line."
+      quoteSecondary="Momentum that survives real life."
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Error Alert Pill */}
         <AnimatePresence>
           {error && (
             <motion.div
-              initial={{ opacity: 0, y: -6 }}
+              initial={{ opacity: 0, y: -4 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -6 }}
-              className="flex items-center gap-2 rounded-2xl border border-clay/40 bg-clay-wash p-3.5 text-xs font-medium text-clay"
+              exit={{ opacity: 0, y: -4 }}
+              className="flex items-center gap-2 rounded-2xl border border-clay/30 bg-clay-wash/80 p-3 text-xs text-clay"
             >
               <AlertCircle className="h-4 w-4 shrink-0" />
               <span>{error}</span>
@@ -89,54 +92,54 @@ export default function RegisterPage() {
 
         {/* Full Name */}
         <div>
-          <label className="block text-xs font-semibold uppercase tracking-wider text-faint mb-1.5 font-mono">
+          <label className="block text-[11px] font-mono uppercase tracking-wider text-faint mb-1.5">
             Full Name
           </label>
           <div className="relative">
-            <User className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
+            <User className="pointer-events-none absolute left-3.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted" />
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Samar Siddiqui"
               required
-              className="w-full rounded-2xl border border-line bg-canvas py-3 pl-10 pr-4 text-sm text-ink placeholder:text-faint focus:border-sage focus:outline-none focus:ring-2 focus:ring-sage/20 transition-all"
+              className="w-full rounded-2xl border border-line/70 bg-canvas/60 py-2.5 pl-9 pr-4 text-xs text-ink placeholder:text-faint/80 focus:border-sage focus:outline-none focus:ring-2 focus:ring-sage/15 transition-all"
             />
           </div>
         </div>
 
         {/* Email Address */}
         <div>
-          <label className="block text-xs font-semibold uppercase tracking-wider text-faint mb-1.5 font-mono">
-            Email Address
+          <label className="block text-[11px] font-mono uppercase tracking-wider text-faint mb-1.5">
+            Email
           </label>
           <div className="relative">
-            <Mail className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
+            <Mail className="pointer-events-none absolute left-3.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted" />
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
+              placeholder="you@domain.com"
               required
-              className="w-full rounded-2xl border border-line bg-canvas py-3 pl-10 pr-4 text-sm text-ink placeholder:text-faint focus:border-sage focus:outline-none focus:ring-2 focus:ring-sage/20 transition-all"
+              className="w-full rounded-2xl border border-line/70 bg-canvas/60 py-2.5 pl-9 pr-4 text-xs text-ink placeholder:text-faint/80 focus:border-sage focus:outline-none focus:ring-2 focus:ring-sage/15 transition-all"
             />
           </div>
         </div>
 
         {/* Password */}
         <div>
-          <label className="block text-xs font-semibold uppercase tracking-wider text-faint mb-1.5 font-mono">
+          <label className="block text-[11px] font-mono uppercase tracking-wider text-faint mb-1.5">
             Password
           </label>
           <div className="relative">
-            <Lock className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
+            <Lock className="pointer-events-none absolute left-3.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted" />
             <input
               type={showPassword ? 'text' : 'password'}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Create a secure password"
+              placeholder="••••••••••••"
               required
-              className="w-full rounded-2xl border border-line bg-canvas py-3 pl-10 pr-11 text-sm text-ink placeholder:text-faint focus:border-sage focus:outline-none focus:ring-2 focus:ring-sage/20 transition-all"
+              className="w-full rounded-2xl border border-line/70 bg-canvas/60 py-2.5 pl-9 pr-10 text-xs text-ink placeholder:text-faint/80 focus:border-sage focus:outline-none focus:ring-2 focus:ring-sage/15 transition-all"
             />
             <button
               type="button"
@@ -144,38 +147,35 @@ export default function RegisterPage() {
               aria-label={showPassword ? 'Hide password' : 'Show password'}
               className="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-1 text-muted hover:text-ink transition-colors"
             >
-              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              {showPassword ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
             </button>
           </div>
 
-          {/* Password Strength Meter */}
+          {/* Minimal Password Strength Meter */}
           {password.length > 0 && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
-              className="mt-2 space-y-1.5 overflow-hidden"
+              className="mt-2 space-y-1 overflow-hidden"
             >
-              <div className="flex items-center justify-between text-[11px]">
-                <span className="text-muted">Password strength:</span>
-                <span className="font-medium text-ink flex items-center gap-1">
-                  {passwordStrength.score >= 3 && <CheckCircle2 className="h-3 w-3 text-sage" />}
-                  {passwordStrength.label}
-                </span>
+              <div className="flex items-center justify-between text-[10px] text-faint font-mono">
+                <span>Strength:</span>
+                <span className="text-ink font-medium">{passwordStrength.label}</span>
               </div>
-              <div className="grid grid-cols-3 gap-1.5 h-1.5">
+              <div className="grid grid-cols-3 gap-1 h-1">
                 <div
                   className={`rounded-full transition-all duration-300 ${
-                    passwordStrength.score >= 1 ? passwordStrength.color : 'bg-line'
+                    passwordStrength.score >= 1 ? passwordStrength.color : 'bg-line/40'
                   }`}
                 />
                 <div
                   className={`rounded-full transition-all duration-300 ${
-                    passwordStrength.score >= 2 ? passwordStrength.color : 'bg-line'
+                    passwordStrength.score >= 2 ? passwordStrength.color : 'bg-line/40'
                   }`}
                 />
                 <div
                   className={`rounded-full transition-all duration-300 ${
-                    passwordStrength.score >= 3 ? passwordStrength.color : 'bg-line'
+                    passwordStrength.score >= 3 ? passwordStrength.color : 'bg-line/40'
                   }`}
                 />
               </div>
@@ -183,19 +183,17 @@ export default function RegisterPage() {
           )}
         </div>
 
-        {/* Terms agreement */}
-        <div className="flex items-start gap-2 pt-1">
+        {/* Terms Agreement */}
+        <div className="flex items-center gap-2 pt-0.5">
           <input
             type="checkbox"
             id="terms"
             checked={agreedTerms}
             onChange={(e) => setAgreedTerms(e.target.checked)}
-            className="mt-0.5 h-4 w-4 rounded-md border-line bg-canvas text-sage focus:ring-sage/30 accent-sage cursor-pointer"
+            className="h-3.5 w-3.5 rounded border-line text-sage focus:ring-sage/20 accent-sage cursor-pointer"
           />
-          <label htmlFor="terms" className="text-xs text-muted leading-relaxed cursor-pointer select-none">
-            I agree to the mindful{' '}
-            <span className="text-ink underline decoration-line hover:text-sage-deep">Terms of Service</span> and{' '}
-            <span className="text-ink underline decoration-line hover:text-sage-deep">Privacy Policy</span>.
+          <label htmlFor="terms" className="text-[11px] text-muted cursor-pointer select-none font-light">
+            I agree to the <span className="underline hover:text-ink">Terms</span> & <span className="underline hover:text-ink">Privacy</span>.
           </label>
         </div>
 
@@ -205,25 +203,25 @@ export default function RegisterPage() {
           disabled={loading}
           whileHover={{ y: -1 }}
           whileTap={{ scale: 0.98 }}
-          className="mt-2 w-full rounded-2xl bg-sage py-3.5 text-sm font-medium text-white shadow-xs transition-colors hover:bg-sage-deep disabled:opacity-70 flex items-center justify-center gap-2"
+          className="mt-2 w-full rounded-2xl bg-sage py-3 text-xs font-medium text-white shadow-xs transition-colors hover:bg-sage-deep disabled:opacity-70 flex items-center justify-center gap-2"
         >
           {loading ? (
             <>
-              <Loader2 className="h-4 w-4 animate-spin" />
-              <span>Creating your account...</span>
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              <span>Creating...</span>
             </>
           ) : (
             <>
-              <span>Create Free Account</span>
-              <ArrowRight className="h-4 w-4" />
+              <span>Create Account</span>
+              <ArrowRight className="h-3.5 w-3.5" />
             </>
           )}
         </motion.button>
       </form>
 
       {/* Redirect to Login */}
-      <div className="mt-7 text-center border-t border-line/60 pt-5">
-        <p className="text-xs text-muted">
+      <div className="mt-6 text-center border-t border-line/40 pt-4">
+        <p className="text-xs text-muted font-light">
           Already have an account?{' '}
           <Link
             href="/login"
