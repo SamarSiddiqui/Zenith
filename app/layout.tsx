@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { AuthProvider } from "../context/AuthContext";
 
 export const metadata: Metadata = {
-  title: "Zenith - Habit Planner",
-  description: "A mindful habit planner",
+  title: "Zenith — Circadian Habits & Usable Working Window",
+  description: "A mindful habit planner with circadian working windows and automated recovery protocols.",
 };
 
 export default function RootLayout({
@@ -13,8 +14,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="antialiased">
-        {children}
+      <body className="antialiased bg-canvas text-ink selection:bg-sage/20 selection:text-ink">
+        <AuthProvider>
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );
