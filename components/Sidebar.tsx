@@ -5,116 +5,135 @@ import { LayoutDashboard, CalendarRange, Stethoscope, HeartPulse, Settings, LogO
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { useAuth } from '../context/AuthContext';
 
 interface SidebarProps {
-    userName: string;
-    isOpen?: boolean;
-    onCloseMobile?: () => void;
+  userName?: string;
+  isOpen?: boolean;
+  onCloseMobile?: () => void;
 }
 
 export function Sidebar({ userName, isOpen = true, onCloseMobile }: SidebarProps) {
-    const pathname = usePathname();
-    const router = useRouter();
+  const pathname = usePathname();
+  const router = useRouter();
+  const { user, signOut } = useAuth();
 
-    const navItems = [
-        {
-            id: '/dashboard',
-            label: 'Dashboard',
-            icon: LayoutDashboard,
-        },
-        {
-            id: '/habits',
-            label: 'Habits Planner',
-            icon: CalendarRange,
-        },
-        {
-            id: '/diagnosis',
-            label: 'Diagnosis & Retro',
-            icon: Stethoscope,
-        },
-        {
-            id: '/recovery',
-            label: 'Recovery Mode',
-            icon: HeartPulse,
-        },
-        {
-            id: '/settings',
-            label: 'Settings',
-            icon: Settings,
-        },
-    ] as const;
+  const navItems = [
+    {
+      id: '/dashboard',
+      label: 'Dashboard',
+      icon: LayoutDashboard,
+    },
+    {
+      id: '/habits',
+      label: 'Habits Planner',
+      icon: CalendarRange,
+    },
+    {
+      id: '/diagnosis',
+      label: 'Diagnosis & Retro',
+      icon: Stethoscope,
+    },
+    {
+      id: '/recovery',
+      label: 'Recovery Mode',
+      icon: HeartPulse,
+    },
+    {
+      id: '/settings',
+      label: 'Settings',
+      icon: Settings,
+    },
+  ] as const;
 
-    const handleSignOut = () => {
-        // In a real app, clear auth tokens here
-        router.push('/login');
-    };
+  const handleSignOut = async () => {
+    await signOut();
+    router.push('/login');
+  };
 
-    return (
-        <aside
-            className={`
-      fixed inset-y-0 left-0 z-50 w-64 bg-zen-sidebar border-r border-zen-border flex flex-col
-      transform transition-transform duration-300 ease-in-out
-      ${isOpen ? 'translate-x-0' : '-translate-x-full'}
-      md:translate-x-0 md:static
-    `}>
-            {/* Logo Area */}
-            <div className="p-8 pb-12">
-                <h1 className="font-heading text-3xl text-zen-text-primary tracking-wide">
-                    Zenith
-                </h1>
-            </div>
+  const displayName = user?.fullName || userName || 'Explorer';
+  const displayEmail = user?.email || 'circadian@zenith.app';
+  const avatarLetter = displayName.charAt(0).toUpperCase() || 'Z';
 
-            {/* Navigation */}
-            <nav className="flex-1 px-4 space-y-2">
-                {navItems.map((item) => {
-                    const isActive = pathname === item.id;
-                    const Icon = item.icon;
-                    return (
-                        <Link
-                            key={item.id}
-                            href={item.id}
-                            onClick={onCloseMobile}
-                            className={`
-                w-full flex items-center px-4 py-3 rounded-xl transition-all duration-200 group relative
-                ${isActive ? 'bg-zen-sidebar-active text-zen-text-primary shadow-sm' : 'text-zen-text-secondary hover:bg-zen-accent hover:text-zen-text-primary'}
-              `}>
-                            <Icon
-                                className={`w-5 h-5 mr-3 stroke-[1.5] transition-colors ${isActive ? 'text-zen-primary' : 'text-zen-text-muted group-hover:text-zen-text-primary'
-                                    }`}
-                            />
-                            <span className="font-medium">{item.label}</span>
-                            {isActive && (
-                                <motion.div
-                                    layoutId="activeIndicator"
-                                    className="absolute left-0 top-0 bottom-0 w-1 bg-zen-primary rounded-r-full"
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    transition={{ duration: 0.3 }}
-                                />
-                            )}
-                        </Link>
-                    );
-                })}
-            </nav>
+  return (
+    <aside
+      className={`
+        fixed inset-y-0 left-0 z-50 w-64 bg-sidebar border-r border-line flex flex-col
+        transform transition-transform duration-300 ease-in-out
+        ${isOpen ? 'translate-x-0' : '-translate-x-full'}
+        md:translate-x-0 md:static
+      `}
+    >
+      {/* Logo Area */}
+      <div className="p-6 pb-8 border-b border-line/50">
+        <Link href="/dashboard" className="flex items-center gap-2.5 group">
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-sage-wash text-sage-deep font-serif text-lg font-bold border border-sage/30 group-hover:scale-105 transition-transform">
+            Z
+          </div>
+          <div>
+            <h1 className="font-serif text-2xl text-ink tracking-tight">Zenith</h1>
+            <p className="text-[10px] uppercase font-mono tracking-widest text-faint">Consistency Engine</p>
+          </div>
+        </Link>
+      </div>
 
-            {/* User Profile */}
-            <div className="p-6 border-t border-zen-border">
-                <div className="flex items-center mb-4">
-                    <div className="w-10 h-10 rounded-full bg-zen-surface border border-zen-border flex items-center justify-center text-zen-primary font-heading text-lg">
-                        {userName.charAt(0).toUpperCase()}
-                    </div>
-                    <div className="ml-3 overflow-hidden">
-                        <p className="text-sm font-medium text-zen-text-primary truncate">{userName}</p>
-                        <p className="text-xs text-zen-text-muted truncate">Mindful Explorer</p>
-                    </div>
-                </div>
-                <button
-                    onClick={handleSignOut}
-                    className="w-full flex items-center justify-center px-4 py-2 text-sm text-zen-text-secondary hover:text-zen-missed transition-colors rounded-lg hover:bg-zen-accent">
-                    <LogOut className="w-4 h-4 mr-2 stroke-[1.5]" />
-                    Sign Out
-                </button>
-            </div>
-        </aside>
-    );
+      {/* Navigation */}
+      <nav className="flex-1 px-3 py-6 space-y-1">
+        {navItems.map((item) => {
+          const isActive = pathname === item.id;
+          const Icon = item.icon;
+          return (
+            <Link
+              key={item.id}
+              href={item.id}
+              onClick={onCloseMobile}
+              className={`
+                w-full flex items-center px-3.5 py-2.5 rounded-2xl transition-all duration-200 group relative text-xs font-medium
+                ${isActive
+                  ? 'bg-surface text-ink shadow-calm border border-line/60 font-semibold'
+                  : 'text-muted hover:bg-surface/50 hover:text-ink'
+                }
+              `}
+            >
+              <Icon
+                className={`w-4 h-4 mr-3 stroke-[1.75] transition-colors ${
+                  isActive ? 'text-sage-deep' : 'text-faint group-hover:text-ink'
+                }`}
+              />
+              <span>{item.label}</span>
+              {isActive && (
+                <motion.div
+                  layoutId="activeIndicator"
+                  className="absolute left-0 top-2.5 bottom-2.5 w-1 bg-sage rounded-r-full"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.2 }}
+                />
+              )}
+            </Link>
+          );
+        })}
+      </nav>
+
+      {/* User Profile & Sign Out */}
+      <div className="p-4 border-t border-line/70 bg-sidebar/50">
+        <div className="flex items-center gap-3 mb-3 p-2 rounded-2xl bg-surface/80 border border-line/50">
+          <div className="w-9 h-9 rounded-xl bg-sage-wash border border-sage/30 flex items-center justify-center text-sage-deep font-serif font-bold text-sm shrink-0">
+            {avatarLetter}
+          </div>
+          <div className="overflow-hidden min-w-0 flex-1">
+            <p className="text-xs font-semibold text-ink truncate">{displayName}</p>
+            <p className="text-[11px] text-faint truncate font-mono">{displayEmail}</p>
+          </div>
+        </div>
+        <button
+          onClick={handleSignOut}
+          className="w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-medium text-muted hover:text-clay hover:bg-clay-wash transition-colors rounded-xl border border-transparent hover:border-clay/20"
+        >
+          <LogOut className="w-3.5 h-3.5 stroke-[1.75]" />
+          <span>Sign Out</span>
+        </button>
+      </div>
+    </aside>
+  );
 }
