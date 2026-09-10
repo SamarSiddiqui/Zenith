@@ -2,10 +2,11 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mail, Lock, Eye, EyeOff, ArrowRight, Sparkles, AlertCircle, Loader2 } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, ArrowRight, AlertCircle, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { AuthLayout } from '../../components/auth/AuthLayout';
+import { useAuth } from '../../context/AuthContext';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -15,6 +16,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const { signIn } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,21 +28,14 @@ export default function LoginPage() {
     }
 
     setLoading(true);
-    // Simulate brief transition for UI polish
-    setTimeout(() => {
-      setLoading(false);
-      router.push('/dashboard');
-    }, 600);
-  };
+    const res = await signIn(email, password);
 
-  const handleDemoLogin = () => {
-    setEmail('samar@zenith.app');
-    setPassword('zenith2026');
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
+    if (res.success) {
       router.push('/dashboard');
-    }, 500);
+    } else {
+      setError(res.error || 'Failed to sign in. Please verify your credentials.');
+      setLoading(false);
+    }
   };
 
   return (
@@ -149,16 +144,6 @@ export default function LoginPage() {
             </>
           )}
         </motion.button>
-
-        {/* Demo Quick Button */}
-        <button
-          type="button"
-          onClick={handleDemoLogin}
-          className="w-full rounded-2xl border border-sage/30 bg-sage-wash/60 py-2.5 text-xs font-semibold text-sage-deep transition-colors hover:bg-sage-wash hover:border-sage flex items-center justify-center gap-1.5"
-        >
-          <Sparkles className="h-3.5 w-3.5" />
-          <span>One-Click Demo Preview</span>
-        </button>
       </form>
 
       {/* Redirect to Register */}
@@ -176,4 +161,3 @@ export default function LoginPage() {
     </AuthLayout>
   );
 }
-

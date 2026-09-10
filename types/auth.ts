@@ -21,7 +21,6 @@ export interface ZenithUserProfile {
 export interface AuthSessionState {
   user: ZenithUserProfile | null;
   isLoading: boolean;
-  isDemo: boolean;
   isAuthenticated: boolean;
   error: string | null;
 }

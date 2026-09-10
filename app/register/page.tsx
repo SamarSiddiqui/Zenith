@@ -2,10 +2,11 @@
 
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User, Mail, Lock, Eye, EyeOff, ArrowRight, Sparkles, AlertCircle, Loader2, CheckCircle2 } from 'lucide-react';
+import { User, Mail, Lock, Eye, EyeOff, ArrowRight, AlertCircle, Loader2, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { AuthLayout } from '../../components/auth/AuthLayout';
+import { useAuth } from '../../context/AuthContext';
 
 export default function RegisterPage() {
   const [name, setName] = useState('');
@@ -16,6 +17,7 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const { signUp } = useAuth();
 
   // Password strength calculation
   const passwordStrength = useMemo(() => {
@@ -37,7 +39,7 @@ export default function RegisterPage() {
     setError(null);
 
     if (!name.trim()) {
-      setError('Please provide your name.');
+      setError('Please provide your full name.');
       return;
     }
     if (!email.trim() || !password) {
@@ -54,22 +56,14 @@ export default function RegisterPage() {
     }
 
     setLoading(true);
-    // Simulating brief transition for UI polish
-    setTimeout(() => {
-      setLoading(false);
-      router.push('/dashboard');
-    }, 600);
-  };
+    const res = await signUp(name.trim(), email.trim(), password);
 
-  const handleDemoSignUp = () => {
-    setName('Samar Siddiqui');
-    setEmail('samar@zenith.app');
-    setPassword('zenith2026');
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
+    if (res.success) {
       router.push('/dashboard');
-    }, 500);
+    } else {
+      setError(res.error || 'Failed to create your account.');
+      setLoading(false);
+    }
   };
 
   return (
@@ -225,16 +219,6 @@ export default function RegisterPage() {
             </>
           )}
         </motion.button>
-
-        {/* Demo Quick Button */}
-        <button
-          type="button"
-          onClick={handleDemoSignUp}
-          className="w-full rounded-2xl border border-sage/30 bg-sage-wash/60 py-2.5 text-xs font-semibold text-sage-deep transition-colors hover:bg-sage-wash hover:border-sage flex items-center justify-center gap-1.5"
-        >
-          <Sparkles className="h-3.5 w-3.5" />
-          <span>Quick Demo Experience</span>
-        </button>
       </form>
 
       {/* Redirect to Login */}
