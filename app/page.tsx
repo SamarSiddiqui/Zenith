@@ -66,7 +66,7 @@ export default function LandingPage() {
           <motion.div whileHover={{ y: -1 }} whileTap={{ scale: 0.98 }} transition={{ duration: 0.14, ease: 'easeOut' }}>
             <Link
               href="/dashboard"
-              className="inline-block rounded-full bg-sage px-5 py-2.5 text-sm font-medium text-white transition-colors duration-150 ease-out hover:bg-sage-deep"
+              className="inline-block rounded-full bg-sage-deep px-5 py-2.5 text-sm font-medium text-white transition-colors duration-150 ease-out hover:bg-sage-deep"
             >
               Begin journey
             </Link>
