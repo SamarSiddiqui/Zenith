@@ -30,8 +30,9 @@ export default function ForgotPasswordPage() {
 
     try {
       if (supabase && configured) {
-        const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: `${typeof window !== 'undefined' ? window.location.origin : ''}/login?reset=true`,
+        const origin = typeof window !== 'undefined' ? window.location.origin : '';
+        const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+          redirectTo: `${origin}/auth/callback?next=/reset-password`,
         });
 
         if (resetError) {
@@ -52,14 +53,16 @@ export default function ForgotPasswordPage() {
 
   return (
     <AuthLayout
-      title="Reset your password"
-      subtitle="Enter your email to receive a secure password recovery link."
+      title="Reset password"
+      subtitle="Enter your email to receive recovery instructions."
+      quotePrimary="A mindful pause before the next step."
+      quoteSecondary="Access your sanctuary."
     >
       {submitted ? (
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="space-y-5 text-center"
+          className="space-y-4 text-center py-2"
         >
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-sage-wash text-sage-deep">
             <CheckCircle2 className="h-6 w-6" />
@@ -67,17 +70,17 @@ export default function ForgotPasswordPage() {
 
           <div>
             <h3 className="font-serif text-xl text-ink">Check your inbox</h3>
-            <p className="mt-1.5 text-xs text-muted leading-relaxed">
-              We&apos;ve sent instructions to <strong className="text-ink font-medium">{email}</strong> to reset your password.
+            <p className="mt-1 text-xs text-muted leading-relaxed font-light">
+              We&apos;ve sent a secure recovery link to <strong className="text-ink font-medium">{email}</strong>.
             </p>
           </div>
 
-          <div className="pt-3">
+          <div className="pt-2">
             <Link
               href="/login"
-              className="inline-flex items-center gap-2 rounded-2xl bg-sage px-6 py-3 text-xs font-medium text-white transition-colors hover:bg-sage-deep"
+              className="inline-flex items-center gap-2 rounded-2xl bg-sage px-5 py-2.5 text-xs font-medium text-white transition-colors hover:bg-sage-deep"
             >
-              <ArrowLeft className="h-4 w-4" />
+              <ArrowLeft className="h-3.5 w-3.5" />
               <span>Return to Sign In</span>
             </Link>
           </div>
@@ -88,10 +91,10 @@ export default function ForgotPasswordPage() {
           <AnimatePresence>
             {error && (
               <motion.div
-                initial={{ opacity: 0, y: -6 }}
+                initial={{ opacity: 0, y: -4 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -6 }}
-                className="flex items-center gap-2 rounded-2xl border border-clay/40 bg-clay-wash p-3.5 text-xs font-medium text-clay"
+                exit={{ opacity: 0, y: -4 }}
+                className="flex items-center gap-2 rounded-2xl border border-clay/30 bg-clay-wash/80 p-3 text-xs text-clay"
               >
                 <AlertCircle className="h-4 w-4 shrink-0" />
                 <span>{error}</span>
@@ -101,18 +104,18 @@ export default function ForgotPasswordPage() {
 
           {/* Email Field */}
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-faint mb-1.5 font-mono">
+            <label className="block text-[11px] font-mono uppercase tracking-wider text-faint mb-1.5">
               Email Address
             </label>
             <div className="relative">
-              <Mail className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
+              <Mail className="pointer-events-none absolute left-3.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted" />
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
+                placeholder="you@domain.com"
                 required
-                className="w-full rounded-2xl border border-line bg-canvas py-3 pl-10 pr-4 text-sm text-ink placeholder:text-faint focus:border-sage focus:outline-none focus:ring-2 focus:ring-sage/20 transition-all"
+                className="w-full rounded-2xl border border-line/70 bg-canvas/60 py-2.5 pl-9 pr-4 text-xs text-ink placeholder:text-faint/80 focus:border-sage focus:outline-none focus:ring-2 focus:ring-sage/15 transition-all"
               />
             </div>
           </div>
@@ -123,26 +126,26 @@ export default function ForgotPasswordPage() {
             disabled={loading}
             whileHover={{ y: -1 }}
             whileTap={{ scale: 0.98 }}
-            className="mt-2 w-full rounded-2xl bg-sage py-3.5 text-sm font-medium text-white shadow-xs transition-colors hover:bg-sage-deep disabled:opacity-70 flex items-center justify-center gap-2"
+            className="mt-2 w-full rounded-2xl bg-sage py-3 text-xs font-medium text-white shadow-xs transition-colors hover:bg-sage-deep disabled:opacity-70 flex items-center justify-center gap-2"
           >
             {loading ? (
               <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                <span>Sending reset link...</span>
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                <span>Sending link...</span>
               </>
             ) : (
               <>
-                <span>Send Recovery Instructions</span>
-                <ArrowRight className="h-4 w-4" />
+                <span>Send Recovery Link</span>
+                <ArrowRight className="h-3.5 w-3.5" />
               </>
             )}
           </motion.button>
 
           {/* Back to Login */}
-          <div className="mt-6 text-center border-t border-line/60 pt-4">
+          <div className="mt-6 text-center border-t border-line/40 pt-4">
             <Link
               href="/login"
-              className="inline-flex items-center gap-1.5 text-xs text-muted hover:text-sage-deep transition-colors"
+              className="inline-flex items-center gap-1.5 text-xs text-muted hover:text-sage-deep transition-colors font-light"
             >
               <ArrowLeft className="h-3.5 w-3.5" />
               <span>Back to Sign In</span>
