@@ -2,98 +2,104 @@ import type { Habit, RecoveryStep, SkipReason } from '../types/zenith';
 
 export const habits: Habit[] = [
   {
-    id: 'reading',
-    name: 'Reading',
-    window: '8:30 PM – 9:00 PM',
-    minutes: 15,
-    health: 61,
-    status: 'unlogged',
-    week: ['completed', 'completed', 'missed', 'completed', 'missed', 'unlogged', 'unlogged'],
-    microVersion: 'Read 2 pages'
-  },
-  {
-    id: 'meditation',
-    name: 'Meditation',
-    window: '7:15 PM – 7:25 PM',
-    minutes: 10,
-    health: 88,
-    status: 'unlogged',
-    week: ['completed', 'completed', 'completed', 'completed', 'completed', 'unlogged', 'unlogged'],
-    microVersion: '2 min breathing'
-  },
-  {
-    id: 'journaling',
-    name: 'Journaling',
-    window: '9:30 PM – 9:35 PM',
-    minutes: 5,
-    health: 79,
-    status: 'unlogged',
-    week: ['completed', 'missed', 'completed', 'completed', 'completed', 'unlogged', 'unlogged'],
-    microVersion: 'One sentence'
-  },
-  {
     id: 'workout',
-    name: 'Workout',
-    window: '6:30 AM – 7:15 AM',
+    name: 'Morning Workout & Mobility',
+    window: '06:30 AM – 07:15 AM',
     minutes: 45,
     health: 92,
     status: 'completed',
     week: ['completed', 'completed', 'completed', 'missed', 'completed', 'unlogged', 'unlogged'],
-    microVersion: '15 min mobility'
+    microVersion: '15 min mobility stretches',
+    circadianSlot: 'morning',
+    category: 'physical',
   },
   {
     id: 'deep-work',
-    name: 'Deep Work Block',
-    window: '9:30 AM – 11:00 AM',
+    name: 'Deep Work Sprint',
+    window: '09:30 AM – 11:00 AM',
     minutes: 90,
     health: 95,
     status: 'completed',
     week: ['completed', 'completed', 'completed', 'completed', 'completed', 'unlogged', 'unlogged'],
-    microVersion: '25 min sprint'
+    microVersion: '25 min focus block',
+    circadianSlot: 'morning',
+    category: 'focus',
   },
   {
     id: 'walk',
-    name: 'Afternoon Walk',
-    window: '1:00 PM – 1:20 PM',
+    name: 'Afternoon Sunlight Walk',
+    window: '01:00 PM – 01:20 PM',
     minutes: 20,
     health: 84,
     status: 'completed',
     week: ['missed', 'completed', 'completed', 'completed', 'completed', 'unlogged', 'unlogged'],
-    microVersion: 'Walk around the block'
-  }
+    microVersion: '5 min outdoor breath',
+    circadianSlot: 'afternoon',
+    category: 'mindfulness',
+  },
+  {
+    id: 'meditation',
+    name: 'Twilight Meditation',
+    window: '05:30 PM – 05:45 PM',
+    minutes: 15,
+    health: 88,
+    status: 'unlogged',
+    week: ['completed', 'completed', 'completed', 'completed', 'completed', 'unlogged', 'unlogged'],
+    microVersion: '3 min calming breaths',
+    circadianSlot: 'afternoon',
+    category: 'mindfulness',
+  },
+  {
+    id: 'reading',
+    name: 'Knowledge Immersion',
+    window: '08:30 PM – 09:00 PM',
+    minutes: 30,
+    health: 74,
+    status: 'unlogged',
+    week: ['completed', 'completed', 'missed', 'completed', 'missed', 'unlogged', 'unlogged'],
+    microVersion: 'Read 2 pages',
+    circadianSlot: 'evening',
+    category: 'craft',
+  },
+  {
+    id: 'journaling',
+    name: 'Evening Reflection & Review',
+    window: '09:30 PM – 09:40 PM',
+    minutes: 10,
+    health: 79,
+    status: 'unlogged',
+    week: ['completed', 'missed', 'completed', 'completed', 'completed', 'unlogged', 'unlogged'],
+    microVersion: '1 honest sentence',
+    circadianSlot: 'evening',
+    category: 'rest',
+  },
 ];
 
 export const skipReasons: SkipReason[] = [
   {
     id: 'tired',
-    label: 'Too tired',
-    response:
-      "Noted. Tiredness shows up on 4 of your last 6 skips after 9 PM — we'll pull Reading forward to 8:00 PM."
+    label: 'Schedule fatigue / Low energy',
+    response: "Tiredness detected after evening close. We recommend converting this to your 5-min micro-version with zero health penalty.",
+    actionType: 'micro_step',
   },
   {
     id: 'no-time',
-    label: 'No time',
-    response:
-      "That's your 3rd no-time skip this month. Zenith will offer the 5-minute version automatically at 8:30 PM."
+    label: 'Unexpected schedule crunch',
+    response: "Working window was compressed today. Automatically queuing micro-version into tomorrow's buffer window.",
+    actionType: 'reschedule',
   },
   {
     id: 'work-overlap',
-    label: 'Work overlap',
-    response:
-      "Got it. That's your 3rd work-overlap skip this month. We'll adjust your evening reminder to follow your last meeting."
+    label: 'Meeting / Focus overlap',
+    response: "Priority conflict detected. Zenith will preserve your cumulative health score and adjust tomorrow's schedule reminder.",
+    actionType: 'preserve_window',
   },
   {
     id: 'brain-fog',
-    label: 'Brain fog',
-    response:
-      "Understood. Zenith will swap the target to audio reading on days flagged low-focus."
+    label: 'Cognitive overload / Brain fog',
+    response: "Swapping today's target to passive audio intake or 3-minute breathwork.",
+    actionType: 'micro_step',
   },
-  {
-    id: 'too-hard',
-    label: 'Habit too hard',
-    response:
-      "15 minutes may be above your current baseline. Recovery Mode can step you back up from 5 minutes."
-  }
 ];
 
 export const recoverySteps: RecoveryStep[] = [
