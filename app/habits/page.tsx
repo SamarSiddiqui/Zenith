@@ -20,14 +20,14 @@ export default function HabitsPage() {
   const [grid, setGrid] = useState<Grid>(
     Object.fromEntries(seedHabits.map((h) => [h.id, [...h.week]]))
   );
-  const [modalHabit, setModalHabit] = useState<string | null>(null);
+  const [modalHabit, setModalHabit] = useState<(typeof seedHabits)[0] | null>(null);
 
-  const toggle = (habitId: string, habitName: string, dayIndex: number) => {
+  const toggle = (habitId: string, habit: (typeof seedHabits)[0], dayIndex: number) => {
     setGrid((prev) => {
       const row = [...prev[habitId]];
       const next = cycle[row[dayIndex]];
       row[dayIndex] = next;
-      if (next === 'missed') setModalHabit(habitName);
+      if (next === 'missed') setModalHabit(habit);
       return { ...prev, [habitId]: row };
     });
   };
@@ -99,7 +99,7 @@ export default function HabitsPage() {
                         whileHover={{ scale: 1.12 }}
                         whileTap={{ scale: 0.88 }}
                         transition={{ duration: 0.12, ease: 'easeOut' }}
-                        onClick={() => toggle(habit.id, habit.name, i)}
+                        onClick={() => toggle(habit.id, habit, i)}
                         aria-label={`${habit.name} on ${weekDays[i]} ${weekDates[i]} — ${status}`}
                         className={[
                           'mx-auto flex h-8 w-8 items-center justify-center rounded-full border transition-colors duration-150 ease-out',
@@ -159,7 +159,7 @@ export default function HabitsPage() {
           </span>
         </div>
 
-        <SkipModal habitName={modalHabit} onClose={() => setModalHabit(null)} />
+        <SkipModal habit={modalHabit} onClose={() => setModalHabit(null)} />
       </div>
     </Layout>
   );
