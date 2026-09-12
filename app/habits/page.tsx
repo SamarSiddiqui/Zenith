@@ -4,12 +4,16 @@ import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Layout } from '../../components/Layout';
 import { useHabits } from '../../hooks/useHabits';
+import { useSprint } from '../../hooks/useSprint';
 import { HabitHeader, PlannerViewMode } from '../../components/habits/HabitHeader';
 import { CircadianBandsView } from '../../components/habits/CircadianBandsView';
-import { WeeklyMatrixView } from '../../components/habits/WeeklyMatrixView';
+import { DynamicSprintMatrix } from '../../components/habits/DynamicSprintMatrix';
 import { HabitGenesisModal } from '../../components/habits/HabitGenesisModal';
 import { SkipModal } from '../../components/habits/SkipModal';
 import { HabitDetailDrawer } from '../../components/habits/HabitDetailDrawer';
+import { SprintSettingsModal } from '../../components/habits/SprintSettingsModal';
+import { SprintCompletedModal } from '../../components/habits/SprintCompletedModal';
+import { PastSprintsDrawer } from '../../components/habits/PastSprintsDrawer';
 import type { Habit, CircadianSlot } from '../../types/zenith';
 
 export default function HabitsPage() {
@@ -24,6 +28,26 @@ export default function HabitsPage() {
     editHabit,
     removeHabit,
   } = useHabits();
+
+  const {
+    session: sprintSession,
+    analytics: sprintAnalytics,
+    isCompletedModalOpen,
+    isSettingsModalOpen,
+    isPastSprintsOpen,
+    pastSprints,
+    isLoadingPastSprints,
+    updateSprintDuration,
+    updateSprintGoal,
+    completeSprint,
+    startNewSprint,
+    openCompletedModal,
+    closeCompletedModal,
+    openSettings,
+    closeSettings,
+    openPastSprints,
+    closePastSprints,
+  } = useSprint(habits);
 
   const [viewMode, setViewMode] = useState<PlannerViewMode>('circadian');
   const [searchQuery, setSearchQuery] = useState('');
@@ -73,7 +97,7 @@ export default function HabitsPage() {
     setIsCreateModalOpen(true);
   };
 
-  const handleToggle = async (habitId: string, dayIndex: number = 3) => {
+  const handleToggle = async (habitId: string, dayIndex: number = sprintSession.currentDayIndex) => {
     const res = await toggleStatus(habitId, dayIndex);
     if (res.nextStatus === 'missed' && res.habit) {
       setSkipHabit({ habit: res.habit, dayIndex });
@@ -83,7 +107,7 @@ export default function HabitsPage() {
   return (
     <Layout>
       <div className="flex flex-col gap-8 pb-12">
-        {/* Habit Planner Header & Controls */}
+        {/* Habit Planner Header & Dynamic Sprint Controls */}
         <HabitHeader
           viewMode={viewMode}
           onChangeViewMode={setViewMode}
@@ -93,6 +117,10 @@ export default function HabitsPage() {
           totalHabits={metrics.total}
           completedToday={metrics.completedToday}
           averageHealth={metrics.averageHealth}
+          sprintSession={sprintSession}
+          onOpenSprintSettings={openSettings}
+          onCompleteSprint={completeSprint}
+          onOpenPastSprints={openPastSprints}
         />
 
         {/* Loading Skeleton */}
@@ -116,9 +144,11 @@ export default function HabitsPage() {
               >
                 <CircadianBandsView
                   circadianGroups={filteredCircadianGroups}
-                  onToggleStatus={(id) => handleToggle(id, 3)}
-                  onOpenSkipModal={(habit) => setSkipHabit({ habit, dayIndex: 3 })}
-                  onLogMicroStep={(id) => logMicroStep(id, 3)}
+                  onToggleStatus={(id) => handleToggle(id, sprintSession.currentDayIndex)}
+                  onOpenSkipModal={(habit) =>
+                    setSkipHabit({ habit, dayIndex: sprintSession.currentDayIndex })
+                  }
+                  onLogMicroStep={(id) => logMicroStep(id, sprintSession.currentDayIndex)}
                   onOpenCreateModal={handleOpenCreate}
                   onSelectHabit={(habit) => setSelectedHabitId(habit.id)}
                 />
@@ -131,11 +161,14 @@ export default function HabitsPage() {
                 exit={{ opacity: 0, y: -8 }}
                 transition={{ duration: 0.2 }}
               >
-                <WeeklyMatrixView
+                <DynamicSprintMatrix
                   habits={filteredHabits}
+                  config={sprintSession.config}
+                  currentDayIndex={sprintSession.currentDayIndex}
                   onToggleStatus={(id, idx) => handleToggle(id, idx)}
                   onOpenSkipModal={(habit, idx) => setSkipHabit({ habit, dayIndex: idx })}
                   onSelectHabit={(habit) => setSelectedHabitId(habit.id)}
+                  onQuickMicroStep={(id, idx) => logMicroStep(id, idx)}
                 />
               </motion.div>
             )}
@@ -152,7 +185,7 @@ export default function HabitsPage() {
         {/* Modal 2: Mindful Skip & Micro-Recovery Modal */}
         <SkipModal
           habit={skipHabit?.habit || null}
-          dayIndex={skipHabit?.dayIndex ?? 3}
+          dayIndex={skipHabit?.dayIndex ?? sprintSession.currentDayIndex}
           onClose={() => setSkipHabit(null)}
           onLogMicroStep={(id, idx) => {
             logMicroStep(id, idx);
@@ -167,9 +200,40 @@ export default function HabitsPage() {
           habit={selectedDrawerHabit}
           isOpen={Boolean(selectedDrawerHabit)}
           onClose={() => setSelectedHabitId(null)}
-          onLogMicroStep={(id) => logMicroStep(id, 3)}
+          onLogMicroStep={(id) => logMicroStep(id, sprintSession.currentDayIndex)}
           onUpdateHabit={editHabit}
           onDeleteHabit={removeHabit}
+        />
+
+        {/* Modal 3: Dynamic Sprint Settings Modal (1-15 days) */}
+        <SprintSettingsModal
+          isOpen={isSettingsModalOpen}
+          currentConfig={sprintSession.config}
+          sprintNumber={sprintSession.sprintNumber}
+          onClose={closeSettings}
+          onUpdateDuration={updateSprintDuration}
+          onUpdateGoal={updateSprintGoal}
+          onStartFreshSprint={startNewSprint}
+        />
+
+        {/* Modal 4: Sprint Completed Retrospective & Horizon Analytics */}
+        <SprintCompletedModal
+          isOpen={isCompletedModalOpen}
+          analytics={sprintAnalytics}
+          onClose={closeCompletedModal}
+          onStartNextSprint={startNewSprint}
+        />
+
+        {/* Drawer 2: Past Sprints Timeline Archive */}
+        <PastSprintsDrawer
+          isOpen={isPastSprintsOpen}
+          pastSprints={pastSprints}
+          isLoading={isLoadingPastSprints}
+          onClose={closePastSprints}
+          onSelectSprintAnalytics={(past) => {
+            closePastSprints();
+            openCompletedModal();
+          }}
         />
       </div>
     </Layout>
