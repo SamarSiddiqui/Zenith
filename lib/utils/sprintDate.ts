@@ -10,6 +10,14 @@ export interface SprintDayInfo {
   isFuture: boolean;
 }
 
+export interface SprintDayProgressInfo {
+  dayIndex: number;      // 0-indexed
+  dayNumber: number;     // 1-indexed (e.g. Day 3 of 7)
+  daysRemaining: number;
+  progressPercentage: number;
+  isCompleted: boolean;
+}
+
 /** Format helper: "Sep 12, 2026" */
 export function formatReadableDate(date: Date): string {
   return date.toLocaleDateString('en-US', {
@@ -25,6 +33,27 @@ export function formatFullTodayDate(date: Date = new Date()): string {
     month: 'long',
     day: 'numeric',
   });
+}
+
+/**
+ * Generate ISO start and end date strings for a given duration (1 to 15 days).
+ */
+export function generateSprintDateRange(
+  baseDate: Date = new Date(),
+  durationDays: number = 7
+): { startDate: string; endDate: string } {
+  const boundedDuration = Math.max(1, Math.min(15, durationDays));
+  const start = new Date(baseDate);
+  start.setHours(0, 0, 0, 0);
+
+  const end = new Date(start);
+  end.setDate(start.getDate() + (boundedDuration - 1));
+  end.setHours(23, 59, 59, 999);
+
+  return {
+    startDate: start.toISOString(),
+    endDate: end.toISOString(),
+  };
 }
 
 /**
@@ -85,12 +114,12 @@ export function getSprintDateRangeLabel(
 }
 
 /**
- * Determine the current day index (0 to durationDays - 1) based on real-world local time.
+ * Calculate detailed sprint progress info based on local time.
  */
-export function getCurrentSprintDayIndex(
+export function calculateSprintDayInfo(
   startDateStr: string,
   durationDays: number = 7
-): number {
+): SprintDayProgressInfo {
   const boundedDuration = Math.max(1, Math.min(15, durationDays));
   const startDate = new Date(startDateStr);
   startDate.setHours(0, 0, 0, 0);
@@ -101,8 +130,29 @@ export function getCurrentSprintDayIndex(
   const diffTime = today.getTime() - startDate.getTime();
   const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
 
-  // Clamp between 0 and durationDays - 1
-  return Math.max(0, Math.min(boundedDuration - 1, diffDays));
+  const dayIndex = Math.max(0, Math.min(boundedDuration - 1, diffDays));
+  const dayNumber = dayIndex + 1;
+  const daysRemaining = Math.max(0, boundedDuration - dayNumber);
+  const progressPercentage = Math.round((dayNumber / boundedDuration) * 100);
+  const isCompleted = diffDays >= boundedDuration - 1;
+
+  return {
+    dayIndex,
+    dayNumber,
+    daysRemaining,
+    progressPercentage,
+    isCompleted,
+  };
+}
+
+/**
+ * Determine the current day index (0 to durationDays - 1) based on real-world local time.
+ */
+export function getCurrentSprintDayIndex(
+  startDateStr: string,
+  durationDays: number = 7
+): number {
+  return calculateSprintDayInfo(startDateStr, durationDays).dayIndex;
 }
 
 /**
@@ -112,15 +162,5 @@ export function checkIsSprintCompleted(
   startDateStr: string,
   durationDays: number = 7
 ): boolean {
-  const boundedDuration = Math.max(1, Math.min(15, durationDays));
-  const startDate = new Date(startDateStr);
-  startDate.setHours(0, 0, 0, 0);
-
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  const diffTime = today.getTime() - startDate.getTime();
-  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-
-  return diffDays >= (boundedDuration - 1);
+  return calculateSprintDayInfo(startDateStr, durationDays).isCompleted;
 }
