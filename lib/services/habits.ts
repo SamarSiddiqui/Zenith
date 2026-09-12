@@ -1,7 +1,6 @@
 import { createClient } from '../supabase/client';
 import { isSupabaseConfigured } from '../supabase/env';
 import type { Habit, HabitDbRow, CreateHabitInput, UpdateHabitInput, HabitStatus } from '../../types/zenith';
-import { habits as seedHabits } from '../../data/zenith';
 
 const LOCAL_STORAGE_HABITS_KEY = 'zenith_local_habits';
 
@@ -64,13 +63,9 @@ export async function getHabits(userId?: string): Promise<Habit[]> {
 
       if (error) throw error;
 
-      if (data && data.length > 0) {
+      if (data) {
         return data.map((row) => mapDbRowToHabit(row as HabitDbRow));
       }
-
-      // If user has no habits yet, initialize with seeds
-      const initialHabits = await initializeSeedHabits(userId);
-      return initialHabits;
     } catch (err) {
       console.error('Failed to fetch habits from Supabase:', err);
     }
@@ -88,42 +83,8 @@ export async function getHabits(userId?: string): Promise<Habit[]> {
     }
   }
 
-  return seedHabits;
-}
-
-/** Initialize starter habits in Supabase for a new user */
-export async function initializeSeedHabits(userId: string): Promise<Habit[]> {
-  const supabase = createClient();
-  const configured = isSupabaseConfigured();
-
-  if (!supabase || !configured) return seedHabits;
-
-  try {
-    const rowsToInsert = seedHabits.map((h) => ({
-      user_id: userId,
-      name: h.name,
-      window_label: h.window,
-      duration_minutes: h.minutes,
-      health_score: h.health,
-      micro_version: h.microVersion,
-      circadian_slot: h.circadianSlot,
-      category: h.category || 'focus',
-      current_status: h.status,
-      weekly_history: h.week,
-    }));
-
-    const { data, error } = await supabase
-      .from('habits')
-      .insert(rowsToInsert)
-      .select();
-
-    if (error) throw error;
-    if (data) return data.map((row) => mapDbRowToHabit(row as HabitDbRow));
-  } catch (err) {
-    console.error('Failed to seed habits:', err);
-  }
-
-  return seedHabits;
+  // Return empty list if no habits have been created yet
+  return [];
 }
 
 /** Create a new habit */
@@ -133,7 +94,7 @@ export async function createHabit(userId: string, input: CreateHabitInput): Prom
 
   const defaultWeek: HabitStatus[] = ['unlogged', 'unlogged', 'unlogged', 'unlogged', 'unlogged', 'unlogged', 'unlogged'];
 
-  if (supabase && configured) {
+  if (supabase && configured && userId && userId !== 'local-user') {
     try {
       const { data, error } = await supabase
         .from('habits')
@@ -174,6 +135,14 @@ export async function createHabit(userId: string, input: CreateHabitInput): Prom
     createdAt: new Date().toISOString(),
   };
 
+  // Persist to local storage
+  if (typeof window !== 'undefined') {
+    const existing = localStorage.getItem(LOCAL_STORAGE_HABITS_KEY);
+    const list: Habit[] = existing ? JSON.parse(existing) : [];
+    list.push(localHabit);
+    localStorage.setItem(LOCAL_STORAGE_HABITS_KEY, JSON.stringify(list));
+  }
+
   return localHabit;
 }
 
@@ -181,6 +150,20 @@ export async function createHabit(userId: string, input: CreateHabitInput): Prom
 export async function updateHabit(habitId: string, updates: UpdateHabitInput): Promise<boolean> {
   const supabase = createClient();
   const configured = isSupabaseConfigured();
+
+  // Update in local storage
+  if (typeof window !== 'undefined') {
+    const existing = localStorage.getItem(LOCAL_STORAGE_HABITS_KEY);
+    if (existing) {
+      try {
+        const list: Habit[] = JSON.parse(existing);
+        const updated = list.map((h) => (h.id === habitId ? { ...h, ...updates } : h));
+        localStorage.setItem(LOCAL_STORAGE_HABITS_KEY, JSON.stringify(updated));
+      } catch (e) {
+        console.error('Error updating habit in localStorage:', e);
+      }
+    }
+  }
 
   if (supabase && configured) {
     try {
@@ -215,6 +198,20 @@ export async function updateHabit(habitId: string, updates: UpdateHabitInput): P
 export async function deleteHabit(habitId: string): Promise<boolean> {
   const supabase = createClient();
   const configured = isSupabaseConfigured();
+
+  // Delete from local storage
+  if (typeof window !== 'undefined') {
+    const existing = localStorage.getItem(LOCAL_STORAGE_HABITS_KEY);
+    if (existing) {
+      try {
+        const list: Habit[] = JSON.parse(existing);
+        const filtered = list.filter((h) => h.id !== habitId);
+        localStorage.setItem(LOCAL_STORAGE_HABITS_KEY, JSON.stringify(filtered));
+      } catch (e) {
+        console.error('Error removing habit from localStorage:', e);
+      }
+    }
+  }
 
   if (supabase && configured) {
     try {

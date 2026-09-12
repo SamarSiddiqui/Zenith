@@ -190,20 +190,6 @@ export async function getPastSprints(userId?: string): Promise<PastSprintSummary
     }
   }
 
-  // Local fallback demo past sprints
-  return [
-    {
-      id: 'past-sprint-1',
-      sprintNumber: 1,
-      durationDays: 7,
-      startDate: new Date(Date.now() - 14 * 86400000).toISOString(),
-      endDate: new Date(Date.now() - 7 * 86400000).toISOString(),
-      overallShowUpRate: 88,
-      anchorHabitName: 'Morning Workout & Mobility',
-      slippedHabitName: 'Knowledge Immersion',
-      completedHabitsCount: 5,
-      totalHabitsCount: 6,
-      createdAt: new Date(Date.now() - 7 * 86400000).toISOString(),
-    },
-  ];
+  // Local fallback: return empty list when no past completed sprints exist
+  return [];
 }

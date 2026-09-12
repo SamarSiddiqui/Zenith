@@ -137,7 +137,21 @@ export function DynamicSprintMatrix({
 
           {/* Body Rows */}
           <tbody className="divide-y divide-line/70">
-            {habits.map((habit) => {
+            {habits.length === 0 ? (
+              <tr>
+                <td
+                  colSpan={sprintDays.length + 2}
+                  className="px-6 py-12 text-center text-muted font-light"
+                >
+                  <div className="flex flex-col items-center justify-center space-y-2">
+                    <ShieldCheck className="h-8 w-8 text-faint stroke-[1.5]" />
+                    <p className="text-sm text-ink font-serif">No rituals anchored in this sprint horizon yet.</p>
+                    <p className="text-xs text-muted font-mono">Use the &quot;+ Anchor Ritual&quot; button above to craft your first habit.</p>
+                  </div>
+                </td>
+              </tr>
+            ) : (
+              habits.map((habit) => {
               // Calculate single habit completion in this sprint
               const habitSprintCompleted = habit.week
                 .slice(0, config.durationDays)
@@ -272,7 +286,8 @@ export function DynamicSprintMatrix({
                   </td>
                 </tr>
               );
-            })}
+            })
+          )}
           </tbody>
 
           {/* Daily Completion Summary Footer */}
