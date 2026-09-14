@@ -72,9 +72,49 @@ export function useHabits() {
     };
   }, [habits]);
 
+  // Explicit Status Setter (for Missed, Completed, Unlogged)
+  const setHabitStatus = useCallback(
+    async (habitId: string, dayIndex: number, status: HabitStatus): Promise<boolean> => {
+      let targetHabit: Habit | null = null;
+
+      setHabits((prevHabits) =>
+        prevHabits.map((h) => {
+          if (h.id !== habitId) return h;
+
+          const updatedWeek = [...h.week];
+          updatedWeek[dayIndex] = status;
+
+          const updatedHealth = calculateHabitHealth(updatedWeek);
+
+          targetHabit = {
+            ...h,
+            status: status,
+            week: updatedWeek,
+            health: updatedHealth,
+          };
+
+          return targetHabit;
+        })
+      );
+
+      if (targetHabit) {
+        const updatedHabit = targetHabit as Habit;
+        await updateHabit(habitId, {
+          status: updatedHabit.status,
+          week: updatedHabit.week,
+          health: updatedHabit.health,
+        });
+        return true;
+      }
+
+      return false;
+    },
+    []
+  );
+
   // Optimistic Status Toggle
   const toggleStatus = useCallback(
-    async (habitId: string, dayIndex: number = 3): Promise<{ nextStatus: HabitStatus; habit: Habit | null }> => {
+    async (habitId: string, dayIndex: number = 0): Promise<{ nextStatus: HabitStatus; habit: Habit | null }> => {
       let targetHabit: Habit | null = null;
       let nextStatus: HabitStatus = 'completed';
 
@@ -92,7 +132,7 @@ export function useHabits() {
 
           targetHabit = {
             ...h,
-            status: dayIndex === 3 ? nextStatus : h.status,
+            status: nextStatus,
             week: updatedWeek,
             health: updatedHealth,
           };
@@ -118,7 +158,7 @@ export function useHabits() {
 
   // Optimistic Micro-Step Logger (for zero-guilt recovery)
   const logMicroStep = useCallback(
-    async (habitId: string, dayIndex: number = 3): Promise<boolean> => {
+    async (habitId: string, dayIndex: number = 0): Promise<boolean> => {
       let targetHabit: Habit | null = null;
 
       setHabits((prevHabits) =>
@@ -130,7 +170,7 @@ export function useHabits() {
 
           targetHabit = {
             ...h,
-            status: dayIndex === 3 ? 'completed' : h.status,
+            status: 'completed',
             week: updatedWeek,
             health: Math.min(100, (h.health || 80) + 2), // Boost morale
           };
@@ -204,6 +244,7 @@ export function useHabits() {
     circadianGroups,
     metrics,
     toggleStatus,
+    setHabitStatus,
     logMicroStep,
     addHabit,
     editHabit,

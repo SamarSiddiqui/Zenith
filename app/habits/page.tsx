@@ -21,6 +21,7 @@ export default function HabitsPage() {
     isLoading,
     metrics,
     toggleStatus,
+    setHabitStatus,
     logMicroStep,
     addHabit,
     editHabit,
@@ -137,9 +138,10 @@ export default function HabitsPage() {
           dayIndex={skipHabit?.dayIndex ?? sprintSession.currentDayIndex}
           onClose={() => setSkipHabit(null)}
           onLogMicroStep={(id, idx) => {
-            logMicroStep(id, idx);
+            logMicroStep(id, idx ?? sprintSession.currentDayIndex);
           }}
-          onConfirmMiss={() => {
+          onConfirmMiss={(id, idx) => {
+            setHabitStatus(id, idx ?? sprintSession.currentDayIndex, 'missed');
             setSkipHabit(null);
           }}
         />
