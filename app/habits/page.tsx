@@ -5,8 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Layout } from '../../components/Layout';
 import { useHabits } from '../../hooks/useHabits';
 import { useSprint } from '../../hooks/useSprint';
-import { HabitHeader, PlannerViewMode } from '../../components/habits/HabitHeader';
-import { CircadianBandsView } from '../../components/habits/CircadianBandsView';
+import { HabitHeader } from '../../components/habits/HabitHeader';
 import { DynamicSprintMatrix } from '../../components/habits/DynamicSprintMatrix';
 import { HabitGenesisModal } from '../../components/habits/HabitGenesisModal';
 import { SkipModal } from '../../components/habits/SkipModal';
@@ -14,15 +13,15 @@ import { HabitDetailDrawer } from '../../components/habits/HabitDetailDrawer';
 import { SprintSettingsModal } from '../../components/habits/SprintSettingsModal';
 import { SprintCompletedModal } from '../../components/habits/SprintCompletedModal';
 import { PastSprintsDrawer } from '../../components/habits/PastSprintsDrawer';
-import type { Habit, CircadianSlot } from '../../types/zenith';
+import type { Habit } from '../../types/zenith';
 
 export default function HabitsPage() {
   const {
     habits,
     isLoading,
-    circadianGroups,
     metrics,
     toggleStatus,
+    setHabitStatus,
     logMicroStep,
     addHabit,
     editHabit,
@@ -49,10 +48,8 @@ export default function HabitsPage() {
     closePastSprints,
   } = useSprint(habits);
 
-  const [viewMode, setViewMode] = useState<PlannerViewMode>('circadian');
   const [searchQuery, setSearchQuery] = useState('');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [defaultSlot, setDefaultSlot] = useState<CircadianSlot | undefined>(undefined);
   const [skipHabit, setSkipHabit] = useState<{ habit: Habit; dayIndex: number } | null>(null);
   const [selectedHabitId, setSelectedHabitId] = useState<string | null>(null);
 
@@ -69,31 +66,11 @@ export default function HabitsPage() {
       (h) =>
         h.name.toLowerCase().includes(q) ||
         h.category?.toLowerCase().includes(q) ||
-        h.circadianSlot.toLowerCase().includes(q)
+        h.window?.toLowerCase().includes(q)
     );
   }, [habits, searchQuery]);
 
-  // Filter circadian groups according to search query
-  const filteredCircadianGroups = useMemo(() => {
-    if (!searchQuery.trim()) return circadianGroups;
-    const q = searchQuery.toLowerCase();
-    const filterList = (list: Habit[]) =>
-      list.filter(
-        (h) =>
-          h.name.toLowerCase().includes(q) ||
-          h.category?.toLowerCase().includes(q)
-      );
-
-    return {
-      morning: filterList(circadianGroups.morning),
-      afternoon: filterList(circadianGroups.afternoon),
-      evening: filterList(circadianGroups.evening),
-      anytime: filterList(circadianGroups.anytime),
-    };
-  }, [circadianGroups, searchQuery]);
-
-  const handleOpenCreate = (slot?: CircadianSlot) => {
-    setDefaultSlot(slot);
+  const handleOpenCreate = () => {
     setIsCreateModalOpen(true);
   };
 
@@ -107,13 +84,11 @@ export default function HabitsPage() {
   return (
     <Layout>
       <div className="flex flex-col gap-8 pb-12">
-        {/* Habit Planner Header & Dynamic Sprint Controls */}
+        {/* Habit Planner Header & Dynamic Sprint Horizon Controls */}
         <HabitHeader
-          viewMode={viewMode}
-          onChangeViewMode={setViewMode}
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
-          onOpenCreateModal={() => handleOpenCreate()}
+          onOpenCreateModal={handleOpenCreate}
           totalHabits={metrics.total}
           completedToday={metrics.completedToday}
           averageHealth={metrics.averageHealth}
@@ -131,48 +106,23 @@ export default function HabitsPage() {
           </div>
         )}
 
-        {/* Main View Area with Smooth Transitions */}
+        {/* Sprint Horizon Dynamic Matrix View */}
         {!isLoading && (
-          <AnimatePresence mode="wait">
-            {viewMode === 'circadian' ? (
-              <motion.div
-                key="circadian"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.2 }}
-              >
-                <CircadianBandsView
-                  circadianGroups={filteredCircadianGroups}
-                  onToggleStatus={(id) => handleToggle(id, sprintSession.currentDayIndex)}
-                  onOpenSkipModal={(habit) =>
-                    setSkipHabit({ habit, dayIndex: sprintSession.currentDayIndex })
-                  }
-                  onLogMicroStep={(id) => logMicroStep(id, sprintSession.currentDayIndex)}
-                  onOpenCreateModal={handleOpenCreate}
-                  onSelectHabit={(habit) => setSelectedHabitId(habit.id)}
-                />
-              </motion.div>
-            ) : (
-              <motion.div
-                key="matrix"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.2 }}
-              >
-                <DynamicSprintMatrix
-                  habits={filteredHabits}
-                  config={sprintSession.config}
-                  currentDayIndex={sprintSession.currentDayIndex}
-                  onToggleStatus={(id, idx) => handleToggle(id, idx)}
-                  onOpenSkipModal={(habit, idx) => setSkipHabit({ habit, dayIndex: idx })}
-                  onSelectHabit={(habit) => setSelectedHabitId(habit.id)}
-                  onQuickMicroStep={(id, idx) => logMicroStep(id, idx)}
-                />
-              </motion.div>
-            )}
-          </AnimatePresence>
+          <motion.div
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            <DynamicSprintMatrix
+              habits={filteredHabits}
+              config={sprintSession.config}
+              currentDayIndex={sprintSession.currentDayIndex}
+              onToggleStatus={(id, idx) => handleToggle(id, idx)}
+              onOpenSkipModal={(habit, idx) => setSkipHabit({ habit, dayIndex: idx })}
+              onSelectHabit={(habit) => setSelectedHabitId(habit.id)}
+              onQuickMicroStep={(id, idx) => logMicroStep(id, idx)}
+            />
+          </motion.div>
         )}
 
         {/* Modal 1: Habit Genesis Creation Modal */}
@@ -188,14 +138,15 @@ export default function HabitsPage() {
           dayIndex={skipHabit?.dayIndex ?? sprintSession.currentDayIndex}
           onClose={() => setSkipHabit(null)}
           onLogMicroStep={(id, idx) => {
-            logMicroStep(id, idx);
+            logMicroStep(id, idx ?? sprintSession.currentDayIndex);
           }}
-          onConfirmMiss={() => {
+          onConfirmMiss={(id, idx) => {
+            setHabitStatus(id, idx ?? sprintSession.currentDayIndex, 'missed');
             setSkipHabit(null);
           }}
         />
 
-        {/* Drawer: Habit Detail & Micro-Fallback Inspector */}
+        {/* Drawer 1: Habit Detail & Micro-Fallback Inspector */}
         <HabitDetailDrawer
           habit={selectedDrawerHabit}
           isOpen={Boolean(selectedDrawerHabit)}
