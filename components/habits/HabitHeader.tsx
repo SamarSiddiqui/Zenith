@@ -1,16 +1,13 @@
 "use client";
 
 import React from 'react';
-import { motion } from 'framer-motion';
 import {
   Calendar,
-  Layers,
   Search,
   Plus,
   Compass,
   Award,
   History,
-  CheckCircle2,
   Clock,
   Sparkles,
 } from 'lucide-react';
@@ -18,11 +15,7 @@ import { useAuth } from '../../context/AuthContext';
 import type { SprintSession } from '../../types/sprint';
 import { formatFullTodayDate, getSprintDateRangeLabel } from '../../lib/utils/sprintDate';
 
-export type PlannerViewMode = 'circadian' | 'matrix';
-
 interface HabitHeaderProps {
-  viewMode: PlannerViewMode;
-  onChangeViewMode: (mode: PlannerViewMode) => void;
   searchQuery: string;
   onSearchChange: (query: string) => void;
   onOpenCreateModal: () => void;
@@ -37,8 +30,6 @@ interface HabitHeaderProps {
 }
 
 export function HabitHeader({
-  viewMode,
-  onChangeViewMode,
   searchQuery,
   onSearchChange,
   onOpenCreateModal,
@@ -80,11 +71,11 @@ export function HabitHeader({
           </div>
 
           <h1 className="font-serif text-3xl sm:text-4xl text-ink tracking-tight">
-            Habits & Circadian Planner
+            Habit & Sprint Planner
           </h1>
           <p className="mt-1 text-xs sm:text-sm text-muted font-light max-w-xl">
             {sprintSession?.config.sprintGoal ||
-              'Align daily rituals with your biological energy curve. Micro-fallbacks preserve momentum without guilt.'}
+              'Track daily rituals across your custom sprint horizons. Micro-fallbacks preserve momentum without guilt.'}
           </p>
         </div>
 
@@ -130,7 +121,7 @@ export function HabitHeader({
             </span>
             <div>
               <span className="font-mono text-xs font-semibold text-ink">
-                Sprint {sprintNumber} Active Horizon
+                Sprint {sprintNumber} Active Horizon ({sprintDuration} Days)
               </span>
               <span className="mx-2 text-faint">·</span>
               <span className="text-muted font-mono text-[11px]">
@@ -158,7 +149,7 @@ export function HabitHeader({
                 className="flex items-center gap-1.5 rounded-xl border border-line bg-surface px-3 py-1.5 text-[11px] font-mono text-muted hover:border-line-hover hover:text-ink transition-colors"
               >
                 <Compass className="h-3.5 w-3.5 text-sage-deep" />
-                <span>Configure ({sprintDuration}d)</span>
+                <span>Configure Horizon ({sprintDuration}d)</span>
               </button>
             )}
 
@@ -176,75 +167,29 @@ export function HabitHeader({
         </div>
       )}
 
-      {/* Control Bar: View Switcher, Search & New Ritual CTA */}
+      {/* Control Bar: Search & New Ritual CTA */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-2 rounded-3xl border border-line/80 bg-surface/90 shadow-calm backdrop-blur-md">
-        {/* View Mode Switcher Pills */}
-        <div className="flex items-center gap-1 bg-canvas p-1 rounded-2xl border border-line/60">
-          <button
-            type="button"
-            onClick={() => onChangeViewMode('circadian')}
-            className={`relative flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-medium transition-all ${
-              viewMode === 'circadian'
-                ? 'text-ink font-semibold shadow-xs'
-                : 'text-muted hover:text-ink'
-            }`}
-          >
-            {viewMode === 'circadian' && (
-              <motion.div
-                layoutId="viewTab"
-                className="absolute inset-0 bg-surface rounded-xl border border-line/60"
-                transition={{ duration: 0.2 }}
-              />
-            )}
-            <Layers className="relative z-10 h-3.5 w-3.5 text-sage-deep" />
-            <span className="relative z-10">Circadian Flow</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => onChangeViewMode('matrix')}
-            className={`relative flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-medium transition-all ${
-              viewMode === 'matrix'
-                ? 'text-ink font-semibold shadow-xs'
-                : 'text-muted hover:text-ink'
-            }`}
-          >
-            {viewMode === 'matrix' && (
-              <motion.div
-                layoutId="viewTab"
-                className="absolute inset-0 bg-surface rounded-xl border border-line/60"
-                transition={{ duration: 0.2 }}
-              />
-            )}
-            <Calendar className="relative z-10 h-3.5 w-3.5 text-sage" />
-            <span className="relative z-10">Sprint Horizon ({sprintDuration}d)</span>
-          </button>
+        {/* Search Box */}
+        <div className="relative flex-1">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => onSearchChange(e.target.value)}
+            placeholder="Search rituals or categories..."
+            className="w-full rounded-2xl border border-line/70 bg-canvas py-2 pl-9 pr-4 text-xs text-ink placeholder:text-faint focus:border-sage focus:outline-none focus:ring-1 focus:ring-sage/20 transition-all"
+          />
         </div>
 
-        {/* Search & Action Controls */}
-        <div className="flex items-center gap-2">
-          {/* Search Box */}
-          <div className="relative flex-1 sm:w-56">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => onSearchChange(e.target.value)}
-              placeholder="Search rituals or category..."
-              className="w-full rounded-2xl border border-line/70 bg-canvas py-1.5 pl-8 pr-3 text-xs text-ink placeholder:text-faint focus:border-sage focus:outline-none focus:ring-1 focus:ring-sage/20 transition-all"
-            />
-          </div>
-
-          {/* New Habit Anchor CTA */}
-          <button
-            type="button"
-            onClick={onOpenCreateModal}
-            className="flex items-center gap-1.5 rounded-2xl bg-sage px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-sage-deep transition-colors shrink-0"
-          >
-            <Plus className="h-3.5 w-3.5 stroke-[2.5]" />
-            <span>Anchor Ritual</span>
-          </button>
-        </div>
+        {/* New Habit Anchor CTA */}
+        <button
+          type="button"
+          onClick={onOpenCreateModal}
+          className="flex items-center gap-1.5 rounded-2xl bg-sage px-5 py-2.5 text-xs font-semibold text-white shadow-xs hover:bg-sage-deep transition-colors shrink-0"
+        >
+          <Plus className="h-3.5 w-3.5 stroke-[2.5]" />
+          <span>Anchor Ritual</span>
+        </button>
       </div>
     </div>
   );

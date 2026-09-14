@@ -176,9 +176,9 @@ export function DynamicSprintMatrix({
                         <span className="block text-sm font-semibold text-ink group-hover:text-sage-deep transition-colors">
                           {habit.name}
                         </span>
-                        {habit.circadianSlot && (
+                        {habit.category && (
                           <span className="rounded-full border border-line/60 bg-canvas px-2 py-0.5 text-[9px] font-mono uppercase text-muted">
-                            {habit.circadianSlot}
+                            {habit.category}
                           </span>
                         )}
                       </div>

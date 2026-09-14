@@ -1,19 +1,15 @@
 "use client";
 
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
   X,
   Sun,
   Moon,
-  Sparkles,
   Clock,
   Feather,
   Shield,
-  Zap,
-  Check,
   Plus,
-  Compass,
 } from 'lucide-react';
 import type { CreateHabitInput, CircadianSlot } from '../../types/zenith';
 
@@ -22,50 +18,6 @@ interface HabitGenesisModalProps {
   onClose: () => void;
   onSave: (habit: CreateHabitInput) => Promise<boolean>;
 }
-
-interface HabitPreset {
-  name: string;
-  slot: CircadianSlot;
-  window: string;
-  minutes: number;
-  microVersion: string;
-  category: 'focus' | 'mindfulness' | 'physical' | 'craft' | 'rest';
-}
-
-const ZEN_PRESETS: HabitPreset[] = [
-  {
-    name: 'Morning Deep Focus',
-    slot: 'morning',
-    window: '09:00 AM – 10:30 AM',
-    minutes: 45,
-    microVersion: '20-minute priority sprint',
-    category: 'focus',
-  },
-  {
-    name: 'Circadian Sunlight Walk',
-    slot: 'afternoon',
-    window: '01:00 PM – 01:25 PM',
-    minutes: 25,
-    microVersion: '5-minute outdoor breath',
-    category: 'physical',
-  },
-  {
-    name: 'Twilight Reflection',
-    slot: 'evening',
-    window: '06:30 PM – 06:45 PM',
-    minutes: 15,
-    microVersion: '1 honest reflective sentence',
-    category: 'rest',
-  },
-  {
-    name: 'Knowledge Immersion',
-    slot: 'evening',
-    window: '08:30 PM – 09:00 PM',
-    minutes: 30,
-    microVersion: 'Read 2 pages',
-    category: 'craft',
-  },
-];
 
 const DURATION_OPTIONS = [5, 15, 25, 45, 60, 90];
 
@@ -88,15 +40,6 @@ export function HabitGenesisModal({ isOpen, onClose, onSave }: HabitGenesisModal
 
   if (!isOpen) return null;
 
-  const handleApplyPreset = (preset: HabitPreset) => {
-    setName(preset.name);
-    setSlot(preset.slot);
-    setWindowTime(preset.window);
-    setMinutes(preset.minutes);
-    setMicroVersion(preset.microVersion);
-    setCategory(preset.category);
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
@@ -105,15 +48,14 @@ export function HabitGenesisModal({ isOpen, onClose, onSave }: HabitGenesisModal
     const success = await onSave({
       name: name.trim(),
       circadianSlot: slot,
-      window: windowTime.trim() || `${slot.toUpperCase()} WINDOW`,
+      window: windowTime.trim() || 'Daily Window',
       minutes,
-      microVersion: microVersion.trim() || '5-minute micro alternative',
+      microVersion: microVersion.trim() || '5-minute micro fallback',
       category,
     });
 
     setIsSubmitting(false);
     if (success) {
-      // Reset form & close
       setName('');
       setMicroVersion('');
       onClose();
@@ -136,9 +78,9 @@ export function HabitGenesisModal({ isOpen, onClose, onSave }: HabitGenesisModal
               <Feather className="h-4 w-4" />
             </div>
             <div>
-              <h2 className="font-serif text-2xl text-ink">Habit Genesis</h2>
+              <h2 className="font-serif text-2xl text-ink">Anchor Habit Ritual</h2>
               <p className="text-xs text-muted font-light">
-                Anchor a mindful ritual with built-in zero-guilt recovery.
+                Define your habit routine with built-in zero-guilt recovery.
               </p>
             </div>
           </div>
@@ -151,31 +93,6 @@ export function HabitGenesisModal({ isOpen, onClose, onSave }: HabitGenesisModal
           </button>
         </div>
 
-        {/* Curated Presets Strip */}
-        <div className="mb-6 space-y-2">
-          <div className="flex items-center gap-1.5 text-[11px] font-mono uppercase tracking-wider text-faint">
-            <Sparkles className="h-3 w-3 text-sand" />
-            <span>Curated Zen Anchors (Quick-Fill)</span>
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            {ZEN_PRESETS.map((preset) => (
-              <button
-                key={preset.name}
-                type="button"
-                onClick={() => handleApplyPreset(preset)}
-                className="flex flex-col items-start rounded-2xl border border-line/60 bg-canvas/70 p-2.5 text-left transition-all hover:border-sage/40 hover:bg-sage-wash/40 group"
-              >
-                <span className="text-xs font-semibold text-ink group-hover:text-sage-deep transition-colors truncate w-full">
-                  {preset.name}
-                </span>
-                <span className="text-[10px] text-faint font-mono mt-0.5">
-                  {preset.minutes}m · {preset.slot}
-                </span>
-              </button>
-            ))}
-          </div>
-        </div>
-
         <form onSubmit={handleSubmit} className="space-y-5">
           {/* Habit Name */}
           <div>
@@ -186,22 +103,22 @@ export function HabitGenesisModal({ isOpen, onClose, onSave }: HabitGenesisModal
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="e.g., Morning Deep Focus Sprint"
+              placeholder="e.g., Morning Deep Focus Block"
               required
               className="w-full rounded-2xl border border-line bg-canvas py-2.5 px-4 text-xs text-ink placeholder:text-faint focus:border-sage focus:outline-none focus:ring-2 focus:ring-sage/15 transition-all"
             />
           </div>
 
-          {/* Circadian Energy Window Selector */}
+          {/* Habit Time Window */}
           <div>
             <label className="block text-[11px] font-mono uppercase tracking-wider text-faint mb-1.5">
-              Circadian Biological Window
+              Routine Time Window
             </label>
             <div className="grid grid-cols-3 gap-2">
               {[
-                { id: 'morning', label: 'Morning Ignition', time: '07:00 – 11:00', icon: Sun },
-                { id: 'afternoon', label: 'Midday Focus', time: '11:00 – 16:00', icon: Clock },
-                { id: 'evening', label: 'Evening Review', time: '17:00 – 21:00', icon: Moon },
+                { id: 'morning', label: 'Morning', time: '07:00 – 11:00', icon: Sun },
+                { id: 'afternoon', label: 'Midday', time: '11:00 – 16:00', icon: Clock },
+                { id: 'evening', label: 'Evening', time: '17:00 – 21:00', icon: Moon },
               ].map(({ id, label, time, icon: Icon }) => {
                 const selected = slot === id;
                 return (
@@ -269,14 +186,14 @@ export function HabitGenesisModal({ isOpen, onClose, onSave }: HabitGenesisModal
             </div>
           </div>
 
-          {/* 5-Minute Micro-Fallback (The Zero-Guilt Engine) */}
+          {/* 5-Minute Micro-Fallback */}
           <div className="rounded-2xl border border-sage/30 bg-sage-wash/50 p-4 space-y-2">
             <div className="flex items-center gap-2 text-xs font-semibold text-ink">
               <Shield className="h-3.5 w-3.5 text-sage-deep" />
               <span>5-Minute Micro-Fallback (Zero-Guilt Protocol)</span>
             </div>
             <p className="text-[11px] text-muted leading-relaxed">
-              When schedule crunch strikes, what is the friction-free version you can complete in 5 minutes to preserve your health score?
+              When busy days strike, what is the quick 5-minute version you can complete to preserve your streak?
             </p>
             <input
               type="text"
@@ -303,7 +220,7 @@ export function HabitGenesisModal({ isOpen, onClose, onSave }: HabitGenesisModal
               className="rounded-2xl bg-sage px-6 py-2.5 text-xs font-semibold text-white shadow-xs hover:bg-sage-deep transition-colors disabled:opacity-50 flex items-center gap-1.5"
             >
               <Plus className="h-3.5 w-3.5 stroke-[2.5]" />
-              <span>{isSubmitting ? 'Anchor Ritual...' : 'Anchor Habit'}</span>
+              <span>{isSubmitting ? 'Saving Habit...' : 'Anchor Habit'}</span>
             </button>
           </div>
         </form>
