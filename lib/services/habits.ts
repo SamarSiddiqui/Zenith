@@ -177,13 +177,17 @@ export async function updateHabit(habitId: string, updates: UpdateHabitInput): P
       if (updates.microVersion !== undefined) dbPayload.micro_version = updates.microVersion;
       if (updates.circadianSlot !== undefined) dbPayload.circadian_slot = updates.circadianSlot;
       if (updates.category !== undefined) dbPayload.category = updates.category;
+      dbPayload.updated_at = new Date().toISOString();
 
       const { error } = await supabase
         .from('habits')
         .update(dbPayload)
         .eq('id', habitId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase habit update error:', error);
+        throw error;
+      }
       return true;
     } catch (err) {
       console.error('Failed to update habit in Supabase:', err);

@@ -75,123 +75,112 @@ export function useHabits() {
   // Explicit Status Setter (for Missed, Completed, Unlogged)
   const setHabitStatus = useCallback(
     async (habitId: string, dayIndex: number, status: HabitStatus): Promise<boolean> => {
-      let targetHabit: Habit | null = null;
+      const current = habits.find((h) => h.id === habitId);
+      if (!current) return false;
 
-      setHabits((prevHabits) =>
-        prevHabits.map((h) => {
-          if (h.id !== habitId) return h;
-
-          const updatedWeek = [...h.week];
-          updatedWeek[dayIndex] = status;
-
-          const updatedHealth = calculateHabitHealth(updatedWeek);
-
-          targetHabit = {
-            ...h,
-            status: status,
-            week: updatedWeek,
-            health: updatedHealth,
-          };
-
-          return targetHabit;
-        })
-      );
-
-      if (targetHabit) {
-        const updatedHabit = targetHabit as Habit;
-        await updateHabit(habitId, {
-          status: updatedHabit.status,
-          week: updatedHabit.week,
-          health: updatedHabit.health,
-        });
-        return true;
+      const updatedWeek = [...(current.week || [])];
+      while (updatedWeek.length <= dayIndex) {
+        updatedWeek.push('unlogged');
       }
+      updatedWeek[dayIndex] = status;
 
-      return false;
+      const updatedHealth = calculateHabitHealth(updatedWeek);
+
+      const updatedHabit: Habit = {
+        ...current,
+        status: status,
+        week: updatedWeek,
+        health: updatedHealth,
+      };
+
+      // Optimistic UI state update
+      setHabits((prev) => prev.map((h) => (h.id === habitId ? updatedHabit : h)));
+
+      // Guaranteed asynchronous persistence
+      await updateHabit(habitId, {
+        status: updatedHabit.status,
+        week: updatedHabit.week,
+        health: updatedHabit.health,
+      });
+
+      return true;
     },
-    []
+    [habits]
   );
 
   // Optimistic Status Toggle
   const toggleStatus = useCallback(
     async (habitId: string, dayIndex: number = 0): Promise<{ nextStatus: HabitStatus; habit: Habit | null }> => {
-      let targetHabit: Habit | null = null;
-      let nextStatus: HabitStatus = 'completed';
+      const current = habits.find((h) => h.id === habitId);
+      if (!current) return { nextStatus: 'completed', habit: null };
 
-      setHabits((prevHabits) =>
-        prevHabits.map((h) => {
-          if (h.id !== habitId) return h;
+      const currentStatus = current.week[dayIndex] || current.status || 'unlogged';
+      const nextStatus = STATUS_CYCLE[currentStatus];
 
-          const currentStatus = h.week[dayIndex] || h.status || 'unlogged';
-          nextStatus = STATUS_CYCLE[currentStatus];
-
-          const updatedWeek = [...h.week];
-          updatedWeek[dayIndex] = nextStatus;
-
-          const updatedHealth = calculateHabitHealth(updatedWeek);
-
-          targetHabit = {
-            ...h,
-            status: nextStatus,
-            week: updatedWeek,
-            health: updatedHealth,
-          };
-
-          return targetHabit;
-        })
-      );
-
-      if (targetHabit) {
-        // Asynchronously sync with Supabase
-        const updatedHabit = targetHabit as Habit;
-        updateHabit(habitId, {
-          status: updatedHabit.status,
-          week: updatedHabit.week,
-          health: updatedHabit.health,
-        });
+      const updatedWeek = [...(current.week || [])];
+      while (updatedWeek.length <= dayIndex) {
+        updatedWeek.push('unlogged');
       }
+      updatedWeek[dayIndex] = nextStatus;
 
-      return { nextStatus, habit: targetHabit };
+      const updatedHealth = calculateHabitHealth(updatedWeek);
+
+      const updatedHabit: Habit = {
+        ...current,
+        status: nextStatus,
+        week: updatedWeek,
+        health: updatedHealth,
+      };
+
+      // Optimistic UI update
+      setHabits((prev) => prev.map((h) => (h.id === habitId ? updatedHabit : h)));
+
+      // Guaranteed asynchronous persistence
+      await updateHabit(habitId, {
+        status: updatedHabit.status,
+        week: updatedHabit.week,
+        health: updatedHabit.health,
+      });
+
+      return { nextStatus, habit: updatedHabit };
     },
-    []
+    [habits]
   );
 
   // Optimistic Micro-Step Logger (for zero-guilt recovery)
   const logMicroStep = useCallback(
     async (habitId: string, dayIndex: number = 0): Promise<boolean> => {
-      let targetHabit: Habit | null = null;
+      const current = habits.find((h) => h.id === habitId);
+      if (!current) return false;
 
-      setHabits((prevHabits) =>
-        prevHabits.map((h) => {
-          if (h.id !== habitId) return h;
-
-          const updatedWeek = [...h.week];
-          updatedWeek[dayIndex] = 'completed'; // Logged as completed micro-step
-
-          targetHabit = {
-            ...h,
-            status: 'completed',
-            week: updatedWeek,
-            health: Math.min(100, (h.health || 80) + 2), // Boost morale
-          };
-
-          return targetHabit;
-        })
-      );
-
-      if (targetHabit) {
-        const updated = targetHabit as Habit;
-        await updateHabit(habitId, {
-          status: updated.status,
-          week: updated.week,
-          health: updated.health,
-        });
-        return true;
+      const updatedWeek = [...(current.week || [])];
+      while (updatedWeek.length <= dayIndex) {
+        updatedWeek.push('unlogged');
       }
+      updatedWeek[dayIndex] = 'completed'; // Logged as completed micro-step
 
-      return false;
+      const updatedHealth = Math.min(100, (current.health || 80) + 2); // Boost morale
+
+      const updatedHabit: Habit = {
+        ...current,
+        status: 'completed',
+        week: updatedWeek,
+        health: updatedHealth,
+      };
+
+      // Optimistic UI update
+      setHabits((prev) => prev.map((h) => (h.id === habitId ? updatedHabit : h)));
+
+      // Guaranteed asynchronous persistence
+      await updateHabit(habitId, {
+        status: updatedHabit.status,
+        week: updatedHabit.week,
+        health: updatedHabit.health,
+      });
+
+      return true;
     },
-    []
+    [habits]
   );
 
   // Add Habit
