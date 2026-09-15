@@ -22,9 +22,6 @@ import { useAuth } from '../context/AuthContext';
 import { createClient } from '../lib/supabase/client';
 import { isSupabaseConfigured } from '../lib/supabase/env';
 
-const LOCAL_STORAGE_ACTIVE_SPRINT = 'zenith_active_sprint_session';
-const LOCAL_STORAGE_PAST_SPRINTS = 'zenith_past_sprints_archive';
-
 function createDefaultSprintSession(userId: string = 'local-user', durationDays: number = 7, sprintNumber: number = 1): SprintSession {
   const { startDate, endDate } = generateSprintDateRange(new Date(), durationDays);
   const config: SprintConfig = {
@@ -37,7 +34,7 @@ function createDefaultSprintSession(userId: string = 'local-user', durationDays:
   const dayInfo = calculateSprintDayInfo(startDate, durationDays);
 
   return {
-    id: `local-sprint-${sprintNumber}`,
+    id: `sprint-${sprintNumber}`,
     userId,
     sprintNumber,
     config,
@@ -53,23 +50,6 @@ function createDefaultSprintSession(userId: string = 'local-user', durationDays:
 export function useSprint(habits: Habit[]) {
   const { user } = useAuth();
   const [session, setSession] = useState<SprintSession>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem(LOCAL_STORAGE_ACTIVE_SPRINT);
-      if (saved) {
-        try {
-          const parsed: SprintSession = JSON.parse(saved);
-          const dayInfo = calculateSprintDayInfo(parsed.config.startDate, parsed.config.durationDays);
-          return {
-            ...parsed,
-            currentDayIndex: dayInfo.dayIndex,
-            isCompleted: dayInfo.isCompleted || parsed.status === 'completed',
-            status: dayInfo.isCompleted ? 'completed' : parsed.status,
-          };
-        } catch (e) {
-          console.error('Error parsing stored sprint session:', e);
-        }
-      }
-    }
     return createDefaultSprintSession(user?.id || 'local-user', 7, 1);
   });
 
@@ -81,12 +61,60 @@ export function useSprint(habits: Habit[]) {
   const [activePastSprintDetail, setActivePastSprintDetail] = useState<SprintDbRow | null>(null);
   const [isCompleting, setIsCompleting] = useState<boolean>(false);
 
-  // Sync active sprint to localStorage whenever it changes
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(LOCAL_STORAGE_ACTIVE_SPRINT, JSON.stringify(session));
+  // Fetch active sprint directly from Supabase
+  const loadActiveSprint = useCallback(async () => {
+    const supabase = createClient();
+    if (!supabase || !isSupabaseConfigured() || !user?.id) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('sprints')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('status', 'active')
+        .order('sprint_number', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error fetching active sprint from Supabase:', error);
+        return;
+      }
+
+      if (data) {
+        const row = data as SprintDbRow;
+        const dayInfo = calculateSprintDayInfo(row.start_date, row.duration_days);
+        const isCompleted = checkIsSprintCompleted(row.start_date, row.duration_days);
+
+        const loadedSession: SprintSession = {
+          id: row.id,
+          userId: row.user_id,
+          sprintNumber: row.sprint_number,
+          config: {
+            durationDays: row.duration_days,
+            startDate: row.start_date,
+            endDate: row.end_date,
+            sprintGoal: row.analytics?.recommendations?.[0]?.title || 'Ground daily rituals and sustain steady momentum',
+          },
+          status: isCompleted ? 'completed' : 'active',
+          currentDayIndex: dayInfo.dayIndex,
+          isCompleted,
+          snapshots: row.habit_snapshots || [],
+          analytics: row.analytics || undefined,
+          createdAt: row.created_at,
+          updatedAt: row.updated_at,
+        };
+
+        setSession(loadedSession);
+      }
+    } catch (err) {
+      console.error('Failed to load active sprint:', err);
     }
-  }, [session]);
+  }, [user?.id]);
+
+  useEffect(() => {
+    loadActiveSprint();
+  }, [loadActiveSprint]);
 
   // Real-time day tracking update
   useEffect(() => {
@@ -101,19 +129,12 @@ export function useSprint(habits: Habit[]) {
     }));
   }, [session.config.startDate, session.config.durationDays]);
 
-  // Load Past Sprints
+  // Load Past Sprints directly from Supabase
   const loadPastSprints = useCallback(async () => {
     setIsLoadingPastSprints(true);
     try {
       const data = await getPastSprints(user?.id);
-      if (data && data.length > 0) {
-        setPastSprints(data);
-      } else if (typeof window !== 'undefined') {
-        const saved = localStorage.getItem(LOCAL_STORAGE_PAST_SPRINTS);
-        if (saved) {
-          setPastSprints(JSON.parse(saved));
-        }
-      }
+      setPastSprints(data || []);
     } catch (err) {
       console.error('Failed to load past sprints:', err);
     } finally {
@@ -130,29 +151,45 @@ export function useSprint(habits: Habit[]) {
     return calculateSprintAnalytics(habits, session.config, session.sprintNumber);
   }, [habits, session.config, session.sprintNumber]);
 
-  // Update Sprint Duration (1 to 15 days)
-  const updateSprintDuration = useCallback((newDuration: number) => {
+  // Update Sprint Duration (1 to 15 days) & persist to Supabase
+  const updateSprintDuration = useCallback(async (newDuration: number) => {
     const clamped = Math.max(1, Math.min(15, newDuration));
-    setSession((prev) => {
-      const { startDate, endDate } = generateSprintDateRange(new Date(prev.config.startDate), clamped);
-      const dayInfo = calculateSprintDayInfo(startDate, clamped);
-      return {
-        ...prev,
-        config: {
-          ...prev.config,
-          durationDays: clamped,
-          startDate,
-          endDate,
-        },
-        currentDayIndex: dayInfo.dayIndex,
-        isCompleted: dayInfo.isCompleted,
-        updatedAt: new Date().toISOString(),
-      };
-    });
-  }, []);
+    const { startDate, endDate } = generateSprintDateRange(new Date(session.config.startDate), clamped);
+    const dayInfo = calculateSprintDayInfo(startDate, clamped);
+
+    const updatedSession: SprintSession = {
+      ...session,
+      config: {
+        ...session.config,
+        durationDays: clamped,
+        startDate,
+        endDate,
+      },
+      currentDayIndex: dayInfo.dayIndex,
+      isCompleted: dayInfo.isCompleted,
+      updatedAt: new Date().toISOString(),
+    };
+
+    setSession(updatedSession);
+
+    // Sync directly to Supabase
+    const supabase = createClient();
+    if (supabase && isSupabaseConfigured() && user?.id && !session.id.startsWith('sprint-')) {
+      try {
+        await supabase.from('sprints').update({
+          duration_days: clamped,
+          start_date: startDate,
+          end_date: endDate,
+          updated_at: new Date().toISOString(),
+        }).eq('id', session.id);
+      } catch (e) {
+        console.error('Failed to update sprint duration in Supabase:', e);
+      }
+    }
+  }, [session, user?.id]);
 
   // Update Sprint Goal
-  const updateSprintGoal = useCallback((goal: string) => {
+  const updateSprintGoal = useCallback(async (goal: string) => {
     setSession((prev) => ({
       ...prev,
       config: {
@@ -161,9 +198,21 @@ export function useSprint(habits: Habit[]) {
       },
       updatedAt: new Date().toISOString(),
     }));
-  }, []);
 
-  // Complete Current Sprint & Store in Archive / Supabase
+    const supabase = createClient();
+    if (supabase && isSupabaseConfigured() && user?.id && !session.id.startsWith('sprint-')) {
+      try {
+        await supabase.from('sprints').update({
+          sprint_goal: goal,
+          updated_at: new Date().toISOString(),
+        }).eq('id', session.id);
+      } catch (e) {
+        console.error('Failed to update sprint goal in Supabase:', e);
+      }
+    }
+  }, [session.id, user?.id]);
+
+  // Complete Current Sprint & Store in Supabase
   const completeSprint = useCallback(async () => {
     setIsCompleting(true);
     const analytics = calculateSprintAnalytics(habits, session.config, session.sprintNumber);
@@ -180,41 +229,19 @@ export function useSprint(habits: Habit[]) {
 
     setSession(completedSession);
 
-    // Save past sprint summary locally
-    const pastSummary: PastSprintSummary = {
-      id: session.id,
-      sprintNumber: session.sprintNumber,
-      durationDays: session.config.durationDays,
-      startDate: session.config.startDate,
-      endDate: session.config.endDate,
-      overallShowUpRate: analytics.overallShowUpRate,
-      anchorHabitName: analytics.anchorHabits[0]?.name,
-      slippedHabitName: analytics.slippedHabits[0]?.name,
-      completedHabitsCount: analytics.anchorHabits.length,
-      totalHabitsCount: habits.length,
-      createdAt: new Date().toISOString(),
-    };
-
-    setPastSprints((prev) => {
-      const updated = [pastSummary, ...prev.filter((p) => p.id !== session.id)];
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(LOCAL_STORAGE_PAST_SPRINTS, JSON.stringify(updated));
-      }
-      return updated;
-    });
-
-    // Save to Supabase if available
+    // Save to Supabase
     const supabase = createClient();
     if (supabase && isSupabaseConfigured() && user?.id) {
       try {
         await supabase.from('sprints').upsert({
-          id: session.id.startsWith('local-') ? undefined : session.id,
+          id: session.id.startsWith('sprint-') ? undefined : session.id,
           user_id: user.id,
           sprint_number: session.sprintNumber,
           duration_days: session.config.durationDays,
           start_date: session.config.startDate,
           end_date: session.config.endDate,
           status: 'completed',
+          sprint_goal: session.config.sprintGoal,
           habit_snapshots: snapshots,
           analytics: analytics,
           updated_at: new Date().toISOString(),
@@ -226,17 +253,18 @@ export function useSprint(habits: Habit[]) {
 
     setIsCompleting(false);
     setIsCompletedModalOpen(true);
-  }, [habits, session, user?.id]);
+    loadPastSprints();
+  }, [habits, session, user?.id, loadPastSprints]);
 
   // Start Next Sprint Horizon
   const startNewSprint = useCallback(
-    (customDuration?: number, customGoal?: string) => {
+    async (customDuration?: number, customGoal?: string) => {
       const nextDuration = customDuration || session.config.durationDays || 7;
       const nextNumber = session.sprintNumber + 1;
       const { startDate, endDate } = generateSprintDateRange(new Date(), nextDuration);
 
       const nextSession: SprintSession = {
-        id: `local-sprint-${nextNumber}-${Date.now()}`,
+        id: `sprint-${nextNumber}-${Date.now()}`,
         userId: user?.id || 'local-user',
         sprintNumber: nextNumber,
         config: {
@@ -256,6 +284,30 @@ export function useSprint(habits: Habit[]) {
       setSession(nextSession);
       setIsCompletedModalOpen(false);
       setIsSettingsModalOpen(false);
+
+      // Create new active sprint in Supabase
+      const supabase = createClient();
+      if (supabase && isSupabaseConfigured() && user?.id) {
+        try {
+          const { data } = await supabase.from('sprints').insert({
+            user_id: user.id,
+            sprint_number: nextNumber,
+            duration_days: nextDuration,
+            start_date: startDate,
+            end_date: endDate,
+            status: 'active',
+            sprint_goal: customGoal || `Sprint ${nextNumber} Rhythm & Flow`,
+            habit_snapshots: [],
+            analytics: null,
+          }).select().single();
+
+          if (data) {
+            setSession((prev) => ({ ...prev, id: (data as SprintDbRow).id }));
+          }
+        } catch (e) {
+          console.error('Failed to insert new active sprint in Supabase:', e);
+        }
+      }
     },
     [session.config.durationDays, session.sprintNumber, user?.id]
   );
