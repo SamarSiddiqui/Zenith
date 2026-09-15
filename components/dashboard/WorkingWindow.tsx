@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Clock, ExternalLink } from 'lucide-react';
+import { Clock, ExternalLink, Moon } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '../../context/AuthContext';
 
@@ -43,6 +43,7 @@ export function WorkingWindow() {
     let elapsedPercent = 0;
     let statusText = '';
     let isWindowOpen = false;
+    let isWindowPast = false;
 
     if (currentMinutes < startMinutes) {
       elapsedPercent = 0;
@@ -52,15 +53,20 @@ export function WorkingWindow() {
       statusText = `Opens in ${hours > 0 ? `${hours}h ` : ''}${mins}m`;
     } else if (currentMinutes >= endMinutes) {
       elapsedPercent = 100;
-      statusText = 'Window closed · Rest mode';
+      isWindowPast = true;
+      statusText = '0m remaining · Complete rituals if you wish';
     } else {
       isWindowOpen = true;
       const elapsedMins = currentMinutes - startMinutes;
       elapsedPercent = Math.min(100, Math.round((elapsedMins / totalWindowMinutes) * 100));
 
       const remainingMins = endMinutes - currentMinutes;
-      const remainingHours = (remainingMins / 60).toFixed(1);
-      statusText = `${remainingHours} hours remaining`;
+      if (remainingMins < 60) {
+        statusText = `${remainingMins} ${remainingMins === 1 ? 'min' : 'mins'} remaining`;
+      } else {
+        const remainingHours = (remainingMins / 60).toFixed(1);
+        statusText = `${remainingHours} hours remaining`;
+      }
     }
 
     const currentFormatted = now.toLocaleTimeString('en-US', {
@@ -76,6 +82,7 @@ export function WorkingWindow() {
       elapsedPercent,
       statusText,
       isWindowOpen,
+      isWindowPast,
     };
   }, [user?.workingWindow, now]);
 
@@ -83,14 +90,26 @@ export function WorkingWindow() {
     <div className="rounded-2xl border border-line bg-surface px-6 py-5 shadow-calm">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <div className="flex items-center gap-1.5">
-          <Clock className="h-3.5 w-3.5 text-sage-deep" />
+          {windowConfig.isWindowPast ? (
+            <Moon className="h-3.5 w-3.5 text-sage" />
+          ) : (
+            <Clock className="h-3.5 w-3.5 text-sage-deep" />
+          )}
           <p className="text-xs uppercase tracking-[0.16em] text-faint font-mono">
             Working Window
           </p>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className={`text-xs font-mono font-medium ${windowConfig.isWindowOpen ? 'text-ink font-semibold' : 'text-muted'}`}>
+          <span
+            className={`text-xs font-mono font-medium ${
+              windowConfig.isWindowOpen
+                ? 'text-ink font-semibold'
+                : windowConfig.isWindowPast
+                ? 'text-sage-deep font-semibold'
+                : 'text-muted'
+            }`}
+          >
             {windowConfig.statusText}
           </span>
           <Link
@@ -106,7 +125,13 @@ export function WorkingWindow() {
       {/* Dynamic Real-Time Progress Bar */}
       <div className="mt-3 h-2 overflow-hidden rounded-full bg-canvas">
         <motion.div
-          className={`h-full rounded-full ${windowConfig.isWindowOpen ? 'bg-sage' : 'bg-line-hover'}`}
+          className={`h-full rounded-full ${
+            windowConfig.isWindowPast
+              ? 'bg-sage/80'
+              : windowConfig.isWindowOpen
+              ? 'bg-sage'
+              : 'bg-line-hover'
+          }`}
           initial={{ width: 0 }}
           animate={{ width: `${windowConfig.elapsedPercent}%` }}
           transition={{ duration: 0.6, ease: [0.23, 1, 0.32, 1] }}
