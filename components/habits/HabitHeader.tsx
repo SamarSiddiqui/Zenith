@@ -1,6 +1,7 @@
 "use client";
 
 import React from 'react';
+import Link from 'next/link';
 import {
   Calendar,
   Search,
@@ -64,10 +65,14 @@ export function HabitHeader({
               <span>{todayLabel}</span>
             </div>
 
-            <div className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface px-3 py-1 text-[11px] font-mono uppercase tracking-wider text-muted">
+            <Link
+              href="/settings"
+              className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface px-3 py-1 text-[11px] font-mono uppercase tracking-wider text-muted hover:border-sage/40 hover:text-sage-deep transition-colors"
+              title="Click to configure your daily working window in Settings"
+            >
               <Clock className="h-3 w-3 text-faint" />
               <span>Window: {windowStart} — {windowEnd}</span>
-            </div>
+            </Link>
           </div>
 
           <h1 className="font-serif text-3xl sm:text-4xl text-ink tracking-tight">
