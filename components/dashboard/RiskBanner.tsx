@@ -2,119 +2,174 @@
 
 import React, { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { AlertTriangle, Minimize2, CheckCircle2, Clock, Sparkles } from 'lucide-react';
+import { AlertTriangle, Minimize2, CheckCircle2, Clock, Sparkles, Zap, ArrowRight } from 'lucide-react';
 import { useHabits } from '../../hooks/useHabits';
 import { useSprint } from '../../hooks/useSprint';
+import type { Habit } from '../../types/zenith';
 
 interface RiskBannerProps {
   currentDayIndex?: number;
 }
 
+interface AtRiskHabitData {
+  habit: Habit;
+  missedCountInSprint: number;
+  isMissedToday: boolean;
+  health: number;
+}
+
 export function RiskBanner({ currentDayIndex }: RiskBannerProps) {
-  const { habits, logMicroStep } = useHabits();
+  const { habits, logMicroStep, toggleStatus } = useHabits();
   const { session } = useSprint(habits);
-  const [resolution, setResolution] = useState<string | null>(null);
+  const [resolvedHabitIds, setResolvedHabitIds] = useState<Record<string, string>>({});
   const [dismissed, setDismissed] = useState(false);
 
   const activeDayIndex = currentDayIndex ?? session.currentDayIndex ?? 0;
+  const sprintNumber = session.sprintNumber || 1;
 
-  // Identify first habit needing attention (missed status today or health < 75)
-  const atRiskHabit = habits.find(
-    (h) => (h.week?.[activeDayIndex] || 'unlogged') === 'missed' || (h.health && h.health < 75)
-  );
+  // Scan sprint history up to today for habits with missed days or degraded health
+  const atRiskList: AtRiskHabitData[] = habits
+    .map((h) => {
+      const sprintHistory = (h.week || []).slice(0, activeDayIndex + 1);
+      const missedCount = sprintHistory.filter((s) => s === 'missed').length;
+      const isMissedToday = (h.week?.[activeDayIndex] || 'unlogged') === 'missed';
+      return {
+        habit: h,
+        missedCountInSprint: missedCount,
+        isMissedToday,
+        health: h.health || 80,
+      };
+    })
+    .filter((item) => item.missedCountInSprint > 0 || item.health < 75);
 
-  if (dismissed || !atRiskHabit) return null;
+  if (dismissed || atRiskList.length === 0) return null;
 
-  const isMissedToday = (atRiskHabit.week?.[activeDayIndex] || 'unlogged') === 'missed';
+  const handleShrink = async (habit: Habit) => {
+    await logMicroStep(habit.id, activeDayIndex);
+    setResolvedHabitIds((prev) => ({
+      ...prev,
+      [habit.id]: `${habit.name} locked as 5-min micro step today (${habit.microVersion || '5m micro'}).`,
+    }));
+  };
 
-  const handleShrink = async () => {
-    await logMicroStep(atRiskHabit.id, activeDayIndex);
-    setResolution(
-      `${atRiskHabit.name} logged as 5-min micro session (${atRiskHabit.microVersion || '5m micro'}). Rhythm protected.`
-    );
+  const handleMarkDone = async (habit: Habit) => {
+    await toggleStatus(habit.id, activeDayIndex);
+    setResolvedHabitIds((prev) => ({
+      ...prev,
+      [habit.id]: `${habit.name} marked completed for today!`,
+    }));
   };
 
   return (
     <motion.section
       layout
-      aria-label="Zenith risk alert"
+      aria-label="Zenith friction radar"
       className="rounded-3xl border border-clay/35 bg-clay-wash p-6 sm:p-7 shadow-calm"
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25, ease: [0.23, 1, 0.32, 1] }}
     >
-      <div className="flex gap-4">
-        <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-clay/15 text-clay">
-          <AlertTriangle className="h-[18px] w-[18px]" strokeWidth={2} aria-hidden />
+      <div className="flex flex-col md:flex-row md:items-start gap-4">
+        <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-clay/15 text-clay shadow-xs">
+          <AlertTriangle className="h-5 w-5" strokeWidth={2.2} aria-hidden />
         </span>
+
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <p className="text-xs font-mono font-semibold uppercase tracking-widest text-clay">
-              Friction Radar
-            </p>
-            <span className="rounded-full bg-clay/10 px-2 py-0.5 text-[10px] font-mono text-clay">
-              Health {atRiskHabit.health}%
-            </span>
+          {/* Header Row */}
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-2">
+              <p className="text-xs font-mono font-bold uppercase tracking-widest text-clay">
+                Friction Radar · Sprint {sprintNumber}
+              </p>
+              <span className="rounded-full bg-clay/15 px-2.5 py-0.5 text-[10px] font-mono font-medium text-clay">
+                {atRiskList.length} {atRiskList.length === 1 ? 'habit needs care' : 'habits need care'}
+              </span>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setDismissed(true)}
+              className="text-xs font-mono text-muted hover:text-ink transition-colors"
+            >
+              Dismiss
+            </button>
           </div>
 
-          <p className="mt-2 max-w-2xl text-base leading-relaxed text-ink">
-            Your <span className="font-semibold text-ink">{atRiskHabit.name}</span> ritual is at risk
-            {atRiskHabit.status === 'missed'
-              ? ' — marked missed today.'
-              : ` — health dropped to ${atRiskHabit.health}%.`}
-            {' '}Protect your circadian momentum with zero guilt.
+          <p className="mt-1.5 text-sm sm:text-base text-ink leading-relaxed">
+            These rituals were previously missed in this sprint. Give them extra focus today to protect your circadian rhythm and prevent a double slip.
           </p>
 
-          <AnimatePresence mode="wait">
-            {resolution ? (
-              <motion.div
-                key="resolved"
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.2, ease: 'easeOut' }}
-                className="mt-4 flex items-center gap-2 rounded-2xl border border-sage/40 bg-sage-wash px-4 py-3 text-sm text-sage-deep font-medium"
-              >
-                <CheckCircle2 className="h-4 w-4 shrink-0" />
-                <span>{resolution}</span>
-              </motion.div>
-            ) : (
-              <motion.div
-                key="actions"
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.15, ease: 'easeOut' }}
-                className="mt-5 flex flex-wrap gap-2.5"
-              >
-                <button
-                  type="button"
-                  onClick={handleShrink}
-                  className="inline-flex items-center gap-2 rounded-xl bg-ink px-4 py-2.5 text-xs font-mono font-medium text-white shadow-xs transition-colors duration-150 ease-out hover:bg-ink/85"
+          {/* At-Risk Habits List */}
+          <ul className="mt-4 grid gap-2.5">
+            {atRiskList.map(({ habit, missedCountInSprint, isMissedToday, health }) => {
+              const resolutionMsg = resolvedHabitIds[habit.id];
+
+              return (
+                <li
+                  key={habit.id}
+                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-clay/25 bg-surface/90 px-4 py-3.5 shadow-xs"
                 >
-                  <Minimize2 className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
-                  <span>Shrink to 5 mins ({atRiskHabit.microVersion || '5m micro'})</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setResolution(`Rescheduled ${atRiskHabit.name} for tomorrow's morning window.`)
-                  }
-                  className="inline-flex items-center gap-2 rounded-xl border border-line bg-surface px-4 py-2.5 text-xs font-mono font-medium text-ink transition-colors duration-150 ease-out hover:bg-canvas"
-                >
-                  <Clock className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
-                  <span>Shift to Tomorrow</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setDismissed(true)}
-                  className="rounded-xl px-3 py-2 text-xs font-mono text-muted transition-colors duration-150 ease-out hover:text-ink"
-                >
-                  Dismiss
-                </button>
-              </motion.div>
-            )}
-          </AnimatePresence>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-sm font-semibold text-ink">{habit.name}</span>
+                      <span className="rounded-md border border-clay/20 bg-clay-wash px-1.5 py-0.5 text-[10px] font-mono text-clay font-medium">
+                        {missedCountInSprint > 0
+                          ? `${missedCountInSprint} ${missedCountInSprint === 1 ? 'skip' : 'skips'} in sprint`
+                          : 'Health degraded'}
+                      </span>
+                      <span className="rounded-md border border-line bg-canvas px-1.5 py-0.5 text-[10px] font-mono text-muted">
+                        Health: {health}%
+                      </span>
+                    </div>
+                    <p className="mt-1 text-xs text-muted font-mono truncate">
+                      Scheduled: {habit.window || 'Anytime'} · 5m Fallback: {habit.microVersion || '5m micro session'}
+                    </p>
+                  </div>
+
+                  {/* Actions / Resolution */}
+                  <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
+                    <AnimatePresence mode="wait">
+                      {resolutionMsg ? (
+                        <motion.span
+                          key="resolved"
+                          initial={{ opacity: 0, scale: 0.9 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          className="inline-flex items-center gap-1.5 text-xs font-mono text-sage-deep font-semibold"
+                        >
+                          <CheckCircle2 className="h-4 w-4" />
+                          <span>Protected for Today</span>
+                        </motion.span>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleShrink(habit)}
+                            title="Execute 5-min micro recovery step"
+                            className="inline-flex items-center gap-1.5 rounded-xl bg-ink px-3 py-1.5 text-xs font-mono font-medium text-white shadow-xs hover:bg-ink/85 transition-colors"
+                          >
+                            <Zap className="h-3 w-3 fill-current text-amber-400" />
+                            <span>Shrink to 5m</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleMarkDone(habit)}
+                            title="Mark full routine completed today"
+                            className="rounded-xl border border-line bg-canvas px-3 py-1.5 text-xs font-mono font-medium text-ink hover:border-sage hover:text-sage-deep transition-colors"
+                          >
+                            Done Today
+                          </button>
+                        </div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
         </div>
       </div>
     </motion.section>
   );
 }
+
 
