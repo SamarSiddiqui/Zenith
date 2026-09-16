@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Check, X, ShieldCheck, Plus, Zap, ArrowRight, Sparkles } from 'lucide-react';
 import { useHabits } from '../../hooks/useHabits';
+import { useSprint } from '../../hooks/useSprint';
 import type { Habit, HabitStatus } from '../../types/zenith';
 import Link from 'next/link';
 
@@ -20,16 +21,26 @@ const slotBadgeTone: Record<string, string> = {
   anytime: 'bg-zinc-500/10 text-zinc-700 dark:text-zinc-300 border-zinc-500/20',
 };
 
-export function TodayHabitList() {
+interface TodayHabitListProps {
+  currentDayIndex?: number;
+}
+
+export function TodayHabitList({ currentDayIndex }: TodayHabitListProps) {
   const { habits, isLoading, toggleStatus, logMicroStep } = useHabits();
+  const { session } = useSprint(habits);
   const [microStepFeedbackId, setMicroStepFeedbackId] = useState<string | null>(null);
 
-  const completedCount = habits.filter((h) => h.status === 'completed').length;
+  // Active day index in sprint (0-indexed)
+  const activeDayIndex = currentDayIndex ?? session.currentDayIndex ?? 0;
+
+  const completedCount = habits.filter(
+    (h) => (h.week?.[activeDayIndex] || 'unlogged') === 'completed'
+  ).length;
   const totalCount = habits.length;
 
   const handleMicroStep = async (habitId: string) => {
     setMicroStepFeedbackId(habitId);
-    await logMicroStep(habitId, 3);
+    await logMicroStep(habitId, activeDayIndex);
     setTimeout(() => {
       setMicroStepFeedbackId(null);
     }, 2000);
@@ -93,8 +104,9 @@ export function TodayHabitList() {
       ) : (
         <ul className="grid gap-3">
           {habits.map((habit, i) => {
-            const isCompleted = habit.status === 'completed';
-            const isMissed = habit.status === 'missed';
+            const todayStatus = (habit.week?.[activeDayIndex] || 'unlogged') as HabitStatus;
+            const isCompleted = todayStatus === 'completed';
+            const isMissed = todayStatus === 'missed';
             const isMicroFeedback = microStepFeedbackId === habit.id;
 
             return (
@@ -117,8 +129,8 @@ export function TodayHabitList() {
                     type="button"
                     whileTap={{ scale: 0.88 }}
                     transition={{ duration: 0.12, ease: 'easeOut' }}
-                    onClick={() => toggleStatus(habit.id, 3)}
-                    aria-label={`${habit.name} is ${habit.status}. Click to cycle status.`}
+                    onClick={() => toggleStatus(habit.id, activeDayIndex)}
+                    aria-label={`${habit.name} is ${todayStatus}. Click to cycle status.`}
                     title="Click to cycle: Unlogged → Completed → Missed"
                     className={[
                       'mt-0.5 sm:mt-0 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border transition-colors duration-150 ease-out shadow-xs',
@@ -131,7 +143,7 @@ export function TodayHabitList() {
                   >
                     <AnimatePresence mode="wait" initial={false}>
                       <motion.span
-                        key={habit.status}
+                        key={todayStatus}
                         initial={{ scale: 0.6, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
                         exit={{ scale: 0.6, opacity: 0 }}

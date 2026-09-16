@@ -47,6 +47,16 @@ export default function DashboardPage() {
 
   const displayName = user?.fullName?.split(' ')[0] || 'Samar';
 
+  // Active sprint day index (0 to durationDays - 1)
+  const currentDayIndex = session.currentDayIndex ?? 0;
+
+  // Real-time completions strictly for TODAY
+  const completedToday = habits.filter(
+    (h) => (h.week?.[currentDayIndex] || 'unlogged') === 'completed'
+  ).length;
+  const todayCompletionRate =
+    metrics.total > 0 ? Math.round((completedToday / metrics.total) * 100) : 0;
+
   // Derive health label
   const healthLabel =
     metrics.averageHealth >= 80
@@ -125,7 +135,7 @@ export default function DashboardPage() {
           onCompleteSprint={openCompletedModal}
         />
 
-        <RiskBanner />
+        <RiskBanner currentDayIndex={currentDayIndex} />
 
         {/* 4 Equal-Dimension Key Metric Cards */}
         <motion.section
@@ -172,7 +182,7 @@ export default function DashboardPage() {
               <div>
                 <p className="text-xs font-mono uppercase tracking-[0.14em] text-faint">Today&apos;s Completion</p>
                 <p className="mt-2.5 font-serif text-3xl text-ink">
-                  {metrics.completedToday}/{metrics.total}
+                  {completedToday}/{metrics.total}
                 </p>
               </div>
               <div className="mt-4 pt-2 border-t border-line/40">
@@ -180,12 +190,12 @@ export default function DashboardPage() {
                   <motion.div
                     className="h-full rounded-full bg-sage"
                     initial={{ width: 0 }}
-                    animate={{ width: `${metrics.completionRate}%` }}
+                    animate={{ width: `${todayCompletionRate}%` }}
                     transition={{ duration: 0.6, ease: [0.23, 1, 0.32, 1] }}
                   />
                 </div>
                 <p className="mt-2 text-xs text-muted truncate">
-                  <CountUp value={metrics.completionRate} suffix="%" /> logged today
+                  <CountUp value={todayCompletionRate} suffix="%" /> logged today
                 </p>
               </div>
             </div>,
@@ -254,8 +264,8 @@ export default function DashboardPage() {
         </motion.section>
 
         <div className="grid gap-10 lg:grid-cols-[1.35fr_1fr] lg:items-start">
-          <TodayHabitList />
-          <EveningOrganizer />
+          <TodayHabitList currentDayIndex={currentDayIndex} />
+          <EveningOrganizer currentDayIndex={currentDayIndex} />
         </div>
       </div>
     </Layout>

@@ -4,19 +4,31 @@ import React, { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AlertTriangle, Minimize2, CheckCircle2, Clock, Sparkles } from 'lucide-react';
 import { useHabits } from '../../hooks/useHabits';
+import { useSprint } from '../../hooks/useSprint';
 
-export function RiskBanner() {
+interface RiskBannerProps {
+  currentDayIndex?: number;
+}
+
+export function RiskBanner({ currentDayIndex }: RiskBannerProps) {
   const { habits, logMicroStep } = useHabits();
+  const { session } = useSprint(habits);
   const [resolution, setResolution] = useState<string | null>(null);
   const [dismissed, setDismissed] = useState(false);
 
-  // Identify first habit needing attention (missed status or health < 75)
-  const atRiskHabit = habits.find((h) => h.status === 'missed' || (h.health && h.health < 75));
+  const activeDayIndex = currentDayIndex ?? session.currentDayIndex ?? 0;
+
+  // Identify first habit needing attention (missed status today or health < 75)
+  const atRiskHabit = habits.find(
+    (h) => (h.week?.[activeDayIndex] || 'unlogged') === 'missed' || (h.health && h.health < 75)
+  );
 
   if (dismissed || !atRiskHabit) return null;
 
+  const isMissedToday = (atRiskHabit.week?.[activeDayIndex] || 'unlogged') === 'missed';
+
   const handleShrink = async () => {
-    await logMicroStep(atRiskHabit.id, 3);
+    await logMicroStep(atRiskHabit.id, activeDayIndex);
     setResolution(
       `${atRiskHabit.name} logged as 5-min micro session (${atRiskHabit.microVersion || '5m micro'}). Rhythm protected.`
     );
