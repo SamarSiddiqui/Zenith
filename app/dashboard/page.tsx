@@ -18,7 +18,7 @@ import { useHabits } from '../../hooks/useHabits';
 import { useSprint } from '../../hooks/useSprint';
 import { OnboardingModal } from '../../components/auth/OnboardingModal';
 
-const card = 'flex flex-col rounded-2xl border border-line bg-surface px-5 py-5 shadow-calm';
+const card = 'flex flex-col h-full rounded-2xl border border-line bg-surface p-5 shadow-calm justify-between';
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -127,44 +127,56 @@ export default function DashboardPage() {
 
         <RiskBanner />
 
+        {/* 4 Equal-Dimension Key Metric Cards */}
         <motion.section
           aria-label="Key metrics"
-          className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
+          className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 items-stretch"
           initial="hidden"
           animate="visible"
           variants={{ visible: { transition: { staggerChildren: 0.05 } } }}
         >
           {[
+            // Card 1: Active Rituals
             <div key="total" className={card}>
-              <p className="text-xs uppercase tracking-[0.14em] text-faint">Active Rituals</p>
-              <p className="mt-3 font-serif text-3xl text-ink">
-                <CountUp value={metrics.total} />
-              </p>
-              <div className="mt-auto flex items-center gap-1.5 pt-3">
-                {metrics.total > 0 ? (
-                  Array.from({ length: Math.min(metrics.total, 10) }).map((_, i) => (
-                    <motion.span
-                      key={i}
-                      className="h-1.5 flex-1 rounded-full bg-sage/70"
-                      initial={{ scaleX: 0 }}
-                      animate={{ scaleX: 1 }}
-                      style={{ transformOrigin: 'left' }}
-                      transition={{ duration: 0.24, delay: 0.1 + i * 0.04, ease: [0.23, 1, 0.32, 1] }}
-                    />
-                  ))
-                ) : (
-                  <span className="text-[11px] font-mono text-muted">No habits anchored</span>
-                )}
+              <div>
+                <p className="text-xs font-mono uppercase tracking-[0.14em] text-faint">Active Rituals</p>
+                <p className="mt-2.5 font-serif text-3xl text-ink">
+                  <CountUp value={metrics.total} />
+                </p>
+              </div>
+              <div className="mt-4 pt-2 border-t border-line/40">
+                <div className="flex items-center gap-1.5">
+                  {metrics.total > 0 ? (
+                    Array.from({ length: Math.min(metrics.total, 8) }).map((_, i) => (
+                      <motion.span
+                        key={i}
+                        className="h-1.5 flex-1 rounded-full bg-sage/70"
+                        initial={{ scaleX: 0 }}
+                        animate={{ scaleX: 1 }}
+                        style={{ transformOrigin: 'left' }}
+                        transition={{ duration: 0.24, delay: 0.1 + i * 0.04, ease: [0.23, 1, 0.32, 1] }}
+                      />
+                    ))
+                  ) : (
+                    <span className="h-1.5 w-full rounded-full bg-canvas border border-line" />
+                  )}
+                </div>
+                <p className="mt-2 text-xs text-muted truncate">
+                  {metrics.total > 0 ? `${metrics.total} rituals anchored` : 'No rituals anchored'}
+                </p>
               </div>
             </div>,
 
+            // Card 2: Today's Completion
             <div key="completion" className={card}>
-              <p className="text-xs uppercase tracking-[0.14em] text-faint">Today&apos;s completion</p>
-              <p className="mt-3 font-serif text-3xl text-ink">
-                {metrics.completedToday}/{metrics.total}
-              </p>
-              <div className="mt-auto pt-3">
-                <div className="h-2 overflow-hidden rounded-full bg-canvas">
+              <div>
+                <p className="text-xs font-mono uppercase tracking-[0.14em] text-faint">Today&apos;s Completion</p>
+                <p className="mt-2.5 font-serif text-3xl text-ink">
+                  {metrics.completedToday}/{metrics.total}
+                </p>
+              </div>
+              <div className="mt-4 pt-2 border-t border-line/40">
+                <div className="h-1.5 overflow-hidden rounded-full bg-canvas border border-line/50">
                   <motion.div
                     className="h-full rounded-full bg-sage"
                     initial={{ width: 0 }}
@@ -172,27 +184,48 @@ export default function DashboardPage() {
                     transition={{ duration: 0.6, ease: [0.23, 1, 0.32, 1] }}
                   />
                 </div>
-                <p className="mt-2 text-xs text-muted">
-                  <CountUp value={metrics.completionRate} suffix="%" /> complete
+                <p className="mt-2 text-xs text-muted truncate">
+                  <CountUp value={metrics.completionRate} suffix="%" /> logged today
                 </p>
               </div>
             </div>,
 
-            <div key="health" className={`${card} items-start`}>
-              <p className="text-xs uppercase tracking-[0.14em] text-faint">Average habit health</p>
-              <div className="mt-3 flex w-full items-center gap-4">
-                <HealthRing value={metrics.averageHealth} size={72} stroke={6} />
-                <span className={`text-xs font-medium ${healthColor}`}>{healthLabel}</span>
+            // Card 3: Average Habit Health
+            <div key="health" className={card}>
+              <div>
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-mono uppercase tracking-[0.14em] text-faint">Habit Health</p>
+                  <span className={`text-[11px] font-mono font-medium ${healthColor}`}>{healthLabel}</span>
+                </div>
+                <p className="mt-2.5 font-serif text-3xl text-ink">
+                  <CountUp value={metrics.averageHealth} suffix="%" />
+                </p>
+              </div>
+              <div className="mt-4 pt-2 border-t border-line/40">
+                <div className="h-1.5 overflow-hidden rounded-full bg-canvas border border-line/50">
+                  <motion.div
+                    className={`h-full rounded-full ${metrics.averageHealth >= 65 ? 'bg-sage' : 'bg-clay'}`}
+                    initial={{ width: 0 }}
+                    animate={{ width: `${metrics.averageHealth}%` }}
+                    transition={{ duration: 0.6, ease: [0.23, 1, 0.32, 1] }}
+                  />
+                </div>
+                <p className="mt-2 text-xs text-muted truncate">
+                  {healthLabel} circadian rhythm
+                </p>
               </div>
             </div>,
 
+            // Card 4: Sprint Show-up Rate
             <div key="consistency" className={card}>
-              <p className="text-xs uppercase tracking-[0.14em] text-faint">Sprint Show-up Rate</p>
-              <p className="mt-3 font-serif text-3xl text-ink">
-                <CountUp value={analytics ? analytics.overallShowUpRate : 100} suffix="%" />
-              </p>
-              <div className="mt-auto pt-3">
-                <div className="h-2 overflow-hidden rounded-full bg-canvas">
+              <div>
+                <p className="text-xs font-mono uppercase tracking-[0.14em] text-faint">Sprint Show-up</p>
+                <p className="mt-2.5 font-serif text-3xl text-ink">
+                  <CountUp value={analytics ? analytics.overallShowUpRate : 100} suffix="%" />
+                </p>
+              </div>
+              <div className="mt-4 pt-2 border-t border-line/40">
+                <div className="h-1.5 overflow-hidden rounded-full bg-canvas border border-line/50">
                   <motion.div
                     className="h-full rounded-full bg-sage-deep"
                     initial={{ width: 0 }}
@@ -200,10 +233,10 @@ export default function DashboardPage() {
                     transition={{ duration: 0.6, ease: [0.23, 1, 0.32, 1] }}
                   />
                 </div>
-                <p className="mt-2 text-xs text-muted">
+                <p className="mt-2 text-xs text-muted truncate">
                   {analytics
-                    ? `${analytics.totalCompletedEvents}/${analytics.totalTargetEvents} rituals completed`
-                    : 'Sustaining rhythm'}
+                    ? `${analytics.totalCompletedEvents}/${analytics.totalTargetEvents} rituals sustained`
+                    : 'Sustaining momentum'}
                 </p>
               </div>
             </div>
@@ -213,9 +246,9 @@ export default function DashboardPage() {
               variants={{ hidden: { opacity: 0, y: 12 }, visible: { opacity: 1, y: 0 } }}
               transition={{ duration: 0.26, ease: [0.23, 1, 0.32, 1] }}
               whileHover={{ y: -3 }}
-              className="flex"
+              className="flex h-full"
             >
-              <div className="w-full">{child}</div>
+              <div className="w-full h-full">{child}</div>
             </motion.div>
           ))}
         </motion.section>

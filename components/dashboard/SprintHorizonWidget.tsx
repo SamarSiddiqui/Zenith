@@ -153,7 +153,7 @@ export function SprintHorizonWidget({
                 </span>
               ) : isConcludingToday ? (
                 <span>
-                  Ends tonight at midnight ·{' '}
+                  Ends tonight ·{' '}
                   <strong className="text-ink font-semibold">
                     {hoursUntilMidnight > 0
                       ? `${hoursUntilMidnight}h ${minsUntilMidnight}m remaining`
