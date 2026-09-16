@@ -134,7 +134,8 @@ export function calculateSprintDayInfo(
   const dayNumber = dayIndex + 1;
   const daysRemaining = Math.max(0, boundedDuration - dayNumber);
   const progressPercentage = Math.round((dayNumber / boundedDuration) * 100);
-  const isCompleted = diffDays >= boundedDuration - 1;
+  // Sprint is strictly completed only after the final day has elapsed past midnight
+  const isCompleted = diffDays >= boundedDuration;
 
   return {
     dayIndex,

@@ -4,14 +4,24 @@ import React, { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronDown, Timer, Sparkles, CheckCircle2, Zap, ArrowUpRight } from 'lucide-react';
 import { useHabits } from '../../hooks/useHabits';
+import { useSprint } from '../../hooks/useSprint';
 import Link from 'next/link';
 
-export function EveningOrganizer() {
+interface EveningOrganizerProps {
+  currentDayIndex?: number;
+}
+
+export function EveningOrganizer({ currentDayIndex }: EveningOrganizerProps) {
   const [open, setOpen] = useState(true);
   const { habits, toggleStatus, logMicroStep } = useHabits();
+  const { session } = useSprint(habits);
+
+  const activeDayIndex = currentDayIndex ?? session.currentDayIndex ?? 0;
 
   // Filter remaining rituals for today (unlogged or missed)
-  const remainingHabits = habits.filter((h) => h.status !== 'completed');
+  const remainingHabits = habits.filter(
+    (h) => (h.week?.[activeDayIndex] || 'unlogged') !== 'completed'
+  );
   const totalRemainingMinutes = remainingHabits.reduce((acc, h) => acc + (h.minutes || 10), 0);
 
   return (
@@ -86,7 +96,7 @@ export function EveningOrganizer() {
                         <div className="flex items-center gap-1.5">
                           <button
                             type="button"
-                            onClick={() => logMicroStep(habit.id, 3)}
+                            onClick={() => logMicroStep(habit.id, activeDayIndex)}
                             title="Log 5-minute micro fallback"
                             className="inline-flex items-center gap-1 rounded-lg border border-sage/40 bg-sage-wash px-2.5 py-1 text-[11px] font-mono font-medium text-sage-deep hover:bg-sage hover:text-white transition-colors"
                           >
@@ -95,7 +105,7 @@ export function EveningOrganizer() {
                           </button>
                           <button
                             type="button"
-                            onClick={() => toggleStatus(habit.id, 3)}
+                            onClick={() => toggleStatus(habit.id, activeDayIndex)}
                             title="Complete full routine"
                             className="rounded-lg border border-line bg-canvas px-2.5 py-1 text-[11px] font-mono font-medium text-ink hover:border-sage hover:text-sage-deep transition-colors"
                           >
@@ -124,4 +134,5 @@ export function EveningOrganizer() {
     </section>
   );
 }
+
 
