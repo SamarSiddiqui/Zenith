@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import type { Habit } from '../types/zenith';
 import type {
   SprintConfig,
+  SprintDraft,
   SprintSession,
   PastSprintSummary,
   SprintDbRow,
@@ -256,12 +257,46 @@ export function useSprint(habits: Habit[]) {
     loadPastSprints();
   }, [habits, session, user?.id, loadPastSprints]);
 
+  // Save Draft for Upcoming Sprint Horizon (during 24h runway)
+  const saveSprintDraft = useCallback(
+    async (draft: SprintDraft) => {
+      setSession((prev) => ({
+        ...prev,
+        config: {
+          ...prev.config,
+          nextWeekDraft: draft,
+        },
+        updatedAt: new Date().toISOString(),
+      }));
+
+      // Sync to Supabase
+      const supabase = createClient();
+      if (supabase && isSupabaseConfigured() && user?.id && !session.id.startsWith('sprint-')) {
+        try {
+          await supabase
+            .from('sprints')
+            .update({
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', session.id);
+        } catch (e) {
+          console.error('Failed to save sprint draft in Supabase:', e);
+        }
+      }
+    },
+    [session.id, user?.id]
+  );
+
   // Start Next Sprint Horizon
   const startNewSprint = useCallback(
     async (customDuration?: number, customGoal?: string) => {
       const nextDuration = customDuration || session.config.durationDays || 7;
       const nextNumber = session.sprintNumber + 1;
       const { startDate, endDate } = generateSprintDateRange(new Date(), nextDuration);
+      const effectiveGoal =
+        customGoal ||
+        session.config.nextWeekDraft?.sprintGoal ||
+        `Sprint ${nextNumber} Rhythm & Flow`;
 
       const nextSession: SprintSession = {
         id: `sprint-${nextNumber}-${Date.now()}`,
@@ -271,7 +306,7 @@ export function useSprint(habits: Habit[]) {
           durationDays: nextDuration,
           startDate,
           endDate,
-          sprintGoal: customGoal || `Sprint ${nextNumber} Rhythm & Flow`,
+          sprintGoal: effectiveGoal,
         },
         status: 'active',
         currentDayIndex: 0,
@@ -296,7 +331,7 @@ export function useSprint(habits: Habit[]) {
             start_date: startDate,
             end_date: endDate,
             status: 'active',
-            sprint_goal: customGoal || `Sprint ${nextNumber} Rhythm & Flow`,
+            sprint_goal: effectiveGoal,
             habit_snapshots: [],
             analytics: null,
           }).select().single();
@@ -309,7 +344,7 @@ export function useSprint(habits: Habit[]) {
         }
       }
     },
-    [session.config.durationDays, session.sprintNumber, user?.id]
+    [session.config.durationDays, session.config.nextWeekDraft, session.sprintNumber, user?.id]
   );
 
   // Day progress metrics
@@ -331,6 +366,7 @@ export function useSprint(habits: Habit[]) {
     // Actions
     updateSprintDuration,
     updateSprintGoal,
+    saveSprintDraft,
     completeSprint,
     startNewSprint,
     openCompletedModal: () => setIsCompletedModalOpen(true),

@@ -201,3 +201,50 @@ export function checkIsSprintCompleted(
 ): boolean {
   return calculateSprintDayInfo(startDateStr, durationDays).isCompleted;
 }
+
+export interface SprintRunwayInfo {
+  isWithin24hRunway: boolean;
+  nextMonday: Date;
+  runwayStartDate: Date;
+  hoursUntilRunway: number;
+  daysUntilRunway: number;
+  unlockLabel: string;
+}
+
+/**
+ * 24-Hour Prior Pre-planning Runway Logic:
+ * Next week sprint can ONLY be added / drafted 24 hours prior to next Monday 00:00:00 (i.e. on Sunday).
+ * Once Monday 00:00:00 arrives, the saved draft rolls into the live active sprint.
+ */
+export function getNextSprintRunwayInfo(currentDate: Date = new Date()): SprintRunwayInfo {
+  const currentMonday = getMondayOfWeek(currentDate);
+  const nextMonday = new Date(currentMonday);
+  nextMonday.setDate(currentMonday.getDate() + 7);
+  nextMonday.setHours(0, 0, 0, 0);
+
+  // 24 hours prior to next Monday 00:00:00 is Sunday 00:00:00
+  const runwayStartDate = new Date(nextMonday.getTime() - 24 * 60 * 60 * 1000);
+
+  const nowTime = currentDate.getTime();
+  const isWithin24hRunway = nowTime >= runwayStartDate.getTime();
+
+  const diffMs = runwayStartDate.getTime() - nowTime;
+  const hoursUntilRunway = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60)));
+  const daysUntilRunway = Math.max(1, Math.ceil(hoursUntilRunway / 24));
+
+  const unlockLabel = isWithin24hRunway
+    ? '24h Runway Active · Draft Unlocked'
+    : daysUntilRunway === 1
+    ? 'Unlocks in ~24h (Sunday 00:00)'
+    : `Unlocks in ${daysUntilRunway} days (Sunday 00:00)`;
+
+  return {
+    isWithin24hRunway,
+    nextMonday,
+    runwayStartDate,
+    hoursUntilRunway,
+    daysUntilRunway,
+    unlockLabel,
+  };
+}
+

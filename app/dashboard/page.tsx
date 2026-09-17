@@ -34,6 +34,7 @@ export default function DashboardPage() {
     closeCompletedModal,
     updateSprintDuration,
     updateSprintGoal,
+    saveSprintDraft,
     startNewSprint,
   } = useSprint(habits);
 
@@ -85,6 +86,7 @@ export default function DashboardPage() {
         isOpen={isSettingsModalOpen}
         currentConfig={session.config}
         sprintNumber={session.sprintNumber}
+        isCurrentWeekCompleted={session.isCompleted}
         onClose={closeSettings}
         onUpdateDuration={updateSprintDuration}
         onUpdateGoal={updateSprintGoal}
@@ -92,6 +94,7 @@ export default function DashboardPage() {
           startNewSprint(duration, goal);
           closeSettings();
         }}
+        onSaveDraft={saveSprintDraft}
       />
 
       <SprintCompletedModal
