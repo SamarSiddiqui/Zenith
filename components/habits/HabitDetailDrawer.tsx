@@ -11,10 +11,8 @@ import {
   Save,
   Clock,
   Tag,
-  Check,
-  Layers,
   Sparkles,
-  RotateCcw,
+  Info,
 } from 'lucide-react';
 import type { Habit } from '../../types/zenith';
 import { HealthRing } from '../visuals/HealthRing';
@@ -55,6 +53,7 @@ export function HabitDetailDrawer({
   const [editedMicro, setEditedMicro] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showMomentumInfo, setShowMomentumInfo] = useState(false);
 
   // Synchronize edit fields whenever active habit changes
   useEffect(() => {
@@ -65,6 +64,7 @@ export function HabitDetailDrawer({
       setEditedCategory(habit.category || 'focus');
       setEditedMicro(habit.microVersion || '5 min micro-step');
       setIsEditing(false);
+      setShowMomentumInfo(false);
     }
   }, [habit]);
 
@@ -152,6 +152,7 @@ export function HabitDetailDrawer({
                 type="button"
                 onClick={onClose}
                 className="rounded-full p-1.5 text-muted hover:text-ink hover:bg-canvas transition-colors"
+                aria-label="Close drawer"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -274,21 +275,80 @@ export function HabitDetailDrawer({
           ) : (
             /* VIEW MODE DETAILS */
             <>
-              {/* Health Gauge & Status Summary */}
-              <div className="rounded-3xl border border-line bg-canvas/70 p-5 flex items-center justify-between shadow-xs">
-                <div className="space-y-1">
-                  <span className="text-[11px] font-mono uppercase tracking-wider text-muted">
-                    Cumulative Health
-                  </span>
-                  <div className="text-sm font-semibold text-ink">
-                    {habit.health >= 80 ? '🌱 Resilient Momentum' : '⚠️ Schedule Fatigue Alert'}
+              {/* Health Gauge & Status Summary with Info Tooltip */}
+              <div className="relative rounded-3xl border border-line bg-canvas/70 p-5 shadow-xs">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[11px] font-mono uppercase tracking-wider text-muted">
+                        Resilient Momentum
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setShowMomentumInfo(!showMomentumInfo)}
+                        className={`flex h-4 w-4 items-center justify-center rounded-full border transition-colors ${
+                          showMomentumInfo
+                            ? 'border-sage bg-sage text-white'
+                            : 'border-line text-muted hover:border-sage hover:text-ink'
+                        }`}
+                        title="How is this calculated?"
+                        aria-label="How momentum is calculated"
+                      >
+                        <Info className="h-2.5 w-2.5" />
+                      </button>
+                    </div>
+
+                    <div className="text-sm font-semibold text-ink">
+                      {habit.health >= 80 ? '🌱 Resilient Momentum' : '⚠️ Schedule Fatigue Alert'}
+                    </div>
+                    <p className="text-[11px] text-faint leading-relaxed font-light">
+                      Preserved across {habit.week.filter((s) => s === 'completed').length} completed rituals this week.
+                    </p>
                   </div>
-                  <p className="text-[11px] text-faint leading-relaxed font-light">
-                    Preserved across {habit.week.filter((s) => s === 'completed').length} completed rituals this week.
-                  </p>
+
+                  <HealthRing value={habit.health} size={74} stroke={6} />
                 </div>
 
-                <HealthRing value={habit.health} size={74} stroke={6} />
+                {/* Simple Language Info Box */}
+                <AnimatePresence>
+                  {showMomentumInfo && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                      animate={{ opacity: 1, height: 'auto', marginTop: 14 }}
+                      exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="overflow-hidden rounded-2xl border border-sage/30 bg-surface p-4 text-xs space-y-2.5 shadow-xs"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-mono text-[11px] uppercase font-bold tracking-wider text-sage-deep flex items-center gap-1.5">
+                          <Sparkles className="h-3.5 w-3.5" />
+                          How Momentum is Calculated
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setShowMomentumInfo(false)}
+                          className="text-faint hover:text-ink text-[11px] font-mono"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                      <ul className="space-y-1.5 text-[11px] text-muted leading-relaxed">
+                        <li className="flex items-start gap-2">
+                          <span className="text-sage-deep font-bold mt-0.5">•</span>
+                          <span><strong>Recent Days Count More:</strong> Showing up today and yesterday boosts your score 2x faster than older days.</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-sage-deep font-bold mt-0.5">•</span>
+                          <span><strong>Streak Bonus:</strong> Consecutive days build extra forward momentum.</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-sage-deep font-bold mt-0.5">•</span>
+                          <span><strong>Guilt-Free Recovery:</strong> Missing a day never drops your score to zero—one good day gets you right back on track!</span>
+                        </li>
+                      </ul>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
 
               {/* Habit Metadata Strip */}
