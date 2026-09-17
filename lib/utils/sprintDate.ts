@@ -36,15 +36,46 @@ export function formatFullTodayDate(date: Date = new Date()): string {
 }
 
 /**
- * Generate ISO start and end date strings for a given duration (1 to 15 days).
+ * Helper: Find Monday 00:00:00 of the week containing the given date
+ */
+export function getMondayOfWeek(date: Date = new Date()): Date {
+  const d = new Date(date);
+  const day = d.getDay(); // 0 is Sunday, 1 is Monday, ...
+  const diff = (day + 6) % 7; // days since Monday
+  d.setDate(d.getDate() - diff);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+/**
+ * Helper: Get ISO Week number of the year (1 - 53)
+ */
+export function getWeekNumber(date: Date = new Date()): number {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  return Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+}
+
+/**
+ * Generate ISO start and end date strings.
+ * Defaults 7-day sprints to the Monday–Sunday calendar week.
  */
 export function generateSprintDateRange(
   baseDate: Date = new Date(),
   durationDays: number = 7
 ): { startDate: string; endDate: string } {
   const boundedDuration = Math.max(1, Math.min(15, durationDays));
-  const start = new Date(baseDate);
-  start.setHours(0, 0, 0, 0);
+  let start: Date;
+
+  if (boundedDuration === 7) {
+    // Option A: Standard Monday–Sunday weekly calendar horizon
+    start = getMondayOfWeek(baseDate);
+  } else {
+    start = new Date(baseDate);
+    start.setHours(0, 0, 0, 0);
+  }
 
   const end = new Date(start);
   end.setDate(start.getDate() + (boundedDuration - 1));
@@ -96,7 +127,7 @@ export function generateSprintDays(
 }
 
 /**
- * Get readable sprint date range string e.g. "Sep 12 – Sep 21 (10 Days)"
+ * Get readable sprint date range string e.g. "Week 38 · Sep 14 – Sep 20 (7 Days)"
  */
 export function getSprintDateRangeLabel(
   startDateStr: string,
@@ -109,6 +140,11 @@ export function getSprintDateRangeLabel(
 
   const startFormatted = startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   const endFormatted = endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  const weekNum = getWeekNumber(startDate);
+
+  if (boundedDuration === 7) {
+    return `Week ${weekNum} · ${startFormatted} – ${endFormatted}`;
+  }
 
   return `${startFormatted} – ${endFormatted} (${boundedDuration} Days)`;
 }
@@ -165,3 +201,50 @@ export function checkIsSprintCompleted(
 ): boolean {
   return calculateSprintDayInfo(startDateStr, durationDays).isCompleted;
 }
+
+export interface SprintRunwayInfo {
+  isWithin24hRunway: boolean;
+  nextMonday: Date;
+  runwayStartDate: Date;
+  hoursUntilRunway: number;
+  daysUntilRunway: number;
+  unlockLabel: string;
+}
+
+/**
+ * 24-Hour Prior Pre-planning Runway Logic:
+ * Next week sprint can ONLY be added / drafted 24 hours prior to next Monday 00:00:00 (i.e. on Sunday).
+ * Once Monday 00:00:00 arrives, the saved draft rolls into the live active sprint.
+ */
+export function getNextSprintRunwayInfo(currentDate: Date = new Date()): SprintRunwayInfo {
+  const currentMonday = getMondayOfWeek(currentDate);
+  const nextMonday = new Date(currentMonday);
+  nextMonday.setDate(currentMonday.getDate() + 7);
+  nextMonday.setHours(0, 0, 0, 0);
+
+  // 24 hours prior to next Monday 00:00:00 is Sunday 00:00:00
+  const runwayStartDate = new Date(nextMonday.getTime() - 24 * 60 * 60 * 1000);
+
+  const nowTime = currentDate.getTime();
+  const isWithin24hRunway = nowTime >= runwayStartDate.getTime();
+
+  const diffMs = runwayStartDate.getTime() - nowTime;
+  const hoursUntilRunway = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60)));
+  const daysUntilRunway = Math.max(1, Math.ceil(hoursUntilRunway / 24));
+
+  const unlockLabel = isWithin24hRunway
+    ? '24h Runway Active · Draft Unlocked'
+    : daysUntilRunway === 1
+    ? 'Unlocks in ~24h (Sunday 00:00)'
+    : `Unlocks in ${daysUntilRunway} days (Sunday 00:00)`;
+
+  return {
+    isWithin24hRunway,
+    nextMonday,
+    runwayStartDate,
+    hoursUntilRunway,
+    daysUntilRunway,
+    unlockLabel,
+  };
+}
+

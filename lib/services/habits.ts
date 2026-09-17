@@ -22,27 +22,60 @@ export function mapDbRowToHabit(row: HabitDbRow): Habit {
   };
 }
 
-/** Helper: Calculate dynamic habit health score based on weekly history */
-export function calculateHabitHealth(week: HabitStatus[]): number {
+/**
+ * Option A: Weighted Recency Momentum Algorithm
+ * - Gives higher weight to recent days (today and yesterday have 2x-3x impact)
+ * - Adds a Consecutive Streak Velocity Bonus (+3% per consecutive day up to +15%)
+ * - Enforces a resilient floor (35% minimum) so a single miss never destroys morale
+ * - Defaults to healthy baseline of 80% when no days have been logged
+ */
+export function calculateHabitHealth(week: HabitStatus[], currentDayIndex?: number): number {
   if (!week || week.length === 0) return 80;
-  
-  let completedCount = 0;
-  let loggedCount = 0;
-  
-  week.forEach((status) => {
-    if (status === 'completed') {
-      completedCount++;
-      loggedCount++;
-    } else if (status === 'missed') {
-      loggedCount++;
-    }
-  });
 
-  if (loggedCount === 0) return 80;
-  
-  // Base percentage with gentle floor to prevent morale crashes (Zenith philosophy)
-  const ratio = completedCount / loggedCount;
-  return Math.round(Math.max(45, Math.min(100, 50 + ratio * 50)));
+  const validDays = week.filter((s) => s === 'completed' || s === 'missed');
+  if (validDays.length === 0) return 80;
+
+  const maxIndex =
+    currentDayIndex !== undefined ? Math.min(week.length - 1, currentDayIndex) : week.length - 1;
+
+  let weightedSum = 0;
+  let totalWeight = 0;
+  let currentStreak = 0;
+  let streakCounted = false;
+
+  // Iterate backwards from most recent day to apply recency decay and compute active streak
+  for (let i = maxIndex; i >= 0; i--) {
+    const status = week[i];
+    if (status === 'unlogged' && i === maxIndex && maxIndex > 0) {
+      continue;
+    }
+    if (status !== 'completed' && status !== 'missed') {
+      continue;
+    }
+
+    const recencyDistance = maxIndex - i;
+    const weight = Math.max(1, 4 - recencyDistance * 0.5);
+
+    const scoreValue = status === 'completed' ? 1.0 : 0.0;
+    weightedSum += scoreValue * weight;
+    totalWeight += weight;
+
+    if (!streakCounted) {
+      if (status === 'completed') {
+        currentStreak++;
+      } else {
+        streakCounted = true;
+      }
+    }
+  }
+
+  if (totalWeight === 0) return 80;
+
+  const weightedRatio = weightedSum / totalWeight;
+  const streakBonus = Math.min(15, currentStreak * 3);
+
+  const rawMomentum = 40 + weightedRatio * 50 + streakBonus;
+  return Math.round(Math.max(35, Math.min(100, rawMomentum)));
 }
 
 /**

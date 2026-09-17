@@ -89,7 +89,7 @@ export function HabitHeader({
           {sprintSession && (
             <div className="rounded-2xl border border-sage/40 bg-sage-wash/40 px-4 py-2.5 shadow-calm text-center">
               <span className="block text-[10px] uppercase font-mono tracking-wider text-sage-deep font-semibold">
-                Sprint {sprintNumber} Horizon
+                {dateRangeLabel.startsWith('Week') ? dateRangeLabel.split('·')[0].trim() : `Sprint ${sprintNumber}`} Horizon
               </span>
               <span className="block font-serif text-lg font-bold text-ink mt-0.5">
                 Day {currentDayNumber} <span className="text-xs font-sans font-light text-muted">/ {sprintDuration}d</span>
@@ -125,13 +125,14 @@ export function HabitHeader({
               <Compass className="h-4 w-4" />
             </span>
             <div>
-              <span className="font-mono text-xs font-semibold text-ink">
-                Sprint {sprintNumber} Active Horizon ({sprintDuration} Days)
-              </span>
-              <span className="mx-2 text-faint">·</span>
-              <span className="text-muted font-mono text-[11px]">
-                {dateRangeLabel}
-              </span>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-mono text-xs font-semibold text-ink">
+                  {dateRangeLabel.startsWith('Week') ? dateRangeLabel : `Sprint ${sprintNumber} (${sprintDuration} Days)`}
+                </span>
+                <span className="rounded-full border border-sage/40 bg-sage-wash px-2 py-0.5 text-[10px] font-mono text-sage-deep">
+                  Weekly Target: 85% Consistency
+                </span>
+              </div>
             </div>
           </div>
 
@@ -143,7 +144,7 @@ export function HabitHeader({
                 className="flex items-center gap-1.5 rounded-xl border border-line bg-surface px-3 py-1.5 text-[11px] font-mono text-muted hover:border-line-hover hover:text-ink transition-colors"
               >
                 <History className="h-3.5 w-3.5 text-faint" />
-                <span>Past Sprints</span>
+                <span>Past Sprints / Weeks</span>
               </button>
             )}
 

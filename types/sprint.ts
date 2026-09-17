@@ -2,11 +2,20 @@ import type { HabitStatus, CircadianSlot } from './zenith';
 
 export type SprintStatus = 'active' | 'completed' | 'archived';
 
+export interface SprintDraft {
+  weekNumber: number;
+  startDate: string;
+  endDate: string;
+  sprintGoal: string;
+  createdAt: string;
+}
+
 export interface SprintConfig {
   durationDays: number; // 1 to 15 days (default 7)
   startDate: string;    // ISO Date string
   endDate: string;      // ISO Date string
   sprintGoal?: string;  // e.g. "Anchor morning deep work block"
+  nextWeekDraft?: SprintDraft;
 }
 
 export interface SprintHabitSnapshot {

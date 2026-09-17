@@ -16,7 +16,7 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import type { PastSprintSummary, SprintAnalytics } from '../../types/sprint';
-import { getSprintDateRangeLabel } from '../../lib/utils/sprintDate';
+import { getSprintDateRangeLabel, getWeekNumber } from '../../lib/utils/sprintDate';
 
 interface PastSprintsDrawerProps {
   isOpen: boolean;
@@ -107,6 +107,7 @@ export function PastSprintsDrawer({
                       sprint.startDate,
                       sprint.durationDays
                     );
+                    const weekNum = getWeekNumber(new Date(sprint.startDate));
 
                     return (
                       <div
@@ -123,14 +124,14 @@ export function PastSprintsDrawer({
                           <div>
                             <div className="flex items-center gap-2">
                               <span className="font-serif font-bold text-ink group-hover:text-sage-deep transition-colors">
-                                Sprint {sprint.sprintNumber}
+                                Week {weekNum}
                               </span>
-                              <span className="rounded-full bg-surface border border-line px-2 py-0.2 text-[10px] font-mono text-muted">
-                                {sprint.durationDays} Days
+                              <span className="rounded-full bg-surface border border-line px-2 py-0.5 text-[10px] font-mono text-muted">
+                                Weekly Archive
                               </span>
                             </div>
                             <span className="mt-0.5 block text-xs text-muted font-mono">
-                              {dateLabel}
+                              {dateLabel.includes('·') ? dateLabel.split('·')[1].trim() : dateLabel}
                             </span>
                           </div>
 

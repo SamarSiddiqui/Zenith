@@ -38,6 +38,7 @@ export default function HabitsPage() {
     isLoadingPastSprints,
     updateSprintDuration,
     updateSprintGoal,
+    saveSprintDraft,
     completeSprint,
     startNewSprint,
     openCompletedModal,
@@ -156,15 +157,17 @@ export default function HabitsPage() {
           onDeleteHabit={removeHabit}
         />
 
-        {/* Modal 3: Dynamic Sprint Settings Modal (1-15 days) */}
+        {/* Modal 3: Weekly Sprint Horizon Settings & 24h Draft Modal */}
         <SprintSettingsModal
           isOpen={isSettingsModalOpen}
           currentConfig={sprintSession.config}
           sprintNumber={sprintSession.sprintNumber}
+          isCurrentWeekCompleted={sprintSession.isCompleted}
           onClose={closeSettings}
           onUpdateDuration={updateSprintDuration}
           onUpdateGoal={updateSprintGoal}
           onStartFreshSprint={startNewSprint}
+          onSaveDraft={saveSprintDraft}
         />
 
         {/* Modal 4: Sprint Completed Retrospective & Horizon Analytics */}
