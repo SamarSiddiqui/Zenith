@@ -195,22 +195,39 @@ export async function getPastSprints(userId?: string): Promise<PastSprintSummary
 }
 
 /**
- * Fetch full sprint row (including habit snapshots) for a specific start date.
+ * Fetch full sprint row (including habit snapshots) for a specific start date / date range.
  */
 export async function getPastSprintDetail(
   userId?: string,
-  startDateStr?: string
+  startDateStr?: string,
+  endDateStr?: string
 ): Promise<SprintDbRow | null> {
   const supabase = createClient();
   const configured = isSupabaseConfigured();
 
   if (supabase && configured && userId && startDateStr) {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('sprints')
         .select('*')
-        .eq('user_id', userId)
-        .eq('start_date', startDateStr)
+        .eq('user_id', userId);
+
+      if (endDateStr) {
+        // Find sprint overlapping or matching this calendar week
+        query = query
+          .lte('start_date', endDateStr)
+          .gte('end_date', startDateStr);
+      } else {
+        const start = new Date(startDateStr);
+        const nextDay = new Date(start.getTime() + 86400000).toISOString();
+        query = query
+          .gte('start_date', start.toISOString())
+          .lt('start_date', nextDay);
+      }
+
+      const { data, error } = await query
+        .order('created_at', { ascending: false })
+        .limit(1)
         .maybeSingle();
 
       if (error) throw error;
@@ -221,4 +238,44 @@ export async function getPastSprintDetail(
   }
   return null;
 }
+
+/**
+ * Transform immutable database habit snapshots into Habit models for matrix rendering.
+ */
+export function mapSnapshotsToHabits(
+  snapshots: SprintHabitSnapshot[],
+  fallbackHabits: Habit[]
+): Habit[] {
+  if (!snapshots || snapshots.length === 0) {
+    // If no past sprint record was found in the database, return habits with unlogged week
+    return fallbackHabits.map((h) => ({
+      ...h,
+      week: ['unlogged', 'unlogged', 'unlogged', 'unlogged', 'unlogged', 'unlogged', 'unlogged'],
+      status: 'unlogged',
+      health: 0,
+    }));
+  }
+
+  return snapshots.map((snap) => {
+    const existing = fallbackHabits.find(
+      (h) => h.id === snap.habitId || h.name.toLowerCase() === snap.habitName.toLowerCase()
+    );
+
+    return {
+      id: snap.habitId,
+      name: snap.habitName,
+      circadianSlot: snap.circadianSlot || existing?.circadianSlot || 'morning',
+      window: existing?.window || 'Daily Window',
+      minutes: existing?.minutes || 20,
+      category: existing?.category || 'focus',
+      health: snap.showUpRate,
+      status: snap.dailyStatuses[snap.dailyStatuses.length - 1] || 'unlogged',
+      week: snap.dailyStatuses,
+      microVersion: existing?.microVersion || '5 min micro-step',
+      createdAt: existing?.createdAt || new Date().toISOString(),
+      updatedAt: existing?.updatedAt || new Date().toISOString(),
+    };
+  });
+}
+
 
