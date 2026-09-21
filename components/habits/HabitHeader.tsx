@@ -11,10 +11,17 @@ import {
   History,
   Clock,
   Sparkles,
+  ChevronLeft,
+  ChevronRight,
+  RotateCcw,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import type { SprintSession } from '../../types/sprint';
-import { formatFullTodayDate, getSprintDateRangeLabel } from '../../lib/utils/sprintDate';
+import {
+  formatFullTodayDate,
+  getSprintDateRangeLabel,
+  ShiftedWeekInfo,
+} from '../../lib/utils/sprintDate';
 
 interface HabitHeaderProps {
   searchQuery: string;
@@ -28,6 +35,12 @@ interface HabitHeaderProps {
   onOpenSprintSettings?: () => void;
   onCompleteSprint?: () => void;
   onOpenPastSprints?: () => void;
+  // Week Navigation Props
+  weekOffset?: number;
+  onPrevWeek?: () => void;
+  onNextWeek?: () => void;
+  onResetToCurrentWeek?: () => void;
+  viewingWeekInfo?: ShiftedWeekInfo;
 }
 
 export function HabitHeader({
@@ -41,6 +54,11 @@ export function HabitHeader({
   onOpenSprintSettings,
   onCompleteSprint,
   onOpenPastSprints,
+  weekOffset = 0,
+  onPrevWeek,
+  onNextWeek,
+  onResetToCurrentWeek,
+  viewingWeekInfo,
 }: HabitHeaderProps) {
   const { user } = useAuth();
   const windowStart = user?.workingWindow?.startTime || '09:00';
@@ -50,9 +68,13 @@ export function HabitHeader({
   const sprintDuration = sprintSession?.config.durationDays || 7;
   const sprintNumber = sprintSession?.sprintNumber || 1;
   const currentDayNumber = (sprintSession?.currentDayIndex ?? 0) + 1;
-  const dateRangeLabel = sprintSession
+  const dateRangeLabel = viewingWeekInfo?.label || (sprintSession
     ? getSprintDateRangeLabel(sprintSession.config.startDate, sprintDuration)
-    : '';
+    : '');
+
+  const isHistorical = weekOffset < 0;
+  const isFuture = weekOffset > 0;
+  const isLiveWeek = weekOffset === 0;
 
   return (
     <div className="space-y-6">
@@ -87,12 +109,22 @@ export function HabitHeader({
         {/* Aggregate Health & Sprint Metric Badges */}
         <div className="flex flex-wrap items-center gap-2.5">
           {sprintSession && (
-            <div className="rounded-2xl border border-sage/40 bg-sage-wash/40 px-4 py-2.5 shadow-calm text-center">
-              <span className="block text-[10px] uppercase font-mono tracking-wider text-sage-deep font-semibold">
-                {dateRangeLabel.startsWith('Week') ? dateRangeLabel.split('·')[0].trim() : `Sprint ${sprintNumber}`} Horizon
+            <div className={`rounded-2xl border px-4 py-2.5 shadow-calm text-center transition-colors ${
+              isHistorical
+                ? 'border-amber-500/30 bg-amber-500/10'
+                : 'border-sage/40 bg-sage-wash/40'
+            }`}>
+              <span className={`block text-[10px] uppercase font-mono tracking-wider font-semibold ${
+                isHistorical ? 'text-amber-600 dark:text-amber-400' : 'text-sage-deep'
+              }`}>
+                {dateRangeLabel.startsWith('Week') ? dateRangeLabel.split('·')[0].trim() : `Sprint ${sprintNumber}`} {isHistorical ? 'Archive' : 'Horizon'}
               </span>
               <span className="block font-serif text-lg font-bold text-ink mt-0.5">
-                Day {currentDayNumber} <span className="text-xs font-sans font-light text-muted">/ {sprintDuration}d</span>
+                {isHistorical ? (
+                  <span className="text-xs font-mono uppercase text-muted">Completed Week</span>
+                ) : (
+                  <>Day {currentDayNumber} <span className="text-xs font-sans font-light text-muted">/ {sprintDuration}d</span></>
+                )}
               </span>
             </div>
           )}
@@ -117,23 +149,74 @@ export function HabitHeader({
         </div>
       </div>
 
-      {/* Sprint Horizon Action Banner */}
+      {/* Sprint Horizon Action Banner with Left / Right Week Navigation */}
       {sprintSession && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-line bg-canvas/80 px-4 py-3 text-xs">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
             <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-surface border border-line text-sage-deep">
               <Compass className="h-4 w-4" />
             </span>
-            <div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-mono text-xs font-semibold text-ink">
-                  {dateRangeLabel.startsWith('Week') ? dateRangeLabel : `Sprint ${sprintNumber} (${sprintDuration} Days)`}
-                </span>
-                <span className="rounded-full border border-sage/40 bg-sage-wash px-2 py-0.5 text-[10px] font-mono text-sage-deep">
-                  Weekly Target: 85% Consistency
+
+            {/* Week Left & Right Browser Controller */}
+            <div className="flex items-center rounded-xl border border-line bg-surface p-0.5 shadow-xs">
+              <button
+                type="button"
+                onClick={onPrevWeek}
+                className="flex h-7 w-7 items-center justify-center rounded-lg text-muted hover:bg-canvas hover:text-ink transition-colors"
+                title="View previous calendar week"
+                aria-label="Previous week"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+
+              <div className="px-2.5 text-center min-w-[170px] sm:min-w-[200px]">
+                <span className="font-mono text-xs font-bold text-ink block truncate">
+                  {dateRangeLabel}
                 </span>
               </div>
+
+              <button
+                type="button"
+                onClick={onNextWeek}
+                disabled={isLiveWeek}
+                className={`flex h-7 w-7 items-center justify-center rounded-lg transition-colors ${
+                  isLiveWeek
+                    ? 'text-faint/40 cursor-not-allowed opacity-30'
+                    : 'text-muted hover:bg-canvas hover:text-ink'
+                }`}
+                title={isLiveWeek ? 'Already viewing current live week' : 'View next calendar week'}
+                aria-label="Next week"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
             </div>
+
+            {/* Historical Status & Quick Reset to Live Week */}
+            {isHistorical && (
+              <div className="flex items-center gap-2">
+                <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-0.5 text-[10px] font-mono font-medium text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                  <History className="h-3 w-3" />
+                  <span>Historical Week</span>
+                </span>
+                {onResetToCurrentWeek && (
+                  <button
+                    type="button"
+                    onClick={onResetToCurrentWeek}
+                    className="flex items-center gap-1 rounded-full border border-sage/40 bg-sage-wash px-2.5 py-0.5 text-[10px] font-mono font-semibold text-sage-deep hover:bg-sage hover:text-white transition-colors"
+                    title="Jump back to active live week"
+                  >
+                    <RotateCcw className="h-2.5 w-2.5" />
+                    <span>Return to Live Week</span>
+                  </button>
+                )}
+              </div>
+            )}
+
+            {isLiveWeek && (
+              <span className="rounded-full border border-sage/40 bg-sage-wash px-2.5 py-0.5 text-[10px] font-mono text-sage-deep">
+                Live Week Horizon · 85% Target
+              </span>
+            )}
           </div>
 
           <div className="flex items-center gap-2">

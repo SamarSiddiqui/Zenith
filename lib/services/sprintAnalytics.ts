@@ -193,3 +193,32 @@ export async function getPastSprints(userId?: string): Promise<PastSprintSummary
   // Local fallback: return empty list when no past completed sprints exist
   return [];
 }
+
+/**
+ * Fetch full sprint row (including habit snapshots) for a specific start date.
+ */
+export async function getPastSprintDetail(
+  userId?: string,
+  startDateStr?: string
+): Promise<SprintDbRow | null> {
+  const supabase = createClient();
+  const configured = isSupabaseConfigured();
+
+  if (supabase && configured && userId && startDateStr) {
+    try {
+      const { data, error } = await supabase
+        .from('sprints')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('start_date', startDateStr)
+        .maybeSingle();
+
+      if (error) throw error;
+      return (data as SprintDbRow) || null;
+    } catch (err) {
+      console.error('Failed to fetch past sprint detail:', err);
+    }
+  }
+  return null;
+}
+

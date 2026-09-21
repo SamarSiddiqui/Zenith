@@ -248,3 +248,46 @@ export function getNextSprintRunwayInfo(currentDate: Date = new Date()): SprintR
   };
 }
 
+export interface ShiftedWeekInfo {
+  offset: number; // 0 = current, -1 = last week, etc.
+  startDate: string; // ISO Monday
+  endDate: string; // ISO Sunday
+  weekNumber: number;
+  label: string;
+  isCurrentWeek: boolean;
+  isPastWeek: boolean;
+  isFutureWeek: boolean;
+}
+
+/**
+ * Helper to compute week metadata when navigating left/right across weeks
+ */
+export function getShiftedWeekInfo(
+  offset: number = 0,
+  baseDate: Date = new Date()
+): ShiftedWeekInfo {
+  const currentMonday = getMondayOfWeek(baseDate);
+  const shiftedMonday = new Date(currentMonday);
+  shiftedMonday.setDate(currentMonday.getDate() + offset * 7);
+  shiftedMonday.setHours(0, 0, 0, 0);
+
+  const shiftedSunday = new Date(shiftedMonday);
+  shiftedSunday.setDate(shiftedMonday.getDate() + 6);
+  shiftedSunday.setHours(23, 59, 59, 999);
+
+  const weekNumber = getWeekNumber(shiftedMonday);
+  const label = getSprintDateRangeLabel(shiftedMonday.toISOString(), 7);
+
+  return {
+    offset,
+    startDate: shiftedMonday.toISOString(),
+    endDate: shiftedSunday.toISOString(),
+    weekNumber,
+    label,
+    isCurrentWeek: offset === 0,
+    isPastWeek: offset < 0,
+    isFutureWeek: offset > 0,
+  };
+}
+
+

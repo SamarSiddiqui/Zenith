@@ -14,6 +14,8 @@ import { SprintSettingsModal } from '../../components/habits/SprintSettingsModal
 import { SprintCompletedModal } from '../../components/habits/SprintCompletedModal';
 import { PastSprintsDrawer } from '../../components/habits/PastSprintsDrawer';
 import type { Habit } from '../../types/zenith';
+import type { SprintConfig } from '../../types/sprint';
+import { getShiftedWeekInfo } from '../../lib/utils/sprintDate';
 
 export default function HabitsPage() {
   const {
@@ -54,6 +56,35 @@ export default function HabitsPage() {
   const [skipHabit, setSkipHabit] = useState<{ habit: Habit; dayIndex: number } | null>(null);
   const [selectedHabitId, setSelectedHabitId] = useState<string | null>(null);
 
+  // Week Navigation State: 0 = current active week, -1 = previous week, -2 = 2 weeks ago, etc.
+  const [weekOffset, setWeekOffset] = useState<number>(0);
+
+  const viewingWeekInfo = useMemo(() => {
+    return getShiftedWeekInfo(weekOffset);
+  }, [weekOffset]);
+
+  const viewingConfig: SprintConfig = useMemo(() => {
+    if (weekOffset === 0) return sprintSession.config;
+    return {
+      durationDays: 7,
+      startDate: viewingWeekInfo.startDate,
+      endDate: viewingWeekInfo.endDate,
+      sprintGoal: `Archived Sprint (Week ${viewingWeekInfo.weekNumber})`,
+    };
+  }, [weekOffset, viewingWeekInfo, sprintSession.config]);
+
+  const handlePrevWeek = () => {
+    setWeekOffset((prev) => prev - 1);
+  };
+
+  const handleNextWeek = () => {
+    setWeekOffset((prev) => Math.min(0, prev + 1));
+  };
+
+  const handleResetToCurrentWeek = () => {
+    setWeekOffset(0);
+  };
+
   // Active drawer habit lookup
   const selectedDrawerHabit = useMemo(() => {
     return habits.find((h) => h.id === selectedHabitId) || null;
@@ -76,6 +107,7 @@ export default function HabitsPage() {
   };
 
   const handleToggle = async (habitId: string, dayIndex: number = sprintSession.currentDayIndex) => {
+    if (weekOffset !== 0) return; // Prevent mutating past archived weeks
     const res = await toggleStatus(habitId, dayIndex);
     if (res.nextStatus === 'missed' && res.habit) {
       setSkipHabit({ habit: res.habit, dayIndex });
@@ -97,6 +129,11 @@ export default function HabitsPage() {
           onOpenSprintSettings={openSettings}
           onCompleteSprint={completeSprint}
           onOpenPastSprints={openPastSprints}
+          weekOffset={weekOffset}
+          onPrevWeek={handlePrevWeek}
+          onNextWeek={handleNextWeek}
+          onResetToCurrentWeek={handleResetToCurrentWeek}
+          viewingWeekInfo={viewingWeekInfo}
         />
 
         {/* Loading Skeleton */}
@@ -116,8 +153,10 @@ export default function HabitsPage() {
           >
             <DynamicSprintMatrix
               habits={filteredHabits}
-              config={sprintSession.config}
-              currentDayIndex={sprintSession.currentDayIndex}
+              config={viewingConfig}
+              currentDayIndex={weekOffset === 0 ? sprintSession.currentDayIndex : -1}
+              isHistoricalView={weekOffset < 0}
+              onResetToCurrentWeek={handleResetToCurrentWeek}
               onToggleStatus={(id, idx) => handleToggle(id, idx)}
               onOpenSkipModal={(habit, idx) => setSkipHabit({ habit, dayIndex: idx })}
               onSelectHabit={(habit) => setSelectedHabitId(habit.id)}
