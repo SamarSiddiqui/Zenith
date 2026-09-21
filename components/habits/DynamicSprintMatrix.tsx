@@ -9,15 +9,19 @@ import {
   Zap,
   Sparkles,
   ChevronRight,
+  History,
+  ArrowRight,
 } from 'lucide-react';
 import type { Habit, HabitStatus } from '../../types/zenith';
 import type { SprintConfig } from '../../types/sprint';
-import { generateSprintDays } from '../../lib/utils/sprintDate';
+import { generateSprintDays, getSprintDateRangeLabel } from '../../lib/utils/sprintDate';
 
 interface DynamicSprintMatrixProps {
   habits: Habit[];
   config: SprintConfig;
   currentDayIndex: number;
+  isHistoricalView?: boolean;
+  onResetToCurrentWeek?: () => void;
   onToggleStatus: (habitId: string, dayIndex: number) => void;
   onOpenSkipModal: (habit: Habit, dayIndex: number) => void;
   onSelectHabit?: (habit: Habit) => void;
@@ -28,6 +32,8 @@ export function DynamicSprintMatrix({
   habits,
   config,
   currentDayIndex,
+  isHistoricalView = false,
+  onResetToCurrentWeek,
   onToggleStatus,
   onOpenSkipModal,
   onSelectHabit,
@@ -67,7 +73,33 @@ export function DynamicSprintMatrix({
   }, [habits, config.durationDays]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
+      {/* Historical Archive Notice Banner */}
+      {isHistoricalView && (
+        <motion.div
+          initial={{ opacity: 0, y: -4 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-500/30 bg-amber-500/5 px-4 py-2.5 text-xs shadow-xs"
+        >
+          <div className="flex items-center gap-2">
+            <History className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
+            <span className="text-muted">
+              Viewing archived sprint history for <strong>{config.startDate ? getSprintDateRangeLabel(config.startDate, config.durationDays) : 'Past Week'}</strong>.
+            </span>
+          </div>
+          {onResetToCurrentWeek && (
+            <button
+              type="button"
+              onClick={onResetToCurrentWeek}
+              className="flex items-center gap-1 font-mono text-xs font-semibold text-sage-deep hover:text-ink transition-colors shrink-0"
+            >
+              <span>Return to Live Week</span>
+              <ArrowRight className="h-3 w-3" />
+            </button>
+          )}
+        </motion.div>
+      )}
+
       {/* Sprint Matrix Horizon Table Container */}
       <div className="overflow-x-auto rounded-3xl border border-line bg-surface shadow-calm">
         <table className="w-full min-w-[720px] border-collapse">
@@ -86,7 +118,7 @@ export function DynamicSprintMatrix({
               </th>
 
               {sprintDays.map((day) => {
-                const isCurrentActiveDay = day.isToday || day.index === currentDayIndex;
+                const isCurrentActiveDay = !isHistoricalView && (day.isToday || day.index === currentDayIndex);
                 return (
                   <th
                     key={day.isoDate || day.index}
