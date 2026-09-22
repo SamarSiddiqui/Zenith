@@ -99,6 +99,7 @@ export interface SprintDbRow {
   start_date: string;
   end_date: string;
   status: SprintStatus;
+  sprint_goal?: string;
   habit_snapshots: SprintHabitSnapshot[];
   analytics: SprintAnalytics | null;
   created_at: string;

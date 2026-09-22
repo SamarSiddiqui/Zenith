@@ -31,6 +31,7 @@ export default function HabitsPage() {
     addHabit,
     editHabit,
     removeHabit,
+    refreshHabits,
   } = useHabits();
 
   const {
@@ -52,7 +53,7 @@ export default function HabitsPage() {
     closeSettings,
     openPastSprints,
     closePastSprints,
-  } = useSprint(habits);
+  } = useSprint(habits, refreshHabits);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
