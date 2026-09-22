@@ -13,12 +13,15 @@ import {
   generateSprintDateRange,
   calculateSprintDayInfo,
   checkIsSprintCompleted,
+  getMondayOfWeek,
 } from '../lib/utils/sprintDate';
 import {
   calculateSprintAnalytics,
   createSprintHabitSnapshots,
   getPastSprints,
+  deletePastSprint as deletePastSprintApi,
 } from '../lib/services/sprintAnalytics';
+import { mapDbRowToHabit } from '../lib/services/habits';
 import { useAuth } from '../context/AuthContext';
 import { createClient } from '../lib/supabase/client';
 import { isSupabaseConfigured } from '../lib/supabase/env';
@@ -48,7 +51,7 @@ function createDefaultSprintSession(userId: string = 'local-user', durationDays:
   };
 }
 
-export function useSprint(habits: Habit[]) {
+export function useSprint(habits: Habit[], onSprintRollover?: () => void) {
   const { user } = useAuth();
   const [session, setSession] = useState<SprintSession>(() => {
     return createDefaultSprintSession(user?.id || 'local-user', 7, 1);
@@ -62,7 +65,20 @@ export function useSprint(habits: Habit[]) {
   const [activePastSprintDetail, setActivePastSprintDetail] = useState<SprintDbRow | null>(null);
   const [isCompleting, setIsCompleting] = useState<boolean>(false);
 
-  // Fetch active sprint directly from Supabase
+  // Load Past Sprints directly from Supabase
+  const loadPastSprints = useCallback(async () => {
+    setIsLoadingPastSprints(true);
+    try {
+      const data = await getPastSprints(user?.id);
+      setPastSprints(data || []);
+    } catch (err) {
+      console.error('Failed to load past sprints:', err);
+    } finally {
+      setIsLoadingPastSprints(false);
+    }
+  }, [user?.id]);
+
+  // Fetch active sprint directly from Supabase with automated week rollover
   const loadActiveSprint = useCallback(async () => {
     const supabase = createClient();
     if (!supabase || !isSupabaseConfigured() || !user?.id) return;
@@ -82,10 +98,108 @@ export function useSprint(habits: Habit[]) {
         return;
       }
 
+      const currentMonday = getMondayOfWeek(new Date());
+
       if (data) {
         const row = data as SprintDbRow;
-        const dayInfo = calculateSprintDayInfo(row.start_date, row.duration_days);
+        const rowStartDate = new Date(row.start_date);
         const isCompleted = checkIsSprintCompleted(row.start_date, row.duration_days);
+        const isPastWeek = row.duration_days === 7 && rowStartDate.getTime() < currentMonday.getTime();
+
+        // If the active sprint has elapsed past its end date or belongs to a previous week:
+        // Automatically archive it and seamlessly rollover to the current live week sprint!
+        if (isCompleted || isPastWeek) {
+          // 1. Snapshot habit data for retrospective archive
+          let habitsToSnapshot = habits;
+          if (!habitsToSnapshot || habitsToSnapshot.length === 0) {
+            const { data: dbHabits } = await supabase
+              .from('habits')
+              .select('*')
+              .eq('user_id', user.id);
+            if (dbHabits) {
+              habitsToSnapshot = dbHabits.map((h) => mapDbRowToHabit(h));
+            }
+          }
+
+          const snapshots = createSprintHabitSnapshots(habitsToSnapshot, row.duration_days);
+          const analytics = calculateSprintAnalytics(
+            habitsToSnapshot,
+            {
+              durationDays: row.duration_days,
+              startDate: row.start_date,
+              endDate: row.end_date,
+              sprintGoal: row.sprint_goal,
+            },
+            row.sprint_number
+          );
+
+          // 2. Archive past sprint to 'completed' in Supabase
+          await supabase.from('sprints').update({
+            status: 'completed',
+            habit_snapshots: snapshots,
+            analytics: analytics,
+            updated_at: new Date().toISOString(),
+          }).eq('id', row.id);
+
+          // 3. Generate current week date range and insert new active sprint
+          const newDuration = 7;
+          const { startDate: newStart, endDate: newEnd } = generateSprintDateRange(new Date(), newDuration);
+          const newSprintNumber = (row.sprint_number || 0) + 1;
+          const newGoal = 'Ground daily rituals and sustain steady momentum';
+
+          const { data: newRow } = await supabase
+            .from('sprints')
+            .insert({
+              user_id: user.id,
+              sprint_number: newSprintNumber,
+              duration_days: newDuration,
+              start_date: newStart,
+              end_date: newEnd,
+              status: 'active',
+              sprint_goal: newGoal,
+              habit_snapshots: [],
+              analytics: null,
+            })
+            .select()
+            .single();
+
+          // 4. Reset habit weekly checkmark slots for the new active week
+          await supabase
+            .from('habits')
+            .update({
+              weekly_history: ['unlogged', 'unlogged', 'unlogged', 'unlogged', 'unlogged', 'unlogged', 'unlogged'],
+              current_status: 'unlogged',
+              updated_at: new Date().toISOString(),
+            })
+            .eq('user_id', user.id);
+
+          const newDayInfo = calculateSprintDayInfo(newStart, newDuration);
+          const newSession: SprintSession = {
+            id: (newRow as SprintDbRow)?.id || `sprint-${newSprintNumber}`,
+            userId: user.id,
+            sprintNumber: newSprintNumber,
+            config: {
+              durationDays: newDuration,
+              startDate: newStart,
+              endDate: newEnd,
+              sprintGoal: newGoal,
+            },
+            status: 'active',
+            currentDayIndex: newDayInfo.dayIndex,
+            isCompleted: false,
+            snapshots: [],
+            createdAt: newStart,
+            updatedAt: newStart,
+          };
+
+          setSession(newSession);
+          if (onSprintRollover) onSprintRollover();
+          loadPastSprints();
+          return;
+        }
+
+        // Active sprint is still within the current calendar week
+        const dayInfo = calculateSprintDayInfo(row.start_date, row.duration_days);
 
         const loadedSession: SprintSession = {
           id: row.id,
@@ -95,11 +209,11 @@ export function useSprint(habits: Habit[]) {
             durationDays: row.duration_days,
             startDate: row.start_date,
             endDate: row.end_date,
-            sprintGoal: row.analytics?.recommendations?.[0]?.title || 'Ground daily rituals and sustain steady momentum',
+            sprintGoal: row.sprint_goal || 'Ground daily rituals and sustain steady momentum',
           },
-          status: isCompleted ? 'completed' : 'active',
+          status: 'active',
           currentDayIndex: dayInfo.dayIndex,
-          isCompleted,
+          isCompleted: false,
           snapshots: row.habit_snapshots || [],
           analytics: row.analytics || undefined,
           createdAt: row.created_at,
@@ -107,11 +221,57 @@ export function useSprint(habits: Habit[]) {
         };
 
         setSession(loadedSession);
+      } else {
+        // No active sprint found in database: automatically bootstrap current week sprint
+        const { count } = await supabase
+          .from('sprints')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id);
+
+        const sprintNumber = (count || 0) + 1;
+        const { startDate, endDate } = generateSprintDateRange(new Date(), 7);
+        const dayInfo = calculateSprintDayInfo(startDate, 7);
+
+        const { data: createdRow } = await supabase
+          .from('sprints')
+          .insert({
+            user_id: user.id,
+            sprint_number: sprintNumber,
+            duration_days: 7,
+            start_date: startDate,
+            end_date: endDate,
+            status: 'active',
+            sprint_goal: 'Ground daily rituals and sustain steady momentum',
+            habit_snapshots: [],
+            analytics: null,
+          })
+          .select()
+          .single();
+
+        const bootstrappedSession: SprintSession = {
+          id: (createdRow as SprintDbRow)?.id || `sprint-${sprintNumber}`,
+          userId: user.id,
+          sprintNumber: sprintNumber,
+          config: {
+            durationDays: 7,
+            startDate,
+            endDate,
+            sprintGoal: 'Ground daily rituals and sustain steady momentum',
+          },
+          status: 'active',
+          currentDayIndex: dayInfo.dayIndex,
+          isCompleted: false,
+          snapshots: [],
+          createdAt: startDate,
+          updatedAt: startDate,
+        };
+
+        setSession(bootstrappedSession);
       }
     } catch (err) {
       console.error('Failed to load active sprint:', err);
     }
-  }, [user?.id]);
+  }, [user?.id, habits, onSprintRollover, loadPastSprints]);
 
   useEffect(() => {
     loadActiveSprint();
@@ -129,23 +289,6 @@ export function useSprint(habits: Habit[]) {
       status: isCompleted ? 'completed' : prev.status,
     }));
   }, [session.config.startDate, session.config.durationDays]);
-
-  // Load Past Sprints directly from Supabase
-  const loadPastSprints = useCallback(async () => {
-    setIsLoadingPastSprints(true);
-    try {
-      const data = await getPastSprints(user?.id);
-      setPastSprints(data || []);
-    } catch (err) {
-      console.error('Failed to load past sprints:', err);
-    } finally {
-      setIsLoadingPastSprints(false);
-    }
-  }, [user?.id]);
-
-  useEffect(() => {
-    loadPastSprints();
-  }, [loadPastSprints]);
 
   // Current calculated analytics (available on completion)
   const currentAnalytics = useMemo(() => {
@@ -339,18 +482,41 @@ export function useSprint(habits: Habit[]) {
           if (data) {
             setSession((prev) => ({ ...prev, id: (data as SprintDbRow).id }));
           }
+
+          // Reset habit weekly checkmark slots for the new active sprint
+          await supabase
+            .from('habits')
+            .update({
+              weekly_history: ['unlogged', 'unlogged', 'unlogged', 'unlogged', 'unlogged', 'unlogged', 'unlogged'],
+              current_status: 'unlogged',
+              updated_at: new Date().toISOString(),
+            })
+            .eq('user_id', user.id);
+
+          if (onSprintRollover) onSprintRollover();
+          loadPastSprints();
         } catch (e) {
           console.error('Failed to insert new active sprint in Supabase:', e);
         }
       }
     },
-    [session.config.durationDays, session.config.nextWeekDraft, session.sprintNumber, user?.id]
+    [session.config.durationDays, session.config.nextWeekDraft, session.sprintNumber, user?.id, onSprintRollover, loadPastSprints]
   );
 
   // Day progress metrics
   const dayProgress = useMemo(() => {
     return calculateSprintDayInfo(session.config.startDate, session.config.durationDays);
   }, [session.config.startDate, session.config.durationDays]);
+
+  // Delete past sprint archive record
+  const deletePastSprint = useCallback(
+    async (sprintId: string): Promise<boolean> => {
+      setPastSprints((prev) => prev.filter((p) => p.id !== sprintId));
+      const ok = await deletePastSprintApi(sprintId, user?.id);
+      return ok;
+    },
+    [user?.id]
+  );
 
   return {
     session,
@@ -369,6 +535,7 @@ export function useSprint(habits: Habit[]) {
     saveSprintDraft,
     completeSprint,
     startNewSprint,
+    deletePastSprint,
     openCompletedModal: () => setIsCompletedModalOpen(true),
     closeCompletedModal: () => setIsCompletedModalOpen(false),
     openSettings: () => setIsSettingsModalOpen(true),

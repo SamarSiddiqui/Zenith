@@ -5,17 +5,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   X,
   History,
-  Calendar,
-  Award,
   TrendingUp,
   AlertCircle,
-  ChevronRight,
-  Sparkles,
-  ArrowUpRight,
   ShieldCheck,
-  CheckCircle2,
+  Trash2,
+  Check,
 } from 'lucide-react';
-import type { PastSprintSummary, SprintAnalytics } from '../../types/sprint';
+import type { PastSprintSummary } from '../../types/sprint';
 import { getSprintDateRangeLabel, getWeekNumber } from '../../lib/utils/sprintDate';
 
 interface PastSprintsDrawerProps {
@@ -23,6 +19,7 @@ interface PastSprintsDrawerProps {
   pastSprints: PastSprintSummary[];
   isLoading: boolean;
   onClose: () => void;
+  onDeleteSprint?: (sprintId: string) => Promise<boolean> | void;
   onSelectSprintAnalytics?: (summary: PastSprintSummary) => void;
 }
 
@@ -31,11 +28,25 @@ export function PastSprintsDrawer({
   pastSprints,
   isLoading,
   onClose,
+  onDeleteSprint,
   onSelectSprintAnalytics,
 }: PastSprintsDrawerProps) {
-  const [selectedSprint, setSelectedSprint] = useState<PastSprintSummary | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [isDeletingId, setIsDeletingId] = useState<string | null>(null);
 
   if (!isOpen) return null;
+
+  const handleDelete = async (e: React.MouseEvent, sprintId: string) => {
+    e.stopPropagation();
+    if (!onDeleteSprint) return;
+    setIsDeletingId(sprintId);
+    try {
+      await onDeleteSprint(sprintId);
+    } finally {
+      setIsDeletingId(null);
+      setConfirmDeleteId(null);
+    }
+  };
 
   return (
     <AnimatePresence>
@@ -65,20 +76,21 @@ export function PastSprintsDrawer({
                   <div className="flex items-center gap-2 text-sage-deep">
                     <History className="h-4 w-4" />
                     <span className="font-mono text-xs uppercase tracking-widest font-semibold">
-                      Sprint Timeline Archive
+                      Past 4 Weeks Archive
                     </span>
                   </div>
                   <h2 className="mt-2 text-2xl font-serif text-ink">
-                    Past Sprints
+                    Past Weeks
                   </h2>
                   <p className="mt-1 text-xs text-muted">
-                    Review historical show-up momentum and retrospective diagnostics.
+                    Rolling 4-week archive with 30-day automatic retention.
                   </p>
                 </div>
 
                 <button
                   onClick={onClose}
                   className="rounded-full p-2 text-muted transition-colors hover:bg-canvas hover:text-ink"
+                  aria-label="Close past weeks archive"
                 >
                   <X className="h-5 w-5" />
                 </button>
@@ -95,10 +107,10 @@ export function PastSprintsDrawer({
                   <div className="rounded-2xl border border-dashed border-line p-8 text-center">
                     <History className="mx-auto h-8 w-8 text-faint" />
                     <h3 className="mt-2 text-sm font-serif text-ink">
-                      No Past Sprints Yet
+                      No Past Weeks Yet
                     </h3>
                     <p className="mt-1 text-xs text-muted">
-                      Complete your active sprint horizon to unlock retrospective records.
+                      As weekly horizons complete, their retrospective records will appear here for 4 weeks.
                     </p>
                   </div>
                 ) : (
@@ -108,26 +120,32 @@ export function PastSprintsDrawer({
                       sprint.durationDays
                     );
                     const weekNum = getWeekNumber(new Date(sprint.startDate));
+                    const isConfirming = confirmDeleteId === sprint.id;
+                    const isDeleting = isDeletingId === sprint.id;
 
                     return (
                       <div
                         key={sprint.id}
                         onClick={() => {
-                          setSelectedSprint(sprint);
+                          if (isConfirming) return;
                           if (onSelectSprintAnalytics) {
                             onSelectSprintAnalytics(sprint);
                           }
                         }}
-                        className="group relative cursor-pointer rounded-2xl border border-line bg-canvas/70 p-4 transition-all duration-150 hover:border-sage/50 hover:bg-canvas hover:shadow-xs"
+                        className={`group relative rounded-2xl border transition-all duration-150 p-4 ${
+                          isConfirming
+                            ? 'border-clay/50 bg-clay-wash/30'
+                            : 'border-line bg-canvas/70 hover:border-sage/50 hover:bg-canvas hover:shadow-xs cursor-pointer'
+                        }`}
                       >
-                        <div className="flex items-start justify-between">
-                          <div>
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1">
                             <div className="flex items-center gap-2">
                               <span className="font-serif font-bold text-ink group-hover:text-sage-deep transition-colors">
                                 Week {weekNum}
                               </span>
                               <span className="rounded-full bg-surface border border-line px-2 py-0.5 text-[10px] font-mono text-muted">
-                                Weekly Archive
+                                Archived Week
                               </span>
                             </div>
                             <span className="mt-0.5 block text-xs text-muted font-mono">
@@ -135,8 +153,8 @@ export function PastSprintsDrawer({
                             </span>
                           </div>
 
-                          {/* Show-up Badge */}
-                          <div className="text-right">
+                          {/* Right action controls: Show-up badge & Delete button */}
+                          <div className="flex items-center gap-2 shrink-0">
                             <span
                               className={`inline-block rounded-full border px-2.5 py-0.5 text-xs font-mono font-bold ${
                                 sprint.overallShowUpRate >= 75
@@ -146,24 +164,84 @@ export function PastSprintsDrawer({
                             >
                               {sprint.overallShowUpRate}%
                             </span>
+
+                            {onDeleteSprint && !isConfirming && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setConfirmDeleteId(sprint.id);
+                                }}
+                                className="opacity-0 group-hover:opacity-100 focus:opacity-100 p-1.5 rounded-lg text-faint hover:text-clay hover:bg-clay-wash transition-all"
+                                title="Delete this archived week record"
+                                aria-label={`Delete Week ${weekNum}`}
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            )}
                           </div>
                         </div>
 
+                        {/* Inline Delete Confirmation Bar */}
+                        <AnimatePresence>
+                          {isConfirming && (
+                            <motion.div
+                              initial={{ opacity: 0, height: 0 }}
+                              animate={{ opacity: 1, height: 'auto' }}
+                              exit={{ opacity: 0, height: 0 }}
+                              className="mt-3 flex items-center justify-between gap-2 border-t border-clay/30 pt-3"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <span className="text-[11px] font-mono text-clay font-medium">
+                                Delete Week {weekNum} record?
+                              </span>
+                              <div className="flex items-center gap-1.5">
+                                <button
+                                  type="button"
+                                  disabled={isDeleting}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setConfirmDeleteId(null);
+                                  }}
+                                  className="rounded-lg border border-line bg-surface px-2.5 py-1 text-[10px] font-mono text-muted hover:text-ink transition-colors"
+                                >
+                                  Cancel
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={isDeleting}
+                                  onClick={(e) => handleDelete(e, sprint.id)}
+                                  className="rounded-lg bg-clay px-2.5 py-1 text-[10px] font-mono font-semibold text-white hover:bg-clay/90 transition-colors flex items-center gap-1"
+                                >
+                                  {isDeleting ? (
+                                    <span className="h-2.5 w-2.5 animate-spin rounded-full border border-white border-t-transparent" />
+                                  ) : (
+                                    <Trash2 className="h-2.5 w-2.5" />
+                                  )}
+                                  <span>{isDeleting ? 'Deleting...' : 'Delete'}</span>
+                                </button>
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+
                         {/* Anchors & Slipped Highlights */}
-                        <div className="mt-3 grid grid-cols-2 gap-2 border-t border-line/50 pt-2 text-[11px] font-mono">
-                          {sprint.anchorHabitName && (
-                            <div className="flex items-center gap-1.5 text-sage-deep truncate">
-                              <TrendingUp className="h-3 w-3 shrink-0" />
-                              <span className="truncate">{sprint.anchorHabitName}</span>
-                            </div>
-                          )}
-                          {sprint.slippedHabitName && (
-                            <div className="flex items-center gap-1.5 text-clay truncate">
-                              <AlertCircle className="h-3 w-3 shrink-0" />
-                              <span className="truncate">{sprint.slippedHabitName}</span>
-                            </div>
-                          )}
-                        </div>
+                        {!isConfirming && (
+                          <div className="mt-3 grid grid-cols-2 gap-2 border-t border-line/50 pt-2 text-[11px] font-mono">
+                            {sprint.anchorHabitName && (
+                              <div className="flex items-center gap-1.5 text-sage-deep truncate">
+                                <TrendingUp className="h-3 w-3 shrink-0" />
+                                <span className="truncate">{sprint.anchorHabitName}</span>
+                              </div>
+                            )}
+                            {sprint.slippedHabitName && (
+                              <div className="flex items-center gap-1.5 text-clay truncate">
+                                <AlertCircle className="h-3 w-3 shrink-0" />
+                                <span className="truncate">{sprint.slippedHabitName}</span>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                     );
                   })
@@ -175,10 +253,10 @@ export function PastSprintsDrawer({
             <div className="mt-8 rounded-2xl border border-line/60 bg-canvas p-4 text-xs text-muted">
               <div className="flex items-center gap-2 text-ink font-semibold">
                 <ShieldCheck className="h-4 w-4 text-sage-deep" />
-                <span>Zero-Guilt Adaptive Analytics</span>
+                <span>Rolling 4-Week Auto-Retention</span>
               </div>
               <p className="mt-1 text-[11px] text-faint leading-relaxed">
-                Past performance is diagnostic feedback to optimize future energy, not an evaluation.
+                Archived records are maintained for 30 days (4 weeks) before automatic cleanup. You can manually delete any week anytime.
               </p>
             </div>
           </motion.div>

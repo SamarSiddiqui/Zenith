@@ -31,6 +31,7 @@ export default function HabitsPage() {
     addHabit,
     editHabit,
     removeHabit,
+    refreshHabits,
   } = useHabits();
 
   const {
@@ -46,13 +47,14 @@ export default function HabitsPage() {
     saveSprintDraft,
     completeSprint,
     startNewSprint,
+    deletePastSprint,
     openCompletedModal,
     closeCompletedModal,
     openSettings,
     closeSettings,
     openPastSprints,
     closePastSprints,
-  } = useSprint(habits);
+  } = useSprint(habits, refreshHabits);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -328,6 +330,7 @@ export default function HabitsPage() {
           pastSprints={pastSprints}
           isLoading={isLoadingPastSprints}
           onClose={closePastSprints}
+          onDeleteSprint={deletePastSprint}
           onSelectSprintAnalytics={(past) => {
             closePastSprints();
             openCompletedModal();
