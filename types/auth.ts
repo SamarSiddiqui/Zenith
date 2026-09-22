@@ -14,6 +14,11 @@ export interface ZenithUserProfile {
   onboarded: boolean;
   themePreference?: 'system' | 'light' | 'dark';
   mindfulReminders?: boolean;
+  telegramChatId?: string;
+  telegramUsername?: string;
+  telegramLinkToken?: string;
+  telegramRemindersEnabled?: boolean;
+  telegramEodTime?: string;
   createdAt: string;
   updatedAt: string;
 }
