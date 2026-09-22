@@ -109,14 +109,12 @@ export function HabitHeader({
         {/* Aggregate Health & Sprint Metric Badges */}
         <div className="flex flex-wrap items-center gap-2.5">
           {sprintSession && (
-            <div className={`rounded-2xl border px-4 py-2.5 shadow-calm text-center transition-colors ${
-              isHistorical
-                ? 'border-amber-500/30 bg-amber-500/10'
-                : 'border-sage/40 bg-sage-wash/40'
-            }`}>
-              <span className={`block text-[10px] uppercase font-mono tracking-wider font-semibold ${
-                isHistorical ? 'text-amber-600 dark:text-amber-400' : 'text-sage-deep'
+            <div className={`rounded-2xl border px-4 py-2.5 shadow-calm text-center transition-colors ${isHistorical
+              ? 'border-amber-500/30 bg-amber-500/10'
+              : 'border-sage/40 bg-sage-wash/40'
               }`}>
+              <span className={`block text-[10px] uppercase font-mono tracking-wider font-semibold ${isHistorical ? 'text-amber-600 dark:text-amber-400' : 'text-sage-deep'
+                }`}>
                 {dateRangeLabel.startsWith('Week') ? dateRangeLabel.split('·')[0].trim() : `Sprint ${sprintNumber}`} {isHistorical ? 'Archive' : 'Horizon'}
               </span>
               <span className="block font-serif text-lg font-bold text-ink mt-0.5">
@@ -179,11 +177,10 @@ export function HabitHeader({
                 type="button"
                 onClick={onNextWeek}
                 disabled={isLiveWeek}
-                className={`flex h-7 w-7 items-center justify-center rounded-lg transition-colors ${
-                  isLiveWeek
-                    ? 'text-faint/40 cursor-not-allowed opacity-30'
-                    : 'text-muted hover:bg-canvas hover:text-ink'
-                }`}
+                className={`flex h-7 w-7 items-center justify-center rounded-lg transition-colors ${isLiveWeek
+                  ? 'text-faint/40 cursor-not-allowed opacity-30'
+                  : 'text-muted hover:bg-canvas hover:text-ink'
+                  }`}
                 title={isLiveWeek ? 'Already viewing current live week' : 'View next calendar week'}
                 aria-label="Next week"
               >
@@ -227,7 +224,7 @@ export function HabitHeader({
                 className="flex items-center gap-1.5 rounded-xl border border-line bg-surface px-3 py-1.5 text-[11px] font-mono text-muted hover:border-line-hover hover:text-ink transition-colors"
               >
                 <History className="h-3.5 w-3.5 text-faint" />
-                <span>Past Sprints / Weeks</span>
+                <span>Past Weeks</span>
               </button>
             )}
 

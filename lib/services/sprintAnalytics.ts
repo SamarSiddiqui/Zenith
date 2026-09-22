@@ -149,7 +149,32 @@ export function calculateSprintAnalytics(
 }
 
 /**
- * Fetch past completed sprint summaries for the user.
+ * Delete a past sprint record from Supabase.
+ */
+export async function deletePastSprint(sprintId: string, userId?: string): Promise<boolean> {
+  const supabase = createClient();
+  const configured = isSupabaseConfigured();
+
+  if (supabase && configured && userId) {
+    try {
+      const { error } = await supabase
+        .from('sprints')
+        .delete()
+        .eq('id', sprintId)
+        .eq('user_id', userId);
+
+      if (error) throw error;
+      return true;
+    } catch (err) {
+      console.error('Failed to delete past sprint from Supabase:', err);
+      return false;
+    }
+  }
+  return true;
+}
+
+/**
+ * Fetch past completed sprint summaries for the user (Rolling 4 Weeks / 30-day TTL).
  */
 export async function getPastSprints(userId?: string): Promise<PastSprintSummary[]> {
   const supabase = createClient();
@@ -157,12 +182,26 @@ export async function getPastSprints(userId?: string): Promise<PastSprintSummary
 
   if (supabase && configured && userId) {
     try {
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+
+      // Automated 30-day TTL background cleanup of older archived records
+      Promise.resolve(
+        supabase
+          .from('sprints')
+          .delete()
+          .eq('user_id', userId)
+          .eq('status', 'completed')
+          .lt('end_date', thirtyDaysAgo)
+      ).catch(() => {});
+
       const { data, error } = await supabase
         .from('sprints')
         .select('*')
         .eq('user_id', userId)
         .eq('status', 'completed')
-        .order('sprint_number', { ascending: false });
+        .gte('end_date', thirtyDaysAgo)
+        .order('sprint_number', { ascending: false })
+        .limit(4);
 
       if (error) throw error;
 

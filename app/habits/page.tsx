@@ -47,6 +47,7 @@ export default function HabitsPage() {
     saveSprintDraft,
     completeSprint,
     startNewSprint,
+    deletePastSprint,
     openCompletedModal,
     closeCompletedModal,
     openSettings,
@@ -329,6 +330,7 @@ export default function HabitsPage() {
           pastSprints={pastSprints}
           isLoading={isLoadingPastSprints}
           onClose={closePastSprints}
+          onDeleteSprint={deletePastSprint}
           onSelectSprintAnalytics={(past) => {
             closePastSprints();
             openCompletedModal();

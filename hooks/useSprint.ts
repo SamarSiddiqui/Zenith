@@ -19,6 +19,7 @@ import {
   calculateSprintAnalytics,
   createSprintHabitSnapshots,
   getPastSprints,
+  deletePastSprint as deletePastSprintApi,
 } from '../lib/services/sprintAnalytics';
 import { mapDbRowToHabit } from '../lib/services/habits';
 import { useAuth } from '../context/AuthContext';
@@ -507,6 +508,16 @@ export function useSprint(habits: Habit[], onSprintRollover?: () => void) {
     return calculateSprintDayInfo(session.config.startDate, session.config.durationDays);
   }, [session.config.startDate, session.config.durationDays]);
 
+  // Delete past sprint archive record
+  const deletePastSprint = useCallback(
+    async (sprintId: string): Promise<boolean> => {
+      setPastSprints((prev) => prev.filter((p) => p.id !== sprintId));
+      const ok = await deletePastSprintApi(sprintId, user?.id);
+      return ok;
+    },
+    [user?.id]
+  );
+
   return {
     session,
     dayProgress,
@@ -524,6 +535,7 @@ export function useSprint(habits: Habit[], onSprintRollover?: () => void) {
     saveSprintDraft,
     completeSprint,
     startNewSprint,
+    deletePastSprint,
     openCompletedModal: () => setIsCompletedModalOpen(true),
     closeCompletedModal: () => setIsCompletedModalOpen(false),
     openSettings: () => setIsSettingsModalOpen(true),
