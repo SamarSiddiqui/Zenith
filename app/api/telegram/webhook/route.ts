@@ -7,6 +7,14 @@ import {
 } from '../../../../lib/services/telegram';
 import { calculateSprintDayInfo, getMondayOfWeek } from '../../../../lib/utils/sprintDate';
 
+interface HabitItem {
+  id: string;
+  name: string;
+  current_status?: string;
+  weekly_history?: string[];
+  micro_version?: string;
+}
+
 export async function POST(request: Request) {
   try {
     const update = await request.json();
@@ -29,49 +37,77 @@ export async function POST(request: Request) {
         const habitId = isMicro ? data.replace('micro_', '') : data.replace('done_', '');
 
         if (supabase && habitId) {
-          // Fetch the habit
-          const { data: habitData } = await supabase
-            .from('habits')
-            .select('*')
-            .eq('id', habitId)
-            .maybeSingle();
+          const currentMonday = getMondayOfWeek(new Date());
+          const dayInfo = calculateSprintDayInfo(currentMonday.toISOString(), 7);
+          const todayIndex = dayInfo.dayIndex;
+          const healthBoost = isMicro ? 82 : 90;
 
-          if (habitData) {
-            const currentMonday = getMondayOfWeek(new Date());
-            const dayInfo = calculateSprintDayInfo(currentMonday.toISOString(), 7);
-            const todayIndex = dayInfo.dayIndex;
+          let recordedName = 'Ritual';
+          let actionSuccess = false;
 
-            const weekHistory = Array.isArray(habitData.weekly_history)
-              ? [...habitData.weekly_history]
-              : ['unlogged', 'unlogged', 'unlogged', 'unlogged', 'unlogged', 'unlogged', 'unlogged'];
+          // 1. Try RPC record function first (bypasses RLS via SECURITY DEFINER)
+          try {
+            const { data: rpcResult, error: rpcErr } = await supabase.rpc('record_telegram_habit_action', {
+              p_habit_id: habitId,
+              p_day_index: todayIndex,
+              p_status: 'completed',
+              p_health_boost: healthBoost,
+            });
 
-            while (weekHistory.length <= todayIndex) {
-              weekHistory.push('unlogged');
+            if (!rpcErr && rpcResult && rpcResult.length > 0) {
+              recordedName = rpcResult[0].name || 'Ritual';
+              actionSuccess = true;
             }
+          } catch (e) {
+            console.error('RPC record_telegram_habit_action error:', e);
+          }
 
-            weekHistory[todayIndex] = 'completed';
-            const healthBoost = isMicro ? Math.min(100, (habitData.health_score || 80) + 2) : 90;
-
-            await supabase
+          // 2. Direct table update fallback
+          if (!actionSuccess) {
+            const { data: habitData } = await supabase
               .from('habits')
-              .update({
-                weekly_history: weekHistory,
-                current_status: 'completed',
-                health_score: healthBoost,
-                updated_at: new Date().toISOString(),
-              })
-              .eq('id', habitId);
+              .select('*')
+              .eq('id', habitId)
+              .maybeSingle();
 
+            if (habitData) {
+              recordedName = habitData.name;
+              const weekHistory = Array.isArray(habitData.weekly_history)
+                ? [...habitData.weekly_history]
+                : ['unlogged', 'unlogged', 'unlogged', 'unlogged', 'unlogged', 'unlogged', 'unlogged'];
+
+              while (weekHistory.length <= todayIndex) {
+                weekHistory.push('unlogged');
+              }
+
+              weekHistory[todayIndex] = 'completed';
+              const calculatedHealth = isMicro ? Math.min(100, (habitData.health_score || 80) + 2) : 90;
+
+              await supabase
+                .from('habits')
+                .update({
+                  weekly_history: weekHistory,
+                  current_status: 'completed',
+                  health_score: calculatedHealth,
+                  updated_at: new Date().toISOString(),
+                })
+                .eq('id', habitId);
+
+              actionSuccess = true;
+            }
+          }
+
+          if (actionSuccess) {
             const toastText = isMicro
-              ? `⚡ 5m micro-step logged for "${habitData.name}"! Identity momentum preserved.`
-              : `✅ "${habitData.name}" marked as completed!`;
+              ? `⚡ 5m micro-step logged for "${recordedName}"! Identity momentum preserved.`
+              : `✅ "${recordedName}" marked as completed!`;
 
             await answerTelegramCallback(callbackId, toastText);
 
             if (chatId) {
               await sendTelegramMessage(
                 chatId,
-                `✨ <b>Ritual Recorded:</b> <i>${habitData.name}</i> has been logged as <b>${isMicro ? 'Micro-Step ⚡' : 'Completed ✅'}</b> in your Zenith Habit Planner.`
+                `✨ <b>Ritual Recorded:</b> <i>${recordedName}</i> has been logged as <b>${isMicro ? 'Micro-Step ⚡' : 'Completed ✅'}</b> in your Zenith Habit Planner.`
               );
             }
 
@@ -160,15 +196,33 @@ export async function POST(request: Request) {
 
         // Check if already linked
         if (supabase) {
-          const { data: existingProfile } = await supabase
-            .from('profiles')
-            .select('id, full_name')
-            .eq('telegram_chat_id', chatId)
-            .maybeSingle();
+          let existingName: string | null = null;
 
-          if (existingProfile) {
+          try {
+            const { data: rpcProfile } = await supabase.rpc('get_telegram_profile', {
+              p_chat_id: chatId,
+            });
+            if (rpcProfile && rpcProfile.length > 0) {
+              existingName = rpcProfile[0].full_name;
+            }
+          } catch {
+            // fallback
+          }
+
+          if (!existingName) {
+            const { data: existingProfile } = await supabase
+              .from('profiles')
+              .select('id, full_name')
+              .eq('telegram_chat_id', chatId)
+              .maybeSingle();
+            if (existingProfile) {
+              existingName = existingProfile.full_name;
+            }
+          }
+
+          if (existingName !== null) {
             const welcomeBack =
-              `🌿 <b>Welcome back, ${existingProfile.full_name || firstName}!</b>\n\n` +
+              `🌿 <b>Welcome back, ${existingName || firstName}!</b>\n\n` +
               `Your Zenith account is connected and active.\n\n` +
               `• Use <b>/status</b> to check today's rituals\n` +
               `• Use <b>/help</b> for assistant information`;
@@ -197,7 +251,47 @@ export async function POST(request: Request) {
       // Handle /status command
       if (text.startsWith('/status')) {
         if (supabase) {
-          // Query profile by chat ID
+          const currentMonday = getMondayOfWeek(new Date());
+          const dayInfo = calculateSprintDayInfo(currentMonday.toISOString(), 7);
+          const todayIndex = dayInfo.dayIndex;
+
+          // 1. Try unified RPC get_telegram_status first (SECURITY DEFINER, bypasses RLS)
+          try {
+            const { data: statusRpc, error: statusErr } = await supabase.rpc('get_telegram_status', {
+              p_chat_id: chatId,
+            });
+
+            if (!statusErr && statusRpc && typeof statusRpc === 'object') {
+              const habits: HabitItem[] = (statusRpc.habits as HabitItem[]) || [];
+              const userName = statusRpc.userName || 'Zenith User';
+
+              const completed = habits.filter((h) => h.weekly_history?.[todayIndex] === 'completed').length;
+              const total = habits.length;
+
+              let statusMsg = `📊 <b>Today's Zenith Habit Status for ${userName}:</b>\n\n`;
+              statusMsg += `Completed: <b>${completed} / ${total}</b> rituals\n\n`;
+
+              if (habits.length === 0) {
+                statusMsg += `<i>No active habits configured yet. Add habits in the Zenith dashboard.</i>\n`;
+              } else {
+                habits.forEach((h) => {
+                  const status = h.weekly_history?.[todayIndex] || 'unlogged';
+                  const icon = status === 'completed' ? '✅' : status === 'missed' ? '❌' : '⏳';
+                  statusMsg += `${icon} <b>${h.name}</b> (${status})\n`;
+                });
+              }
+
+              await sendTelegramMessage(chatId, statusMsg, [
+                [{ text: '🔗 Open Habit Planner', url: `${getTelegramConfig().appUrl}/habits` }],
+              ]);
+
+              return NextResponse.json({ ok: true });
+            }
+          } catch (e) {
+            console.error('RPC get_telegram_status error:', e);
+          }
+
+          // 2. Direct query fallback (if service role key is active or RPC not yet deployed)
           let userProfile: { id: string; full_name?: string } | null = null;
 
           try {
@@ -226,22 +320,22 @@ export async function POST(request: Request) {
               .select('*')
               .eq('user_id', userProfile.id);
 
-            const currentMonday = getMondayOfWeek(new Date());
-            const dayInfo = calculateSprintDayInfo(currentMonday.toISOString(), 7);
-            const todayIndex = dayInfo.dayIndex;
-
-            const habitList = habits || [];
+            const habitList: HabitItem[] = (habits as HabitItem[]) || [];
             const completed = habitList.filter((h) => h.weekly_history?.[todayIndex] === 'completed').length;
             const total = habitList.length;
 
             let statusMsg = `📊 <b>Today's Zenith Habit Status:</b>\n\n`;
             statusMsg += `Completed: <b>${completed} / ${total}</b> rituals\n\n`;
 
-            habitList.forEach((h) => {
-              const status = h.weekly_history?.[todayIndex] || 'unlogged';
-              const icon = status === 'completed' ? '✅' : status === 'missed' ? '❌' : '⏳';
-              statusMsg += `${icon} <b>${h.name}</b> (${status})\n`;
-            });
+            if (habitList.length === 0) {
+              statusMsg += `<i>No active habits configured yet. Add habits in the Zenith dashboard.</i>\n`;
+            } else {
+              habitList.forEach((h) => {
+                const status = h.weekly_history?.[todayIndex] || 'unlogged';
+                const icon = status === 'completed' ? '✅' : status === 'missed' ? '❌' : '⏳';
+                statusMsg += `${icon} <b>${h.name}</b> (${status})\n`;
+              });
+            }
 
             await sendTelegramMessage(chatId, statusMsg, [
               [{ text: '🔗 Open Habit Planner', url: `${getTelegramConfig().appUrl}/habits` }],

@@ -63,21 +63,43 @@ BEGIN
 END;
 $$;
 
--- 5. Function to get habits by Telegram chat ID (bypasses RLS for /status command)
-CREATE OR REPLACE FUNCTION public.get_telegram_habits(
+-- 5. Function to get status and habits in one call (bypasses RLS for /status command)
+CREATE OR REPLACE FUNCTION public.get_telegram_status(
   p_chat_id VARCHAR
 )
-RETURNS SETOF public.habits
+RETURNS JSONB
 LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
+DECLARE
+  v_user_id UUID;
+  v_user_name VARCHAR;
+  v_habits JSONB;
 BEGIN
-  RETURN QUERY
-  SELECT habits.*
-  FROM public.habits
-  JOIN public.profiles ON profiles.id = habits.user_id
+  -- 1. Find user by telegram_chat_id
+  SELECT profiles.id, profiles.full_name INTO v_user_id, v_user_name
+  FROM public.profiles
   WHERE profiles.telegram_chat_id = p_chat_id
-  ORDER BY habits.created_at ASC;
+  LIMIT 1;
+
+  IF v_user_id IS NULL THEN
+    RETURN NULL;
+  END IF;
+
+  -- 2. Fetch active habits
+  SELECT COALESCE(jsonb_agg(to_jsonb(h)), '[]'::jsonb) INTO v_habits
+  FROM (
+    SELECT id, name, window_label, duration_minutes, current_status, weekly_history, micro_version
+    FROM public.habits
+    WHERE user_id = v_user_id
+    ORDER BY created_at ASC
+  ) h;
+
+  RETURN jsonb_build_object(
+    'userId', v_user_id,
+    'userName', COALESCE(v_user_name, 'Zenith User'),
+    'habits', v_habits
+  );
 END;
 $$;
 
@@ -97,17 +119,16 @@ RETURNS TABLE (
 LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
-DECLARE
-  v_week JSONB;
 BEGIN
-  -- Fetch current weekly history
-  SELECT weekly_history INTO v_week FROM public.habits WHERE habits.id = p_habit_id;
-  
-  -- Update slot
   UPDATE public.habits
   SET
     current_status = p_status,
     health_score = p_health_boost,
+    weekly_history = jsonb_set(
+      COALESCE(weekly_history, '["unlogged","unlogged","unlogged","unlogged","unlogged","unlogged","unlogged"]'::jsonb),
+      ARRAY[p_day_index::text],
+      to_jsonb(p_status)
+    ),
     updated_at = TIMEZONE('utc'::text, NOW())
   WHERE habits.id = p_habit_id
   RETURNING habits.id, habits.name, habits.current_status::VARCHAR, habits.health_score INTO id, name, current_status, health_score;
@@ -115,3 +136,36 @@ BEGIN
   RETURN NEXT;
 END;
 $$;
+
+-- 7. Function to fetch all active telegram reminder users for cron (bypasses RLS)
+CREATE OR REPLACE FUNCTION public.get_telegram_eod_users()
+RETURNS TABLE (
+  id UUID,
+  full_name VARCHAR,
+  telegram_chat_id VARCHAR,
+  telegram_reminders_enabled BOOLEAN,
+  working_window JSONB
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+  RETURN QUERY
+  SELECT 
+    profiles.id, 
+    profiles.full_name, 
+    profiles.telegram_chat_id, 
+    profiles.telegram_reminders_enabled,
+    profiles.working_window
+  FROM public.profiles
+  WHERE profiles.telegram_chat_id IS NOT NULL 
+    AND profiles.telegram_reminders_enabled = TRUE;
+END;
+$$;
+
+-- 8. Grant execution permissions to API roles
+GRANT EXECUTE ON FUNCTION public.link_telegram_chat(VARCHAR, VARCHAR, VARCHAR) TO anon, authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.get_telegram_profile(VARCHAR) TO anon, authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.get_telegram_status(VARCHAR) TO anon, authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.record_telegram_habit_action(UUID, INT, VARCHAR, INT) TO anon, authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.get_telegram_eod_users() TO anon, authenticated, service_role;
