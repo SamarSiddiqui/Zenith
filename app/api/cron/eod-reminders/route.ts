@@ -46,15 +46,35 @@ async function handleCronJob(request: Request) {
 
   try {
     // 1. Query all users with Telegram notifications enabled and chat ID configured
-    const { data: profiles, error: profilesError } = await supabase
-      .from('profiles')
-      .select('id, full_name, telegram_chat_id, telegram_reminders_enabled, working_window')
-      .not('telegram_chat_id', 'is', null)
-      .eq('telegram_reminders_enabled', true);
+    let profiles: Array<{
+      id: string;
+      full_name?: string | null;
+      telegram_chat_id?: string | null;
+      telegram_reminders_enabled?: boolean;
+      working_window?: unknown;
+    }> | null = null;
 
-    if (profilesError) {
-      console.error('Error querying profiles for EOD cron:', profilesError);
-      return NextResponse.json({ error: profilesError.message }, { status: 500 });
+    try {
+      const { data: rpcProfiles, error: rpcErr } = await supabase.rpc('get_telegram_eod_users');
+      if (!rpcErr && rpcProfiles && rpcProfiles.length > 0) {
+        profiles = rpcProfiles;
+      }
+    } catch {
+      // fallback
+    }
+
+    if (!profiles) {
+      const { data: tableProfiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, full_name, telegram_chat_id, telegram_reminders_enabled, working_window')
+        .not('telegram_chat_id', 'is', null)
+        .eq('telegram_reminders_enabled', true);
+
+      if (profilesError) {
+        console.error('Error querying profiles for EOD cron:', profilesError);
+        return NextResponse.json({ error: profilesError.message }, { status: 500 });
+      }
+      profiles = tableProfiles;
     }
 
     if (!profiles || profiles.length === 0) {

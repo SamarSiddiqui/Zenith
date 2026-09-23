@@ -124,6 +124,30 @@ export default function SettingsPage() {
     }
   };
 
+  // Direct Save Manual Chat ID
+  const handleSaveManualChatId = async (idToSave?: string) => {
+    const targetId = (idToSave || telegramChatId).trim();
+    if (!targetId) {
+      setTestFeedback({ type: 'error', message: 'Please enter a valid numeric Telegram Chat ID.' });
+      return;
+    }
+
+    setSaving(true);
+    setTelegramChatId(targetId);
+    const res = await updateProfile({
+      telegramChatId: targetId,
+      telegramRemindersEnabled: true,
+    });
+    setSaving(false);
+
+    if (res.success) {
+      setSuccessMessage(`Telegram Chat ID (${targetId}) connected & saved!`);
+      setTimeout(() => setSuccessMessage(null), 4000);
+    } else {
+      setErrorMessage(res.error || 'Failed to save Telegram Chat ID.');
+    }
+  };
+
   // Dispatch Test Notification
   const handleSendTestNotification = async () => {
     if (!telegramChatId) {
@@ -135,6 +159,12 @@ export default function SettingsPage() {
     setTestFeedback(null);
 
     try {
+      // Ensure chat ID is persisted in Supabase
+      updateProfile({
+        telegramChatId: telegramChatId.trim(),
+        telegramRemindersEnabled: true,
+      }).catch(() => {});
+
       const res = await fetch('/api/telegram/test', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -150,7 +180,7 @@ export default function SettingsPage() {
         throw new Error(data.error || 'Failed to dispatch test notification.');
       }
 
-      setTestFeedback({ type: 'success', message: 'Test message sent! Check your Telegram.' });
+      setTestFeedback({ type: 'success', message: 'Test message delivered! Connection active.' });
       setTimeout(() => setTestFeedback(null), 5000);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to deliver message.';
@@ -426,16 +456,25 @@ export default function SettingsPage() {
 
                     <div className="border-t border-line/60 pt-3">
                       <label className="block text-[10px] font-semibold uppercase tracking-wider text-faint mb-1 font-mono">
-                        Or enter Telegram Chat ID manually
+                        Or enter Telegram Chat ID manually (via @userinfobot)
                       </label>
                       <div className="flex gap-2">
                         <input
                           type="text"
                           value={telegramChatId}
                           onChange={(e) => setTelegramChatId(e.target.value.trim())}
-                          placeholder="e.g. 987654321"
+                          placeholder="e.g. 906395724"
                           className="flex-1 rounded-xl border border-line bg-surface py-1.5 px-3 text-xs text-ink placeholder:text-faint font-mono focus:border-sage focus:outline-none"
                         />
+                        <button
+                          type="button"
+                          onClick={() => handleSaveManualChatId()}
+                          disabled={saving || !telegramChatId.trim()}
+                          className="rounded-xl bg-sage hover:bg-sage-deep text-white px-3.5 py-1.5 text-xs font-semibold shadow-xs transition-colors flex items-center gap-1.5 shrink-0 disabled:opacity-50"
+                        >
+                          {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
+                          <span>Save & Link</span>
+                        </button>
                       </div>
                     </div>
                   </div>
