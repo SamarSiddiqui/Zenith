@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '../../../../lib/supabase/client';
+import { createAdminClient } from '../../../../lib/supabase/admin';
 import {
   sendTelegramMessage,
   answerTelegramCallback,
@@ -10,6 +10,7 @@ import { calculateSprintDayInfo, getMondayOfWeek } from '../../../../lib/utils/s
 export async function POST(request: Request) {
   try {
     const update = await request.json();
+    const supabase = createAdminClient();
 
     // 1. Handle Inline Button Callback Queries (Micro-actions & Completions)
     if (update.callback_query) {
@@ -26,7 +27,6 @@ export async function POST(request: Request) {
       if (data.startsWith('done_') || data.startsWith('micro_')) {
         const isMicro = data.startsWith('micro_');
         const habitId = isMicro ? data.replace('micro_', '') : data.replace('done_', '');
-        const supabase = createClient();
 
         if (supabase && habitId) {
           // Fetch the habit
@@ -103,28 +103,52 @@ export async function POST(request: Request) {
       if (text.startsWith('/start')) {
         const parts = text.split(' ');
         const token = parts.length > 1 ? parts[1].trim() : null;
-        const supabase = createClient();
 
         if (token && supabase) {
-          // Attempt to link profile via token
-          const { data: updatedProfiles, error } = await supabase
-            .from('profiles')
-            .update({
-              telegram_chat_id: chatId,
-              telegram_username: username || null,
-              telegram_link_token: null, // consume token
-              telegram_reminders_enabled: true,
-              updated_at: new Date().toISOString(),
-            })
-            .eq('telegram_link_token', token)
-            .select();
+          // 1. Try RPC link function first (runs as SECURITY DEFINER in Postgres)
+          let linkedUser: { full_name?: string; email?: string } | null = null;
 
-          if (!error && updatedProfiles && updatedProfiles.length > 0) {
-            const userProfile = updatedProfiles[0];
+          try {
+            const { data: rpcData, error: rpcError } = await supabase.rpc('link_telegram_chat', {
+              p_link_token: token,
+              p_chat_id: chatId,
+              p_username: username || null,
+            });
+
+            if (!rpcError && rpcData && rpcData.length > 0) {
+              linkedUser = rpcData[0];
+            }
+          } catch (e) {
+            console.error('RPC link_telegram_chat error:', e);
+          }
+
+          // 2. Direct table update fallback (works when using service role key)
+          if (!linkedUser) {
+            const { data: updatedProfiles } = await supabase
+              .from('profiles')
+              .update({
+                telegram_chat_id: chatId,
+                telegram_username: username || null,
+                telegram_link_token: null, // consume token
+                telegram_reminders_enabled: true,
+                updated_at: new Date().toISOString(),
+              })
+              .eq('telegram_link_token', token)
+              .select();
+
+            if (updatedProfiles && updatedProfiles.length > 0) {
+              linkedUser = updatedProfiles[0];
+            }
+          }
+
+          if (linkedUser) {
             const welcomeText =
-              `🌿 <b>Welcome to Zenith, ${userProfile.full_name || firstName}!</b>\n\n` +
-              `Your Telegram account is now connected. Zenith will gently notify you at the end of your working window if any rituals remain unlogged.\n\n` +
-              `Use <b>/status</b> anytime to check today's rituals.`;
+              `🌿 <b>Welcome to Zenith, ${linkedUser.full_name || firstName}!</b>\n\n` +
+              `Your Telegram account is now successfully connected.\n\n` +
+              `Zenith will gently notify you at the end of your working window if any daily rituals remain unlogged.\n\n` +
+              `Commands available:\n` +
+              `• <b>/status</b> — Check today's habits and completion rate\n` +
+              `• <b>/help</b> — Information about mindful circadian notifications`;
 
             await sendTelegramMessage(chatId, welcomeText, [
               [{ text: '🔗 Open Zenith Dashboard', url: `${getTelegramConfig().appUrl}/habits` }],
@@ -134,10 +158,34 @@ export async function POST(request: Request) {
           }
         }
 
-        // Generic welcome if no token provided or already linked
+        // Check if already linked
+        if (supabase) {
+          const { data: existingProfile } = await supabase
+            .from('profiles')
+            .select('id, full_name')
+            .eq('telegram_chat_id', chatId)
+            .maybeSingle();
+
+          if (existingProfile) {
+            const welcomeBack =
+              `🌿 <b>Welcome back, ${existingProfile.full_name || firstName}!</b>\n\n` +
+              `Your Zenith account is connected and active.\n\n` +
+              `• Use <b>/status</b> to check today's rituals\n` +
+              `• Use <b>/help</b> for assistant information`;
+
+            await sendTelegramMessage(chatId, welcomeBack, [
+              [{ text: '🔗 Open Habit Planner', url: `${getTelegramConfig().appUrl}/habits` }],
+            ]);
+            return NextResponse.json({ ok: true });
+          }
+        }
+
+        // Generic welcome if no token provided or invalid
         const defaultWelcome =
           `✨ <b>Hello ${firstName}! I am your Zenith Circadian Habit Assistant.</b>\n\n` +
-          `To link your account, go to <b>Zenith Settings</b> in your browser and click <b>Connect Telegram</b>.\n\n` +
+          `To link your account:\n` +
+          `1. Go to <b>Zenith Settings</b> in your browser.\n` +
+          `2. Click <b>"Open Telegram Bot"</b> (or paste your Chat ID: <code>${chatId}</code> into Settings).\n\n` +
           `Commands available:\n` +
           `• <b>/status</b> — Check today's rituals and completion progress\n` +
           `• <b>/help</b> — Information about mindful circadian notifications`;
@@ -148,19 +196,35 @@ export async function POST(request: Request) {
 
       // Handle /status command
       if (text.startsWith('/status')) {
-        const supabase = createClient();
         if (supabase) {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('id, full_name')
-            .eq('telegram_chat_id', chatId)
-            .maybeSingle();
+          // Query profile by chat ID
+          let userProfile: { id: string; full_name?: string } | null = null;
 
-          if (profile) {
+          try {
+            const { data: rpcProfile } = await supabase.rpc('get_telegram_profile', {
+              p_chat_id: chatId,
+            });
+            if (rpcProfile && rpcProfile.length > 0) {
+              userProfile = rpcProfile[0];
+            }
+          } catch {
+            // fallback
+          }
+
+          if (!userProfile) {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('id, full_name')
+              .eq('telegram_chat_id', chatId)
+              .maybeSingle();
+            userProfile = profile;
+          }
+
+          if (userProfile) {
             const { data: habits } = await supabase
               .from('habits')
               .select('*')
-              .eq('user_id', profile.id);
+              .eq('user_id', userProfile.id);
 
             const currentMonday = getMondayOfWeek(new Date());
             const dayInfo = calculateSprintDayInfo(currentMonday.toISOString(), 7);
@@ -187,7 +251,10 @@ export async function POST(request: Request) {
           }
         }
 
-        await sendTelegramMessage(chatId, 'Account not connected. Please visit Zenith Settings to connect your Telegram.');
+        await sendTelegramMessage(
+          chatId,
+          `Account not connected yet.\n\nYour Telegram Chat ID is: <code>${chatId}</code>\nEnter this in Zenith Settings to link your account!`
+        );
         return NextResponse.json({ ok: true });
       }
 
