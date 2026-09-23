@@ -55,6 +55,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           onboarded: profile.onboarded ?? false,
           themePreference: profile.theme_preference,
           mindfulReminders: profile.mindful_reminders,
+          telegramChatId: profile.telegram_chat_id,
+          telegramUsername: profile.telegram_username,
+          telegramLinkToken: profile.telegram_link_token,
+          telegramRemindersEnabled: profile.telegram_reminders_enabled ?? true,
+          telegramEodTime: profile.telegram_eod_time || '20:00',
           createdAt: profile.created_at,
           updatedAt: profile.updated_at,
         } as ZenithUserProfile;
@@ -249,6 +254,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           onboarded: updates.onboarded !== undefined ? updates.onboarded : user.onboarded,
           theme_preference: updates.themePreference !== undefined ? updates.themePreference : user.themePreference,
           mindful_reminders: updates.mindfulReminders !== undefined ? updates.mindfulReminders : user.mindfulReminders,
+          telegram_chat_id: updates.telegramChatId !== undefined ? updates.telegramChatId : user.telegramChatId,
+          telegram_username: updates.telegramUsername !== undefined ? updates.telegramUsername : user.telegramUsername,
+          telegram_link_token: updates.telegramLinkToken !== undefined ? updates.telegramLinkToken : user.telegramLinkToken,
+          telegram_reminders_enabled: updates.telegramRemindersEnabled !== undefined ? updates.telegramRemindersEnabled : user.telegramRemindersEnabled,
+          telegram_eod_time: updates.telegramEodTime !== undefined ? updates.telegramEodTime : user.telegramEodTime,
         })
         .eq('id', user.id);
 
