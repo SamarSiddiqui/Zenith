@@ -91,6 +91,15 @@ export default function SettingsPage() {
     setErrorMessage(null);
 
     try {
+      // Auto-register webhook with current production domain if not on localhost
+      if (typeof window !== 'undefined' && !window.location.hostname.includes('localhost')) {
+        fetch('/api/telegram/setup-webhook', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ customAppUrl: window.location.origin }),
+        }).catch(() => {});
+      }
+
       const res = await fetch('/api/telegram/link-token', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

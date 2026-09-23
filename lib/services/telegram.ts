@@ -1,4 +1,4 @@
-import { createClient } from '../supabase/client';
+import { createAdminClient } from '../supabase/admin';
 import type { Habit } from '../../types/zenith';
 
 export interface TelegramInlineButton {
@@ -179,7 +179,7 @@ export function formatTestNotification(userName: string): { message: string; key
  * Generate a single-use Telegram link token for the authenticated user.
  */
 export async function generateTelegramLinkToken(userId: string): Promise<string | null> {
-  const supabase = createClient();
+  const supabase = createAdminClient();
   if (!supabase || !userId) return null;
 
   const token = `zn_${Math.random().toString(36).substring(2, 10)}_${Date.now().toString(36)}`;

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '../../../../lib/supabase/client';
+import { createAdminClient } from '../../../../lib/supabase/admin';
 import { sendTelegramMessage, formatEodReminder } from '../../../../lib/services/telegram';
 import { calculateSprintDayInfo, getMondayOfWeek } from '../../../../lib/utils/sprintDate';
 import { mapDbRowToHabit } from '../../../../lib/services/habits';
@@ -39,7 +39,7 @@ async function handleCronJob(request: Request) {
     }
   }
 
-  const supabase = createClient();
+  const supabase = createAdminClient();
   if (!supabase) {
     return NextResponse.json({ error: 'Supabase client unavailable' }, { status: 500 });
   }
