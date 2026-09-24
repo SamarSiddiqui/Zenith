@@ -6,7 +6,11 @@ import { Layout } from '../../components/Layout';
 import { useHabits } from '../../hooks/useHabits';
 import { useSprint } from '../../hooks/useSprint';
 import { HabitHeader } from '../../components/habits/HabitHeader';
-import { DynamicSprintMatrix } from '../../components/habits/DynamicSprintMatrix';
+import {
+  DynamicSprintMatrix,
+  type HabitSortMode,
+  type HabitSlotFilter,
+} from '../../components/habits/DynamicSprintMatrix';
 import { HabitGenesisModal } from '../../components/habits/HabitGenesisModal';
 import { SkipModal } from '../../components/habits/SkipModal';
 import { HabitDetailDrawer } from '../../components/habits/HabitDetailDrawer';
@@ -57,6 +61,8 @@ export default function HabitsPage() {
   } = useSprint(habits, refreshHabits);
 
   const [searchQuery, setSearchQuery] = useState('');
+  const [sortMode, setSortMode] = useState<HabitSortMode>('circadian');
+  const [slotFilter, setSlotFilter] = useState<HabitSlotFilter>('all');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [skipHabit, setSkipHabit] = useState<{ habit: Habit; dayIndex: number } | null>(null);
   const [selectedHabitId, setSelectedHabitId] = useState<string | null>(null);
@@ -165,17 +171,52 @@ export default function HabitsPage() {
     return activeHabitsPool.find((h) => h.id === selectedHabitId) || null;
   }, [activeHabitsPool, selectedHabitId]);
 
-  // Filter habits according to search query
+  // Filter and sort habits according to search query, slot filter, and sorting mode
   const filteredHabits = useMemo(() => {
-    if (!searchQuery.trim()) return activeHabitsPool;
-    const q = searchQuery.toLowerCase();
-    return activeHabitsPool.filter(
-      (h) =>
-        h.name.toLowerCase().includes(q) ||
-        h.category?.toLowerCase().includes(q) ||
-        h.window?.toLowerCase().includes(q)
-    );
-  }, [activeHabitsPool, searchQuery]);
+    let list = activeHabitsPool;
+
+    // 1. Search Query Filter
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      list = list.filter(
+        (h) =>
+          h.name.toLowerCase().includes(q) ||
+          h.category?.toLowerCase().includes(q) ||
+          h.window?.toLowerCase().includes(q) ||
+          h.circadianSlot?.toLowerCase().includes(q)
+      );
+    }
+
+    // 2. Circadian Slot Filter
+    if (slotFilter !== 'all') {
+      list = list.filter((h) => (h.circadianSlot || 'morning') === slotFilter);
+    }
+
+    // 3. Sorting Mode
+    const SLOT_ORDER: Record<string, number> = {
+      morning: 1,
+      afternoon: 2,
+      evening: 3,
+      anytime: 4,
+    };
+
+    return [...list].sort((a, b) => {
+      if (sortMode === 'time-desc') {
+        return (b.minutes || 0) - (a.minutes || 0);
+      }
+      if (sortMode === 'time-asc') {
+        return (a.minutes || 0) - (b.minutes || 0);
+      }
+      if (sortMode === 'health-desc') {
+        return (b.health || 0) - (a.health || 0);
+      }
+      // Circadian Flow
+      const slotA = SLOT_ORDER[a.circadianSlot || 'morning'] || 99;
+      const slotB = SLOT_ORDER[b.circadianSlot || 'morning'] || 99;
+      if (slotA !== slotB) return slotA - slotB;
+      return (b.minutes || 0) - (a.minutes || 0);
+    });
+  }, [activeHabitsPool, searchQuery, slotFilter, sortMode]);
 
   // Dynamic header metrics (live vs historical)
   const headerMetrics = useMemo(() => {
@@ -263,6 +304,10 @@ export default function HabitsPage() {
               config={viewingConfig}
               currentDayIndex={weekOffset === 0 ? sprintSession.currentDayIndex : -1}
               isHistoricalView={weekOffset < 0}
+              sortMode={sortMode}
+              onSortModeChange={setSortMode}
+              slotFilter={slotFilter}
+              onSlotFilterChange={setSlotFilter}
               onResetToCurrentWeek={handleResetToCurrentWeek}
               onToggleStatus={(id, idx) => handleToggle(id, idx)}
               onOpenSkipModal={(habit, idx) => setSkipHabit({ habit, dayIndex: idx })}
