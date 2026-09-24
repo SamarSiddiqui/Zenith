@@ -163,9 +163,30 @@ BEGIN
 END;
 $$;
 
--- 8. Grant execution permissions to API roles
+-- 8. Function to safely set telegram link token (bypasses RLS)
+CREATE OR REPLACE FUNCTION public.set_telegram_link_token(
+  p_user_id UUID,
+  p_link_token VARCHAR
+)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+  UPDATE public.profiles
+  SET 
+    telegram_link_token = p_link_token,
+    updated_at = TIMEZONE('utc'::text, NOW())
+  WHERE id = p_user_id;
+
+  RETURN FOUND;
+END;
+$$;
+
+-- 9. Grant execution permissions to API roles
 GRANT EXECUTE ON FUNCTION public.link_telegram_chat(VARCHAR, VARCHAR, VARCHAR) TO anon, authenticated, service_role;
 GRANT EXECUTE ON FUNCTION public.get_telegram_profile(VARCHAR) TO anon, authenticated, service_role;
 GRANT EXECUTE ON FUNCTION public.get_telegram_status(VARCHAR) TO anon, authenticated, service_role;
 GRANT EXECUTE ON FUNCTION public.record_telegram_habit_action(UUID, INT, VARCHAR, INT) TO anon, authenticated, service_role;
 GRANT EXECUTE ON FUNCTION public.get_telegram_eod_users() TO anon, authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.set_telegram_link_token(UUID, VARCHAR) TO anon, authenticated, service_role;

@@ -134,7 +134,7 @@ export function formatEodReminder(
     ]);
   });
 
-  message += `<i>A 5-minute micro-step preserves 100% of identity momentum without fatigue.</i>`;
+  message += `<i>Tap an action above to log your ritual in 1 click.</i>`;
 
   // Append web link button
   keyboard.push([
@@ -155,9 +155,9 @@ export function formatTestNotification(userName: string): { message: string; key
   const firstName = userName ? userName.split(' ')[0] : 'there';
 
   const message = `✨ <b>Zenith Telegram Integration Connected!</b>\n\n` +
-    `Hello <b>${firstName}</b>, your Telegram account is successfully connected to Zenith.\n\n` +
-    `You will receive gentle, zero-guilt check-ins at the end of your circadian working window if any daily rituals remain unlogged.\n\n` +
-    `<i>Ready to maintain steady momentum with effortless micro-fallbacks!</i>`;
+    `Hello <b>${firstName}</b>, your Telegram account is connected to Zenith.\n\n` +
+    `You'll receive a daily summary at the end of your day whenever you have habits left to log.\n\n` +
+    `<i>Tap /status anytime to see your daily progress!</i>`;
 
   const keyboard: TelegramInlineButton[][] = [
     [
@@ -185,6 +185,21 @@ export async function generateTelegramLinkToken(userId: string): Promise<string 
   const token = `zn_${Math.random().toString(36).substring(2, 10)}_${Date.now().toString(36)}`;
 
   try {
+    // 1. Try RPC first (SECURITY DEFINER, bypasses RLS)
+    try {
+      const { data: rpcSuccess, error: rpcErr } = await supabase.rpc('set_telegram_link_token', {
+        p_user_id: userId,
+        p_link_token: token,
+      });
+
+      if (!rpcErr && rpcSuccess) {
+        return token;
+      }
+    } catch {
+      // fallback
+    }
+
+    // 2. Direct table update fallback
     const { error } = await supabase
       .from('profiles')
       .update({

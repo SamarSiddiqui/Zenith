@@ -14,6 +14,8 @@ import {
   Send,
   ExternalLink,
   X,
+  Pencil,
+  RotateCw,
 } from 'lucide-react';
 import { Layout } from '../../components/Layout';
 import { useAuth } from '../../context/AuthContext';
@@ -45,8 +47,8 @@ export default function SettingsPage() {
   const [telegramRemindersEnabled, setTelegramRemindersEnabled] = useState(true);
   const [telegramEodTime, setTelegramEodTime] = useState('20:00');
   const [isConnectingTelegram, setIsConnectingTelegram] = useState(false);
-  const [isSendingTest, setIsSendingTest] = useState(false);
-  const [testFeedback, setTestFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [isEditingChatId, setIsEditingChatId] = useState(false);
+  const [tempChatId, setTempChatId] = useState('');
 
   const [saving, setSaving] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -59,7 +61,7 @@ export default function SettingsPage() {
       if (user.workingWindow) {
         setStartTime(user.workingWindow.startTime || '09:00');
         setEndTime(user.workingWindow.endTime || '19:00');
-        setTimezone(user.workingWindow.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC');
+        setTimezone(user.workingWindow.timezone || 'UTC');
         setActiveDays(user.workingWindow.activeDays || [1, 2, 3, 4, 5]);
       }
       setMindfulReminders(user.mindfulReminders ?? true);
@@ -80,7 +82,7 @@ export default function SettingsPage() {
     }
   };
 
-  // 1-Click Connect Telegram Assistant
+  // 1-Click Connect Telegram Assistant with Live Polling
   const handleConnectTelegram = async () => {
     if (!user?.id) {
       setErrorMessage('Please sign in to connect Telegram.');
@@ -114,26 +116,51 @@ export default function SettingsPage() {
 
       // Open Telegram app / web client with single-use start token
       window.open(data.deepLink, '_blank');
-      setSuccessMessage('Telegram opened! Press "Start" in the Telegram chat to complete connection.');
-      setTimeout(() => setSuccessMessage(null), 6000);
+      setSuccessMessage('Telegram opened! Press "START" in Telegram — Zenith will automatically detect and link your account.');
+
+      // Poll for automatic connection for up to 60 seconds
+      const pollStartTime = Date.now();
+      const interval = setInterval(async () => {
+        if (Date.now() - pollStartTime > 60000) {
+          clearInterval(interval);
+          setIsConnectingTelegram(false);
+          return;
+        }
+
+        try {
+          const checkRes = await fetch(`/api/telegram/status?userId=${user.id}`);
+          const checkData = await checkRes.json();
+          if (checkData.connected && checkData.chatId) {
+            clearInterval(interval);
+            setTelegramChatId(checkData.chatId);
+            if (checkData.username) setTelegramUsername(checkData.username);
+            setIsConnectingTelegram(false);
+            setSuccessMessage(`✨ Telegram connected successfully! Active ID: ${checkData.chatId}`);
+            setTimeout(() => setSuccessMessage(null), 5000);
+          }
+        } catch {
+          // ignore polling error
+        }
+      }, 2000);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Error launching Telegram.';
       setErrorMessage(msg);
-    } finally {
       setIsConnectingTelegram(false);
     }
   };
 
-  // Direct Save Manual Chat ID
+  // Direct Save Manual / Edited Chat ID
   const handleSaveManualChatId = async (idToSave?: string) => {
-    const targetId = (idToSave || telegramChatId).trim();
+    const targetId = (idToSave !== undefined ? idToSave : telegramChatId).trim();
     if (!targetId) {
-      setTestFeedback({ type: 'error', message: 'Please enter a valid numeric Telegram Chat ID.' });
+      setErrorMessage('Please enter a valid numeric Telegram Chat ID.');
       return;
     }
 
     setSaving(true);
     setTelegramChatId(targetId);
+    setIsEditingChatId(false);
+
     const res = await updateProfile({
       telegramChatId: targetId,
       telegramRemindersEnabled: true,
@@ -148,52 +175,12 @@ export default function SettingsPage() {
     }
   };
 
-  // Dispatch Test Notification
-  const handleSendTestNotification = async () => {
-    if (!telegramChatId) {
-      setTestFeedback({ type: 'error', message: 'No Telegram Chat ID found.' });
-      return;
-    }
-
-    setIsSendingTest(true);
-    setTestFeedback(null);
-
-    try {
-      // Ensure chat ID is persisted in Supabase
-      updateProfile({
-        telegramChatId: telegramChatId.trim(),
-        telegramRemindersEnabled: true,
-      }).catch(() => {});
-
-      const res = await fetch('/api/telegram/test', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          chatId: telegramChatId,
-          userName: name || user?.fullName || 'Zenith User',
-        }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to dispatch test notification.');
-      }
-
-      setTestFeedback({ type: 'success', message: 'Test message delivered! Connection active.' });
-      setTimeout(() => setTestFeedback(null), 5000);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to deliver message.';
-      setTestFeedback({ type: 'error', message: msg });
-    } finally {
-      setIsSendingTest(false);
-    }
-  };
 
   // Disconnect Telegram
   const handleDisconnectTelegram = async () => {
     setTelegramChatId('');
     setTelegramUsername('');
+    setIsEditingChatId(false);
     await updateProfile({
       telegramChatId: '',
       telegramUsername: '',
@@ -435,7 +422,7 @@ export default function SettingsPage() {
                       <div>
                         <h3 className="text-xs font-semibold text-ink">1-Click Auto-Connection</h3>
                         <p className="text-[11px] text-muted font-light mt-0.5">
-                          Tap below to open Telegram and start the assistant. Your chat ID links automatically.
+                          Tap below to open Telegram and press <strong>Start</strong>. Zenith will automatically detect and link your account.
                         </p>
                       </div>
 
@@ -446,11 +433,16 @@ export default function SettingsPage() {
                         className="inline-flex items-center justify-center gap-2 rounded-xl bg-sky-500 hover:bg-sky-600 text-white px-4 py-2 text-xs font-semibold shadow-xs transition-colors shrink-0"
                       >
                         {isConnectingTelegram ? (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          <>
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            <span>Listening for connection...</span>
+                          </>
                         ) : (
-                          <ExternalLink className="h-3.5 w-3.5" />
+                          <>
+                            <ExternalLink className="h-3.5 w-3.5" />
+                            <span>Open Telegram Bot</span>
+                          </>
                         )}
-                        <span>{isConnectingTelegram ? 'Generating Link...' : 'Open Telegram Bot'}</span>
                       </button>
                     </div>
 
@@ -480,63 +472,71 @@ export default function SettingsPage() {
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-sage/30 bg-sage-wash/30 p-3.5">
-                      <div className="flex items-center gap-2 text-xs">
-                        <CheckCircle2 className="h-4 w-4 text-sage-deep shrink-0" />
-                        <span className="text-ink font-medium">
-                          Active Chat ID: <strong className="font-mono">{telegramChatId}</strong>
-                        </span>
+                    {isEditingChatId ? (
+                      <div className="rounded-2xl border border-sage/40 bg-surface p-3.5 space-y-2.5">
+                        <label className="block text-[11px] font-semibold text-ink font-mono">
+                          Edit Telegram Chat ID
+                        </label>
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            value={tempChatId}
+                            onChange={(e) => setTempChatId(e.target.value.trim())}
+                            placeholder="e.g. 906395724"
+                            className="flex-1 rounded-xl border border-line bg-canvas py-1.5 px-3 text-xs text-ink placeholder:text-faint font-mono focus:border-sage focus:outline-none"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleSaveManualChatId(tempChatId)}
+                            disabled={saving || !tempChatId.trim()}
+                            className="rounded-xl bg-sage hover:bg-sage-deep text-white px-3 py-1.5 text-xs font-semibold transition-colors flex items-center gap-1 shrink-0 disabled:opacity-50"
+                          >
+                            {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
+                            <span>Save</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setIsEditingChatId(false)}
+                            className="rounded-xl border border-line bg-canvas px-3 py-1.5 text-xs font-mono text-muted hover:text-ink transition-colors"
+                          >
+                            Cancel
+                          </button>
+                        </div>
                       </div>
+                    ) : (
+                      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-sage/30 bg-sage-wash/30 p-3.5">
+                        <div className="flex items-center gap-2 text-xs">
+                          <CheckCircle2 className="h-4 w-4 text-sage-deep shrink-0" />
+                          <span className="text-ink font-medium">
+                            Active Chat ID: <strong className="font-mono">{telegramChatId}</strong>
+                          </span>
+                        </div>
 
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={handleSendTestNotification}
-                          disabled={isSendingTest}
-                          className="inline-flex items-center gap-1.5 rounded-xl border border-sage/40 bg-surface px-3 py-1.5 text-xs font-mono font-medium text-sage-deep hover:bg-sage-wash transition-colors"
-                        >
-                          {isSendingTest ? (
-                            <Loader2 className="h-3 w-3 animate-spin" />
-                          ) : (
-                            <Send className="h-3 w-3" />
-                          )}
-                          <span>{isSendingTest ? 'Sending...' : 'Send Test Alert'}</span>
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setTempChatId(telegramChatId);
+                              setIsEditingChatId(true);
+                            }}
+                            className="inline-flex items-center gap-1.5 rounded-xl border border-sage/40 bg-surface px-3 py-1.5 text-xs font-mono font-medium text-sage-deep hover:bg-sage-wash transition-colors"
+                          >
+                            <Pencil className="h-3 w-3" />
+                            <span>Edit</span>
+                          </button>
 
-                        <button
-                          type="button"
-                          onClick={handleDisconnectTelegram}
-                          className="inline-flex items-center gap-1 rounded-xl border border-clay/30 bg-surface px-2.5 py-1.5 text-xs font-mono text-clay hover:bg-clay-wash transition-colors"
-                          title="Disconnect Telegram Bot"
-                        >
-                          <X className="h-3 w-3" />
-                          <span>Disconnect</span>
-                        </button>
+                          <button
+                            type="button"
+                            onClick={handleDisconnectTelegram}
+                            className="inline-flex items-center gap-1 rounded-xl border border-clay/30 bg-surface px-2.5 py-1.5 text-xs font-mono text-clay hover:bg-clay-wash transition-colors"
+                            title="Disconnect Telegram Bot"
+                          >
+                            <X className="h-3 w-3" />
+                            <span>Disconnect</span>
+                          </button>
+                        </div>
                       </div>
-                    </div>
-
-                    {/* Test Delivery Feedback Banner */}
-                    <AnimatePresence>
-                      {testFeedback && (
-                        <motion.div
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: 'auto' }}
-                          exit={{ opacity: 0, height: 0 }}
-                          className={`flex items-center gap-2 rounded-xl p-3 text-xs ${
-                            testFeedback.type === 'success'
-                              ? 'bg-sage-wash text-sage-deep border border-sage/40'
-                              : 'bg-clay-wash text-clay border border-clay/40'
-                          }`}
-                        >
-                          {testFeedback.type === 'success' ? (
-                            <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
-                          ) : (
-                            <AlertCircle className="h-3.5 w-3.5 shrink-0" />
-                          )}
-                          <span>{testFeedback.message}</span>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
+                    )}
                   </div>
                 )}
 

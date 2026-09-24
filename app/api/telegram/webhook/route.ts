@@ -281,10 +281,30 @@ export async function POST(request: Request) {
                 });
               }
 
-              await sendTelegramMessage(chatId, statusMsg, [
-                [{ text: '🔗 Open Habit Planner', url: `${getTelegramConfig().appUrl}/habits` }],
+              const keyboard: Array<Array<{ text: string; callback_data?: string; url?: string }>> = [];
+              const uncompletedHabits = habits.filter((h) => h.weekly_history?.[todayIndex] !== 'completed');
+
+              if (uncompletedHabits.length > 0) {
+                statusMsg += `\n<i>Tap below to log any habit right now:</i>\n`;
+                uncompletedHabits.forEach((h) => {
+                  keyboard.push([
+                    {
+                      text: `✅ ${h.name.length > 14 ? h.name.slice(0, 12) + '…' : h.name}`,
+                      callback_data: `done_${h.id}`,
+                    },
+                    {
+                      text: `⚡ Micro`,
+                      callback_data: `micro_${h.id}`,
+                    },
+                  ]);
+                });
+              }
+
+              keyboard.push([
+                { text: '🔗 Open Habit Planner', url: `${getTelegramConfig().appUrl}/habits` },
               ]);
 
+              await sendTelegramMessage(chatId, statusMsg, keyboard);
               return NextResponse.json({ ok: true });
             }
           } catch (e) {
@@ -337,10 +357,30 @@ export async function POST(request: Request) {
               });
             }
 
-            await sendTelegramMessage(chatId, statusMsg, [
-              [{ text: '🔗 Open Habit Planner', url: `${getTelegramConfig().appUrl}/habits` }],
+            const fallbackKeyboard: Array<Array<{ text: string; callback_data?: string; url?: string }>> = [];
+            const unloggedFallback = habitList.filter((h) => h.weekly_history?.[todayIndex] !== 'completed');
+
+            if (unloggedFallback.length > 0) {
+              statusMsg += `\n<i>Tap below to log any habit right now:</i>\n`;
+              unloggedFallback.forEach((h) => {
+                fallbackKeyboard.push([
+                  {
+                    text: `✅ ${h.name.length > 14 ? h.name.slice(0, 12) + '…' : h.name}`,
+                    callback_data: `done_${h.id}`,
+                  },
+                  {
+                    text: `⚡ Micro`,
+                    callback_data: `micro_${h.id}`,
+                  },
+                ]);
+              });
+            }
+
+            fallbackKeyboard.push([
+              { text: '🔗 Open Habit Planner', url: `${getTelegramConfig().appUrl}/habits` },
             ]);
 
+            await sendTelegramMessage(chatId, statusMsg, fallbackKeyboard);
             return NextResponse.json({ ok: true });
           }
         }
@@ -355,11 +395,11 @@ export async function POST(request: Request) {
       // Handle /help command
       if (text.startsWith('/help')) {
         const helpText =
-          `🌿 <b>Zenith Circadian Habit Assistant</b>\n\n` +
-          `Zenith uses adaptive circadian tracking and zero-guilt micro-fallbacks.\n\n` +
-          `• <b>End-of-Day Check-in:</b> Arrives at your configured EOD time.\n` +
-          `• <b>Micro-Steps:</b> When busy, tap "⚡ Micro-Step" on any reminder to preserve your identity streak.\n` +
-          `• <b>Commands:</b> Send /status to review today's show-up rate anytime.`;
+          `🌿 <b>Zenith Habit Assistant</b>\n\n` +
+          `Zenith helps you build steady daily habits that fit your work schedule.\n\n` +
+          `• <b>Daily Summary:</b> Sends a quick check-in at the end of your day if any habits are still unlogged.\n` +
+          `• <b>1-Click Logging:</b> Tap <b>Done</b> or <b>Micro-Step</b> directly in Telegram to log your progress.\n` +
+          `• <b>Status Check:</b> Type <b>/status</b> anytime to see how you're doing today.`;
 
         await sendTelegramMessage(chatId, helpText);
         return NextResponse.json({ ok: true });
