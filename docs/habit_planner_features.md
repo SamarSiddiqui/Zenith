@@ -66,14 +66,18 @@ Users can sort rituals with one click via the organizer bar or by clicking the *
 
 ---
 
-### D. Midnight Auto-Rollover Engine
-Ensures past unlogged habits automatically transition to `missed` when midnight passes:
+### D. Morning Yesterday Reconciliation & Rollover Engine
 
-#### 1. Client-Side Instant Rollover (`useHabits.ts` & `lib/services/habits.ts`)
-- On habit load, `rolloverPastUnloggedDays(habit, currentDayIndex)` checks all past days in the sprint ($i < \text{currentDayIndex}$).
-- If any past day is still `'unlogged'`, it is converted to `'missed'` (❌).
-- Recalculates the weighted momentum score via `calculateHabitHealth(newWeek, currentDayIndex)` and asynchronously updates Supabase.
-- **Advantage:** Immediate, works seamlessly across all timezones without server delay.
+Zenith uses a user-empowering, mindful approach to overnight habits rather than prematurely penalizing users:
+
+#### 1. Morning Reconciliation Modal (`YesterdayCheckinModal.tsx` & `useYesterdayCheckin.ts`)
+- **Files:** [`components/habits/YesterdayCheckinModal.tsx`](file:///c:/Users/samsi/Desktop/feb-projects/Zenith/components/habits/YesterdayCheckinModal.tsx), [`hooks/useYesterdayCheckin.ts`](file:///c:/Users/samsi/Desktop/feb-projects/Zenith/hooks/useYesterdayCheckin.ts)
+- **Workflow:**
+  - On morning launch, if yesterday's sprint index has unlogged habits, Zenith opens a gentle reconciliation prompt (*"How did yesterday go?"*).
+  - **Quick Batch Actions:** `[✅ Mark All Done]` or `[❌ Mark All Missed]` in 1 click.
+  - **Individual 1-by-1 Checks:** Direct toggle buttons (`[✅ Done]` vs `[❌ Missed]`) for each unlogged habit without micro-step interruptions.
+  - **Frequency:** Triggered once per calendar day (tracked via `zenith_last_yesterday_checkin_date` in localStorage).
+  - **Resolution:** Batch-updates Supabase in real-time and recalculates momentum scores.
 
 #### 2. Server-Side Midnight Cron Worker (`/api/cron/midnight-rollover`)
 - **File:** [`app/api/cron/midnight-rollover/route.ts`](file:///c:/Users/samsi/Desktop/feb-projects/Zenith/app/api/cron/midnight-rollover/route.ts)

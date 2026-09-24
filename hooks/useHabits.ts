@@ -30,26 +30,7 @@ export function useHabits() {
     setIsLoading(true);
     try {
       const data = await getHabits(user?.id);
-
-      // Auto-rollover: if midnight passed, convert past unlogged days (< todayIndex) to 'missed'
-      const currentMonday = getMondayOfWeek(new Date());
-      const dayInfo = calculateSprintDayInfo(currentMonday.toISOString(), 7);
-      const currentDayIndex = dayInfo.dayIndex;
-
-      const processedHabits = data.map((habit) => {
-        const { habit: updatedHabit, changed } = rolloverPastUnloggedDays(habit, currentDayIndex);
-        if (changed && habit.id && !habit.id.startsWith('local-habit-')) {
-          // Asynchronously persist rollover update in Supabase
-          updateHabit(habit.id, {
-            week: updatedHabit.week,
-            health: updatedHabit.health,
-            status: updatedHabit.status,
-          }).catch((e) => console.error('Rollover sync error:', e));
-        }
-        return updatedHabit;
-      });
-
-      setHabits(processedHabits);
+      setHabits(data);
       setError(null);
     } catch (err) {
       console.error('Failed to load habits:', err);

@@ -16,13 +16,15 @@ import { CountUp } from '../../components/visuals/CountUp';
 import { useAuth } from '../../context/AuthContext';
 import { useHabits } from '../../hooks/useHabits';
 import { useSprint } from '../../hooks/useSprint';
+import { useYesterdayCheckin } from '../../hooks/useYesterdayCheckin';
 import { OnboardingModal } from '../../components/auth/OnboardingModal';
+import { YesterdayCheckinModal } from '../../components/habits/YesterdayCheckinModal';
 
 const card = 'flex flex-col h-full rounded-2xl border border-line bg-surface p-5 shadow-calm justify-between';
 
 export default function DashboardPage() {
   const { user } = useAuth();
-  const { habits, metrics, isLoading: habitsLoading } = useHabits();
+  const { habits, metrics, isLoading: habitsLoading, refreshHabits } = useHabits();
   const {
     session,
     analytics,
@@ -37,6 +39,14 @@ export default function DashboardPage() {
     saveSprintDraft,
     startNewSprint,
   } = useSprint(habits);
+
+  const {
+    isYesterdayCheckinOpen,
+    yesterdayLabel,
+    unloggedYesterdayHabits,
+    closeYesterdayCheckin,
+    resolveYesterdayCheckin,
+  } = useYesterdayCheckin(habits, refreshHabits);
 
   const [showOnboarding, setShowOnboarding] = useState(false);
 
@@ -270,6 +280,15 @@ export default function DashboardPage() {
           <TodayHabitList currentDayIndex={currentDayIndex} />
           <EveningOrganizer currentDayIndex={currentDayIndex} />
         </div>
+
+        {/* Morning Yesterday Reconciliation Modal */}
+        <YesterdayCheckinModal
+          isOpen={isYesterdayCheckinOpen}
+          yesterdayLabel={yesterdayLabel}
+          unloggedHabits={unloggedYesterdayHabits}
+          onResolve={resolveYesterdayCheckin}
+          onClose={closeYesterdayCheckin}
+        />
       </div>
     </Layout>
   );

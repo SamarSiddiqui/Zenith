@@ -17,6 +17,8 @@ import { HabitDetailDrawer } from '../../components/habits/HabitDetailDrawer';
 import { SprintSettingsModal } from '../../components/habits/SprintSettingsModal';
 import { SprintCompletedModal } from '../../components/habits/SprintCompletedModal';
 import { PastSprintsDrawer } from '../../components/habits/PastSprintsDrawer';
+import { YesterdayCheckinModal } from '../../components/habits/YesterdayCheckinModal';
+import { useYesterdayCheckin } from '../../hooks/useYesterdayCheckin';
 import type { Habit } from '../../types/zenith';
 import type { SprintConfig } from '../../types/sprint';
 import { getShiftedWeekInfo } from '../../lib/utils/sprintDate';
@@ -59,6 +61,14 @@ export default function HabitsPage() {
     openPastSprints,
     closePastSprints,
   } = useSprint(habits, refreshHabits);
+
+  const {
+    isYesterdayCheckinOpen,
+    yesterdayLabel,
+    unloggedYesterdayHabits,
+    closeYesterdayCheckin,
+    resolveYesterdayCheckin,
+  } = useYesterdayCheckin(habits, refreshHabits);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [sortMode, setSortMode] = useState<HabitSortMode>('circadian');
@@ -380,6 +390,15 @@ export default function HabitsPage() {
             closePastSprints();
             openCompletedModal();
           }}
+        />
+
+        {/* Morning Yesterday Reconciliation Modal */}
+        <YesterdayCheckinModal
+          isOpen={isYesterdayCheckinOpen}
+          yesterdayLabel={yesterdayLabel}
+          unloggedHabits={unloggedYesterdayHabits}
+          onResolve={resolveYesterdayCheckin}
+          onClose={closeYesterdayCheckin}
         />
       </div>
     </Layout>
