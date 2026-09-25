@@ -2,7 +2,15 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import type { Habit, HabitStatus, CreateHabitInput, UpdateHabitInput, CircadianSlot } from '../types/zenith';
-import { getHabits, createHabit, updateHabit, deleteHabit, calculateHabitHealth } from '../lib/services/habits';
+import {
+  getHabits,
+  createHabit,
+  updateHabit,
+  deleteHabit,
+  calculateHabitHealth,
+  rolloverPastUnloggedDays,
+} from '../lib/services/habits';
+import { getMondayOfWeek, calculateSprintDayInfo } from '../lib/utils/sprintDate';
 import { useAuth } from '../context/AuthContext';
 
 const STATUS_CYCLE: Record<HabitStatus, HabitStatus> = {
@@ -34,6 +42,17 @@ export function useHabits() {
 
   useEffect(() => {
     loadHabits();
+  }, [loadHabits]);
+
+  // Real-time synchronization across multiple components on the same page
+  useEffect(() => {
+    const handleSync = () => {
+      loadHabits();
+    };
+    if (typeof window !== 'undefined') {
+      window.addEventListener('zenith_habits_sync', handleSync);
+      return () => window.removeEventListener('zenith_habits_sync', handleSync);
+    }
   }, [loadHabits]);
 
   // Group habits by circadian energy slot
@@ -97,13 +116,17 @@ export function useHabits() {
       setHabits((prev) => prev.map((h) => (h.id === habitId ? updatedHabit : h)));
 
       // Guaranteed asynchronous persistence
-      await updateHabit(habitId, {
+      const ok = await updateHabit(habitId, {
         status: updatedHabit.status,
         week: updatedHabit.week,
         health: updatedHabit.health,
       });
 
-      return true;
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('zenith_habits_sync'));
+      }
+
+      return ok;
     },
     [habits]
   );
@@ -142,6 +165,10 @@ export function useHabits() {
         health: updatedHabit.health,
       });
 
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('zenith_habits_sync'));
+      }
+
       return { nextStatus, habit: updatedHabit };
     },
     [habits]
@@ -172,13 +199,17 @@ export function useHabits() {
       setHabits((prev) => prev.map((h) => (h.id === habitId ? updatedHabit : h)));
 
       // Guaranteed asynchronous persistence
-      await updateHabit(habitId, {
+      const ok = await updateHabit(habitId, {
         status: updatedHabit.status,
         week: updatedHabit.week,
         health: updatedHabit.health,
       });
 
-      return true;
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('zenith_habits_sync'));
+      }
+
+      return ok;
     },
     [habits]
   );
@@ -191,6 +222,9 @@ export function useHabits() {
         const newHabit = await createHabit('local-user', input);
         if (newHabit) {
           setHabits((prev) => [...prev, newHabit]);
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('zenith_habits_sync'));
+          }
           return true;
         }
         return false;
@@ -199,6 +233,9 @@ export function useHabits() {
       const created = await createHabit(user.id, input);
       if (created) {
         setHabits((prev) => [...prev, created]);
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('zenith_habits_sync'));
+        }
         return true;
       }
       return false;
@@ -212,7 +249,11 @@ export function useHabits() {
       setHabits((prev) =>
         prev.map((h) => (h.id === habitId ? { ...h, ...updates } : h))
       );
-      return await updateHabit(habitId, updates);
+      const ok = await updateHabit(habitId, updates);
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('zenith_habits_sync'));
+      }
+      return ok;
     },
     []
   );
@@ -221,7 +262,11 @@ export function useHabits() {
   const removeHabit = useCallback(
     async (habitId: string): Promise<boolean> => {
       setHabits((prev) => prev.filter((h) => h.id !== habitId));
-      return await deleteHabit(habitId);
+      const ok = await deleteHabit(habitId);
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('zenith_habits_sync'));
+      }
+      return ok;
     },
     []
   );

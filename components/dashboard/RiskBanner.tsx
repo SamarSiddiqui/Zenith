@@ -23,13 +23,12 @@ interface RiskBannerProps {
 
 interface AtRiskHabitData {
   habit: Habit;
-  missedCountInSprint: number;
   isMissedToday: boolean;
-  health: number;
+  isCompletedToday: boolean;
 }
 
 export function RiskBanner({ currentDayIndex }: RiskBannerProps) {
-  const { habits, logMicroStep, toggleStatus } = useHabits();
+  const { habits, logMicroStep, setHabitStatus } = useHabits();
   const { session } = useSprint(habits);
   const [resolvedHabitIds, setResolvedHabitIds] = useState<Record<string, string>>({});
   const [dismissed, setDismissed] = useState(false);
@@ -38,20 +37,35 @@ export function RiskBanner({ currentDayIndex }: RiskBannerProps) {
   const activeDayIndex = currentDayIndex ?? session.currentDayIndex ?? 0;
   const sprintNumber = session.sprintNumber || 1;
 
-  // Scan sprint history up to today for habits with missed days or degraded health
+  // Filter ONLY habits that were missed for 2 consecutive days immediately preceding today (e.g. yesterday & day before yesterday)
+  // AND are not yet completed for today (unless just resolved with feedback in the active session)
   const atRiskList: AtRiskHabitData[] = habits
+    .filter((h) => {
+      const prevDay1 = activeDayIndex - 1; // Yesterday
+      const prevDay2 = activeDayIndex - 2; // Day before yesterday
+
+      // Must have at least 2 previous days in the current cycle
+      if (prevDay1 < 0 || prevDay2 < 0) return false;
+
+      const yesterdayMissed = h.week?.[prevDay1] === 'missed';
+      const dayBeforeMissed = h.week?.[prevDay2] === 'missed';
+
+      if (!yesterdayMissed || !dayBeforeMissed) return false;
+
+      const todayStatus = h.week?.[activeDayIndex] || 'unlogged';
+      const isDoneToday = todayStatus === 'completed';
+
+      // Only show if not yet completed today, or if currently displaying session resolution feedback
+      return !isDoneToday || Boolean(resolvedHabitIds[h.id]);
+    })
     .map((h) => {
-      const sprintHistory = (h.week || []).slice(0, activeDayIndex + 1);
-      const missedCount = sprintHistory.filter((s) => s === 'missed').length;
-      const isMissedToday = (h.week?.[activeDayIndex] || 'unlogged') === 'missed';
+      const todayStatus = h.week?.[activeDayIndex] || 'unlogged';
       return {
         habit: h,
-        missedCountInSprint: missedCount,
-        isMissedToday,
-        health: h.health || 80,
+        isMissedToday: todayStatus === 'missed',
+        isCompletedToday: todayStatus === 'completed',
       };
-    })
-    .filter((item) => item.missedCountInSprint > 0 || item.health < 75);
+    });
 
   if (dismissed || atRiskList.length === 0) return null;
 
@@ -62,12 +76,12 @@ export function RiskBanner({ currentDayIndex }: RiskBannerProps) {
     await logMicroStep(habit.id, activeDayIndex);
     setResolvedHabitIds((prev) => ({
       ...prev,
-      [habit.id]: `${habit.name} locked as 5-min micro step today (${habit.microVersion || '5m micro'}).`,
+      [habit.id]: `${habit.name} locked as 5-min micro session today.`,
     }));
   };
 
   const handleMarkDone = async (habit: Habit) => {
-    await toggleStatus(habit.id, activeDayIndex);
+    await setHabitStatus(habit.id, activeDayIndex, 'completed');
     setResolvedHabitIds((prev) => ({
       ...prev,
       [habit.id]: `${habit.name} marked completed for today!`,
@@ -94,10 +108,10 @@ export function RiskBanner({ currentDayIndex }: RiskBannerProps) {
             <div className="flex items-center justify-between gap-3 flex-wrap">
               <div className="flex items-center gap-2">
                 <p className="text-xs font-mono font-bold uppercase tracking-widest text-clay">
-                  Friction Radar · Sprint {sprintNumber}
+                  Friction Radar · Priority Recovery
                 </p>
-                <span className="rounded-full bg-clay/15 px-2.5 py-0.5 text-[10px] font-mono font-medium text-clay">
-                  {atRiskList.length} {atRiskList.length === 1 ? 'habit needs care' : 'habits need care'}
+                <span className="rounded-full bg-clay/15 px-2.5 py-0.5 text-[10px] font-mono font-semibold text-clay">
+                  {atRiskList.length} {atRiskList.length === 1 ? 'habit missed 2x in a row' : 'habits missed 2x in a row'}
                 </span>
               </div>
 
@@ -123,12 +137,12 @@ export function RiskBanner({ currentDayIndex }: RiskBannerProps) {
             </div>
 
             <p className="mt-1.5 text-sm sm:text-base text-ink leading-relaxed">
-              These rituals were previously missed in this sprint. Give them extra focus today to protect your circadian rhythm and prevent a double slip.
+              <strong>High Priority:</strong> You missed these rituals 2 days in a row. Never miss twice — shrink to a 5-minute micro-action or mark completed today to protect your momentum.
             </p>
 
             {/* At-Risk Habits List (Top 2 items) */}
             <ul className="mt-4 grid gap-2.5">
-              {displayedList.map(({ habit, missedCountInSprint, isMissedToday, health }) => {
+              {displayedList.map(({ habit }) => {
                 const resolutionMsg = resolvedHabitIds[habit.id];
 
                 return (
@@ -139,21 +153,16 @@ export function RiskBanner({ currentDayIndex }: RiskBannerProps) {
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-sm font-semibold text-ink">{habit.name}</span>
-                        <span className="rounded-md border border-clay/20 bg-clay-wash px-1.5 py-0.5 text-[10px] font-mono text-clay font-medium">
-                          {missedCountInSprint > 0
-                            ? `${missedCountInSprint} ${missedCountInSprint === 1 ? 'skip' : 'skips'} in sprint`
-                            : 'Health degraded'}
-                        </span>
-                        <span className="rounded-md border border-line bg-canvas px-1.5 py-0.5 text-[10px] font-mono text-muted">
-                          Health: {health}%
+                        <span className="rounded-md border border-clay/20 bg-clay-wash px-1.5 py-0.5 text-[10px] font-mono text-clay font-semibold">
+                          2 consecutive skips
                         </span>
                       </div>
                       <p className="mt-1 text-xs text-muted font-mono truncate">
-                        Scheduled: {habit.window || 'Anytime'} · 5m Fallback: {habit.microVersion || '5m micro session'}
+                        5m Fallback: {habit.microVersion || '5m micro session'}
                       </p>
                     </div>
 
-                    {/* Actions / Resolution */}
+                    {/* Actions: Strictly 2 Options (Shrink to 5 min / Mark Complete) */}
                     <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
                       <AnimatePresence mode="wait">
                         {resolutionMsg ? (
@@ -172,18 +181,19 @@ export function RiskBanner({ currentDayIndex }: RiskBannerProps) {
                               type="button"
                               onClick={() => handleShrink(habit)}
                               title="Execute 5-min micro recovery step"
-                              className="inline-flex items-center gap-1.5 rounded-xl bg-ink px-3 py-1.5 text-xs font-mono font-medium text-white shadow-xs hover:bg-ink/85 transition-colors"
+                              className="inline-flex items-center gap-1.5 rounded-xl bg-ink px-3 py-1.5 text-xs font-mono font-medium text-white shadow-xs hover:bg-ink/85 transition-colors cursor-pointer"
                             >
-                              <Zap className="h-3 w-3 fill-current text-amber-400" />
-                              <span>Shrink to 5m</span>
+                              <Zap className="h-3.5 w-3.5 fill-current text-amber-400" />
+                              <span>Shrink to 5 min</span>
                             </button>
                             <button
                               type="button"
                               onClick={() => handleMarkDone(habit)}
                               title="Mark full routine completed today"
-                              className="rounded-xl border border-line bg-canvas px-3 py-1.5 text-xs font-mono font-medium text-ink hover:border-sage hover:text-sage-deep transition-colors"
+                              className="inline-flex items-center gap-1.5 rounded-xl border border-line bg-canvas px-3 py-1.5 text-xs font-mono font-medium text-ink hover:border-sage hover:text-sage-deep transition-colors cursor-pointer"
                             >
-                              Done Today
+                              <CheckCircle2 className="h-3.5 w-3.5 text-sage-deep" />
+                              <span>Mark as Completed</span>
                             </button>
                           </div>
                         )}
@@ -201,7 +211,7 @@ export function RiskBanner({ currentDayIndex }: RiskBannerProps) {
                 onClick={() => setIsModalOpen(true)}
                 className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-clay/40 bg-surface/60 py-2.5 text-xs font-mono text-clay hover:bg-surface hover:border-clay transition-all"
               >
-                <span>+{remainingCount} more habits require attention · Open Full Radar</span>
+                <span>+{remainingCount} more habits with 2 consecutive skips · Open Full Radar</span>
                 <ArrowRight className="h-3.5 w-3.5" />
               </button>
             )}
@@ -239,14 +249,14 @@ export function RiskBanner({ currentDayIndex }: RiskBannerProps) {
                   <div>
                     <div className="flex items-center gap-2">
                       <h3 className="font-serif text-lg font-bold text-ink">
-                        Sprint {sprintNumber} Friction Radar
+                        Priority Friction Radar
                       </h3>
                       <span className="rounded-full bg-clay/15 px-2.5 py-0.5 text-[10px] font-mono text-clay font-medium">
                         {atRiskList.length} At-Risk
                       </span>
                     </div>
                     <p className="text-xs text-muted font-mono">
-                      Zero-guilt recovery list for sustained circadian momentum
+                      Habits missed 2 days in a row — protect your streak today
                     </p>
                   </div>
                 </div>
@@ -262,7 +272,7 @@ export function RiskBanner({ currentDayIndex }: RiskBannerProps) {
 
               {/* Scrollable Habits List */}
               <div className="flex-1 overflow-y-auto py-4 space-y-3 pr-1">
-                {atRiskList.map(({ habit, missedCountInSprint, health }) => {
+                {atRiskList.map(({ habit }) => {
                   const resolutionMsg = resolvedHabitIds[habit.id];
 
                   return (
@@ -273,18 +283,11 @@ export function RiskBanner({ currentDayIndex }: RiskBannerProps) {
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-medium text-sm text-ink">{habit.name}</span>
-                          <span className="rounded-md border border-clay/25 bg-clay-wash px-2 py-0.5 text-[10px] font-mono text-clay font-medium">
-                            {missedCountInSprint > 0
-                              ? `${missedCountInSprint} ${missedCountInSprint === 1 ? 'skip' : 'skips'} this sprint`
-                              : 'Health low'}
-                          </span>
-                          <span className="rounded-md border border-line bg-surface px-2 py-0.5 text-[10px] font-mono text-muted">
-                            Health: {health}%
+                          <span className="rounded-md border border-clay/25 bg-clay-wash px-2 py-0.5 text-[10px] font-mono text-clay font-semibold">
+                            2 consecutive skips
                           </span>
                         </div>
                         <div className="mt-1.5 flex items-center gap-2 text-xs text-muted font-mono flex-wrap">
-                          <span>Window: {habit.window || 'Anytime'}</span>
-                          <span>·</span>
                           <span className="text-sage-deep">⚡ 5m Fallback: {habit.microVersion || '5m micro session'}</span>
                         </div>
                       </div>
@@ -301,17 +304,18 @@ export function RiskBanner({ currentDayIndex }: RiskBannerProps) {
                             <button
                               type="button"
                               onClick={() => handleShrink(habit)}
-                              className="inline-flex items-center gap-1.5 rounded-xl bg-ink px-3.5 py-1.5 text-xs font-mono font-medium text-white shadow-xs hover:bg-ink/85 transition-colors"
+                              className="inline-flex items-center gap-1.5 rounded-xl bg-ink px-3.5 py-1.5 text-xs font-mono font-medium text-white shadow-xs hover:bg-ink/85 transition-colors cursor-pointer"
                             >
                               <Zap className="h-3 w-3 fill-current text-amber-400" />
-                              <span>5m Fallback</span>
+                              <span>Shrink to 5 min</span>
                             </button>
                             <button
                               type="button"
                               onClick={() => handleMarkDone(habit)}
-                              className="rounded-xl border border-line bg-surface px-3 py-1.5 text-xs font-mono font-medium text-ink hover:border-sage hover:text-sage-deep transition-colors"
+                              className="inline-flex items-center gap-1.5 rounded-xl border border-line bg-surface px-3 py-1.5 text-xs font-mono font-medium text-ink hover:border-sage hover:text-sage-deep transition-colors cursor-pointer"
                             >
-                              Done Today
+                              <CheckCircle2 className="h-3 w-3 text-sage-deep" />
+                              <span>Mark as Completed</span>
                             </button>
                           </>
                         )}
@@ -324,7 +328,7 @@ export function RiskBanner({ currentDayIndex }: RiskBannerProps) {
               {/* Modal Footer */}
               <div className="border-t border-line pt-4 flex items-center justify-between">
                 <p className="text-xs text-muted font-mono">
-                  Reinforcing these rituals today protects your sprint show-up score.
+                  Reinforcing these rituals today stops consecutive drop-offs.
                 </p>
                 <button
                   type="button"

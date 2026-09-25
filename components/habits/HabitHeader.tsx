@@ -98,7 +98,7 @@ export function HabitHeader({
           </div>
 
           <h1 className="font-serif text-3xl sm:text-4xl text-ink tracking-tight">
-            Habit & Sprint Planner
+            Habit Planner
           </h1>
           <p className="mt-1 text-xs sm:text-sm text-muted font-light max-w-xl">
             {sprintSession?.config.sprintGoal ||

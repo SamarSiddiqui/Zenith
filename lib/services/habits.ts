@@ -79,6 +79,45 @@ export function calculateHabitHealth(week: HabitStatus[], currentDayIndex?: numb
 }
 
 /**
+ * Automatically rolls over past unlogged days (< currentDayIndex) to 'missed' status.
+ * This runs when midnight passes, ensuring habits left unlogged on past days become 'missed' (❌).
+ */
+export function rolloverPastUnloggedDays(
+  habit: Habit,
+  currentDayIndex: number
+): { habit: Habit; changed: boolean } {
+  if (currentDayIndex <= 0 || !Array.isArray(habit.week)) {
+    return { habit, changed: false };
+  }
+
+  let changed = false;
+  const newWeek: HabitStatus[] = [...habit.week];
+
+  for (let i = 0; i < currentDayIndex && i < newWeek.length; i++) {
+    if (newWeek[i] === 'unlogged') {
+      newWeek[i] = 'missed';
+      changed = true;
+    }
+  }
+
+  if (!changed) {
+    return { habit, changed: false };
+  }
+
+  const newHealth = calculateHabitHealth(newWeek, currentDayIndex);
+  const currentTodayStatus = (newWeek[currentDayIndex] || 'unlogged') as HabitStatus;
+
+  const updatedHabit: Habit = {
+    ...habit,
+    week: newWeek,
+    health: newHealth,
+    status: currentTodayStatus,
+  };
+
+  return { habit: updatedHabit, changed: true };
+}
+
+/**
  * Fetch all habits for the authenticated user.
  * Executes indexed query: `WHERE user_id = $1 ORDER BY created_at ASC`
  */
@@ -97,7 +136,7 @@ export async function getHabits(userId?: string): Promise<Habit[]> {
       if (error) throw error;
 
       if (data) {
-        return data.map((row) => mapDbRowToHabit(row as HabitDbRow));
+        return (data as any[]).map((row: any) => mapDbRowToHabit(row as HabitDbRow));
       }
     } catch (err) {
       console.error('Failed to fetch habits from Supabase:', err);
@@ -212,10 +251,11 @@ export async function updateHabit(habitId: string, updates: UpdateHabitInput): P
       if (updates.category !== undefined) dbPayload.category = updates.category;
       dbPayload.updated_at = new Date().toISOString();
 
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('habits')
         .update(dbPayload)
-        .eq('id', habitId);
+        .eq('id', habitId)
+        .select();
 
       if (error) {
         console.error('Supabase habit update error:', error);

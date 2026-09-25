@@ -11,16 +11,24 @@ import {
   ChevronRight,
   History,
   ArrowRight,
+  ArrowUpDown,
 } from 'lucide-react';
-import type { Habit, HabitStatus } from '../../types/zenith';
+import type { Habit, HabitStatus, CircadianSlot } from '../../types/zenith';
 import type { SprintConfig } from '../../types/sprint';
 import { generateSprintDays, getSprintDateRangeLabel } from '../../lib/utils/sprintDate';
+
+export type HabitSortMode = 'circadian' | 'time-desc' | 'time-asc' | 'health-desc';
+export type HabitSlotFilter = 'all' | CircadianSlot;
 
 interface DynamicSprintMatrixProps {
   habits: Habit[];
   config: SprintConfig;
   currentDayIndex: number;
   isHistoricalView?: boolean;
+  sortMode?: HabitSortMode;
+  onSortModeChange?: (mode: HabitSortMode) => void;
+  slotFilter?: HabitSlotFilter;
+  onSlotFilterChange?: (slot: HabitSlotFilter) => void;
   onResetToCurrentWeek?: () => void;
   onToggleStatus: (habitId: string, dayIndex: number) => void;
   onOpenSkipModal: (habit: Habit, dayIndex: number) => void;
@@ -33,6 +41,10 @@ export function DynamicSprintMatrix({
   config,
   currentDayIndex,
   isHistoricalView = false,
+  sortMode = 'circadian',
+  onSortModeChange,
+  slotFilter = 'all',
+  onSlotFilterChange,
   onResetToCurrentWeek,
   onToggleStatus,
   onOpenSkipModal,
@@ -100,6 +112,66 @@ export function DynamicSprintMatrix({
         </motion.div>
       )}
 
+      {/* Organizer Controls: Circadian Slot Filter + Duration / Flow Sorter */}
+      <div className="flex flex-wrap items-center justify-between gap-2.5 rounded-2xl border border-line bg-surface/80 p-2.5 shadow-calm">
+        {/* Circadian Slot Filters */}
+        <div className="flex items-center gap-1 overflow-x-auto pb-0.5 sm:pb-0">
+          {(
+            [
+              { id: 'all', label: 'All Slots' },
+              { id: 'morning', label: 'Morning' },
+              { id: 'afternoon', label: 'Afternoon' },
+              { id: 'evening', label: 'Evening' },
+            ] as const
+          ).map((slot) => {
+            const active = (slotFilter || 'all') === slot.id;
+            return (
+              <button
+                key={slot.id}
+                type="button"
+                onClick={() => onSlotFilterChange?.(slot.id)}
+                className={`rounded-xl px-3 py-1 text-xs font-mono font-medium transition-all ${
+                  active
+                    ? 'bg-sage text-white shadow-xs'
+                    : 'text-muted hover:text-ink hover:bg-canvas'
+                }`}
+              >
+                {slot.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Sort Selector */}
+        {onSortModeChange && (
+          <div className="flex items-center gap-1.5">
+            <span className="text-[11px] font-mono text-faint hidden sm:inline">Sort:</span>
+            <button
+              type="button"
+              onClick={() => {
+                if (sortMode === 'circadian') onSortModeChange('time-desc');
+                else if (sortMode === 'time-desc') onSortModeChange('time-asc');
+                else if (sortMode === 'time-asc') onSortModeChange('health-desc');
+                else onSortModeChange('circadian');
+              }}
+              className="flex items-center gap-1.5 rounded-xl border border-line bg-canvas px-3 py-1.5 text-xs font-mono font-medium text-ink hover:border-sage hover:text-sage-deep transition-all shadow-xs cursor-pointer"
+              title="Click to toggle sorting: Circadian Flow → Longest First → Quick Wins → Health Score"
+            >
+              <ArrowUpDown className="h-3 w-3 text-sage-deep" />
+              <span>
+                {sortMode === 'circadian'
+                  ? 'Circadian Flow'
+                  : sortMode === 'time-desc'
+                  ? 'Longest First (▼)'
+                  : sortMode === 'time-asc'
+                  ? 'Quick Wins (▲)'
+                  : 'Health Score (▼)'}
+              </span>
+            </button>
+          </div>
+        )}
+      </div>
+
       {/* Sprint Matrix Horizon Table Container */}
       <div className="overflow-x-auto rounded-3xl border border-line bg-surface shadow-calm">
         <table className="w-full min-w-[720px] border-collapse">
@@ -114,7 +186,27 @@ export function DynamicSprintMatrix({
                 scope="col"
                 className="px-6 py-4 text-left text-xs font-mono font-semibold uppercase tracking-[0.14em] text-faint"
               >
-                Mindful Ritual
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (onSortModeChange) {
+                      if (sortMode === 'circadian') onSortModeChange('time-desc');
+                      else if (sortMode === 'time-desc') onSortModeChange('time-asc');
+                      else if (sortMode === 'time-asc') onSortModeChange('health-desc');
+                      else onSortModeChange('circadian');
+                    }
+                  }}
+                  className="inline-flex items-center gap-1.5 hover:text-ink transition-colors cursor-pointer group"
+                  title="Click to toggle sorting order"
+                >
+                  <span>Mindful Ritual</span>
+                  <ArrowUpDown className="h-3 w-3 text-faint group-hover:text-sage-deep transition-colors" />
+                  {sortMode && sortMode !== 'circadian' && (
+                    <span className="text-[10px] lowercase text-sage-deep font-normal font-sans">
+                      ({sortMode === 'time-desc' ? 'longest first' : sortMode === 'time-asc' ? 'quick wins' : 'health'})
+                    </span>
+                  )}
+                </button>
               </th>
 
               {sprintDays.map((day) => {
