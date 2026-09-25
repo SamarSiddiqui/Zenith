@@ -38,6 +38,7 @@ export function RiskBanner({ currentDayIndex }: RiskBannerProps) {
   const sprintNumber = session.sprintNumber || 1;
 
   // Filter ONLY habits that were missed for 2 consecutive days immediately preceding today (e.g. yesterday & day before yesterday)
+  // AND are not yet completed for today (unless just resolved with feedback in the active session)
   const atRiskList: AtRiskHabitData[] = habits
     .filter((h) => {
       const prevDay1 = activeDayIndex - 1; // Yesterday
@@ -49,7 +50,13 @@ export function RiskBanner({ currentDayIndex }: RiskBannerProps) {
       const yesterdayMissed = h.week?.[prevDay1] === 'missed';
       const dayBeforeMissed = h.week?.[prevDay2] === 'missed';
 
-      return yesterdayMissed && dayBeforeMissed;
+      if (!yesterdayMissed || !dayBeforeMissed) return false;
+
+      const todayStatus = h.week?.[activeDayIndex] || 'unlogged';
+      const isDoneToday = todayStatus === 'completed';
+
+      // Only show if not yet completed today, or if currently displaying session resolution feedback
+      return !isDoneToday || Boolean(resolvedHabitIds[h.id]);
     })
     .map((h) => {
       const todayStatus = h.week?.[activeDayIndex] || 'unlogged';
