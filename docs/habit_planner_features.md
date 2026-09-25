@@ -108,11 +108,24 @@ Zenith uses a user-empowering, mindful approach to overnight habits rather than 
 
 ---
 
+### H. Dashboard Priority Friction Radar (`RiskBanner.tsx`)
+- **File:** [`components/dashboard/RiskBanner.tsx`](file:///c:/Users/samsi/Desktop/feb-projects/Zenith/components/dashboard/RiskBanner.tsx)
+- **Philosophy ("Never Miss Twice"):** 1 miss is an accident; 2 misses in a row starts a negative habit loop. The Friction Radar only flags habits that were missed for 2 consecutive days leading into today (yesterday and the day before yesterday).
+- **Trigger Condition:**
+  $$\text{habit.week}[d - 1] == \text{'missed'} \quad \text{AND} \quad \text{habit.week}[d - 2] == \text{'missed'}$$
+- **Focused 2-Action Interface:**
+  1. ⚡ **`Shrink to 5 min`** — Instantly locks today as a 5-minute micro-fallback (`logMicroStep`), maintaining identity momentum with minimal willpower.
+  2. ✅ **`Mark as Completed`** — Direct 1-click completion for today (`toggleStatus`).
+- **Auto-Dismiss:** Stays hidden when all habits are on track or after being resolved for today.
+
+---
+
 ## 3. Key Source Files & Responsibilities
 
 | File | Purpose |
 | :--- | :--- |
 | [`app/habits/page.tsx`](file:///c:/Users/samsi/Desktop/feb-projects/Zenith/app/habits/page.tsx) | Main Habit Planner controller, search/slot filtering, sorting pipeline, and modal orchestrator. |
+| [`components/dashboard/RiskBanner.tsx`](file:///c:/Users/samsi/Desktop/feb-projects/Zenith/components/dashboard/RiskBanner.tsx) | Priority Friction Radar for 2-consecutive-miss detection with 5-min shrink & mark complete actions. |
 | [`components/habits/DynamicSprintMatrix.tsx`](file:///c:/Users/samsi/Desktop/feb-projects/Zenith/components/habits/DynamicSprintMatrix.tsx) | Sprint horizon matrix table, interactive sort header, slot tabs, and day cell toggles. |
 | [`components/habits/HabitHeader.tsx`](file:///c:/Users/samsi/Desktop/feb-projects/Zenith/components/habits/HabitHeader.tsx) | Habit header, aggregate stats (Today's Rituals, Avg Health), sprint navigation, and search input. |
 | [`hooks/useHabits.ts`](file:///c:/Users/samsi/Desktop/feb-projects/Zenith/hooks/useHabits.ts) | Habit state management, optimistic status cycling, and auto-rollover on fetch. |
