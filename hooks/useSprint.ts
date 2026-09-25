@@ -117,7 +117,7 @@ export function useSprint(habits: Habit[], onSprintRollover?: () => void) {
               .select('*')
               .eq('user_id', user.id);
             if (dbHabits) {
-              habitsToSnapshot = dbHabits.map((h) => mapDbRowToHabit(h));
+              habitsToSnapshot = (dbHabits as any[]).map((h: any) => mapDbRowToHabit(h));
             }
           }
 

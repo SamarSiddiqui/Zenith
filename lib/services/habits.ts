@@ -136,7 +136,7 @@ export async function getHabits(userId?: string): Promise<Habit[]> {
       if (error) throw error;
 
       if (data) {
-        return data.map((row) => mapDbRowToHabit(row as HabitDbRow));
+        return (data as any[]).map((row: any) => mapDbRowToHabit(row as HabitDbRow));
       }
     } catch (err) {
       console.error('Failed to fetch habits from Supabase:', err);
@@ -251,10 +251,11 @@ export async function updateHabit(habitId: string, updates: UpdateHabitInput): P
       if (updates.category !== undefined) dbPayload.category = updates.category;
       dbPayload.updated_at = new Date().toISOString();
 
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('habits')
         .update(dbPayload)
-        .eq('id', habitId);
+        .eq('id', habitId)
+        .select();
 
       if (error) {
         console.error('Supabase habit update error:', error);

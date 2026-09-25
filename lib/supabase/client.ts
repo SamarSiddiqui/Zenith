@@ -1,8 +1,10 @@
 import { createBrowserClient } from '@supabase/ssr';
 import { getSupabaseUrl, getSupabaseAnonKey, isSupabaseConfigured } from './env';
 
+let browserClient: ReturnType<typeof createBrowserClient> | null = null;
+
 /**
- * Creates a browser-side Supabase client for Next.js App Router.
+ * Creates or retrieves the singleton browser-side Supabase client for Next.js App Router.
  * Returns null if Supabase environment variables are unconfigured.
  */
 export function createClient() {
@@ -11,5 +13,9 @@ export function createClient() {
     return null;
   }
 
-  return createBrowserClient(getSupabaseUrl(), getSupabaseAnonKey());
+  if (!browserClient) {
+    browserClient = createBrowserClient(getSupabaseUrl(), getSupabaseAnonKey());
+  }
+
+  return browserClient;
 }
