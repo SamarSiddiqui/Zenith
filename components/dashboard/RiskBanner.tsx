@@ -28,7 +28,7 @@ interface AtRiskHabitData {
 }
 
 export function RiskBanner({ currentDayIndex }: RiskBannerProps) {
-  const { habits, logMicroStep, toggleStatus } = useHabits();
+  const { habits, logMicroStep, setHabitStatus } = useHabits();
   const { session } = useSprint(habits);
   const [resolvedHabitIds, setResolvedHabitIds] = useState<Record<string, string>>({});
   const [dismissed, setDismissed] = useState(false);
@@ -74,7 +74,7 @@ export function RiskBanner({ currentDayIndex }: RiskBannerProps) {
   };
 
   const handleMarkDone = async (habit: Habit) => {
-    await toggleStatus(habit.id, activeDayIndex);
+    await setHabitStatus(habit.id, activeDayIndex, 'completed');
     setResolvedHabitIds((prev) => ({
       ...prev,
       [habit.id]: `${habit.name} marked completed for today!`,
