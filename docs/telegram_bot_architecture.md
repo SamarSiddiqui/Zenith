@@ -112,6 +112,15 @@ When Telegram webhooks or Vercel cron jobs hit Next.js server routes, no browser
   3. Filters habits with `status === 'unlogged'`.
   4. Formats and sends EOD digest with 1-click action buttons via `formatEodReminder`.
 
+### 6. Circadian Midday Micro-Nudge Worker — `GET|POST /api/cron/midday-nudge`
+- **File:** [`app/api/cron/midday-nudge/route.ts`](file:///c:/Users/samsi/Desktop/feb-projects/Zenith/app/api/cron/midday-nudge/route.ts)
+- **Security:** Verifies `Authorization: Bearer <CRON_SECRET>` or `?secret=<CRON_SECRET>`.
+- **Logic:**
+  1. Identifies connected Telegram users with reminders active.
+  2. Filters unlogged rituals for today.
+  3. Selects the **single shortest quick-win ritual** (e.g. 5-minute reading or morning meditation) and surfaces its 5m fallback version.
+  4. Sends an encouraging 1-habit micro-nudge with inline `[✅ Mark Completed]` and `[⚡ 5m Micro-Step]` buttons.
+
 ---
 
 ## 4. Frontend State & Settings Integration
@@ -154,11 +163,24 @@ Defined in root [`vercel.json`](file:///c:/Users/samsi/Desktop/feb-projects/Zeni
   "crons": [
     {
       "path": "/api/cron/eod-reminders",
-      "schedule": "0 * * * *"
+      "schedule": "0 15 * * *"
+    },
+    {
+      "path": "/api/cron/midnight-rollover",
+      "schedule": "0 0 * * *"
     }
   ]
 }
 ```
+
+### External Scheduler Configuration ([cron-job.org](https://cron-job.org))
+For flexible schedules (hourly EOD checks or midday micro-nudges):
+1. **Midday Micro-Nudge:**
+   - **URL:** `https://your-domain.vercel.app/api/cron/midday-nudge?secret=YOUR_CRON_SECRET`
+   - **Schedule:** `0 8 * * *` (1:30 PM IST / Daytime)
+2. **Hourly EOD Multi-Timezone Check:**
+   - **URL:** `https://your-domain.vercel.app/api/cron/eod-reminders?secret=YOUR_CRON_SECRET`
+   - **Schedule:** `0 * * * *` (Hourly)
 
 ---
 

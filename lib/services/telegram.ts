@@ -148,6 +148,46 @@ export function formatEodReminder(
 }
 
 /**
+ * Format a friendly, low-friction midday micro-nudge for a single quick habit.
+ */
+export function formatMiddayMicroNudge(
+  userName: string,
+  habit: Habit,
+  dayName: string = 'today'
+): { message: string; keyboard: TelegramInlineButton[][] } {
+  const { appUrl } = getTelegramConfig();
+  const firstName = userName ? userName.split(' ')[0] : 'there';
+  const micro = habit.microVersion || '5 min micro-step';
+
+  let message = `☀️ <b>Midday Circadian Boost</b>\n\n`;
+  message += `Hey <b>${firstName}</b>, got 5 minutes right now?\n\n`;
+  message += `You have <b>${habit.name}</b> waiting for ${dayName} (${habit.minutes}m routine).\n`;
+  message += `↳ ⚡ <b>5m Micro-Action:</b> <i>"${micro}"</i>\n\n`;
+  message += `Keep your momentum effortless by knocking it out now in 1 tap:`;
+
+  const keyboard: TelegramInlineButton[][] = [
+    [
+      {
+        text: `✅ Mark Completed`,
+        callback_data: `done_${habit.id}`,
+      },
+      {
+        text: `⚡ 5m Micro-Step`,
+        callback_data: `micro_${habit.id}`,
+      },
+    ],
+    [
+      {
+        text: `🔗 Open Habit Planner`,
+        url: `${appUrl}/habits`,
+      },
+    ],
+  ];
+
+  return { message, keyboard };
+}
+
+/**
  * Format a test notification to verify Telegram Bot connectivity.
  */
 export function formatTestNotification(userName: string): { message: string; keyboard: TelegramInlineButton[][] } {
