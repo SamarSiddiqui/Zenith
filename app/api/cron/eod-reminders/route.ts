@@ -3,7 +3,7 @@ import { createAdminClient } from '../../../../lib/supabase/admin';
 import { sendTelegramMessage, formatEodReminder } from '../../../../lib/services/telegram';
 import { calculateSprintDayInfo, getMondayOfWeek } from '../../../../lib/utils/sprintDate';
 import { mapDbRowToHabit } from '../../../../lib/services/habits';
-import type { HabitDbRow } from '../../../../types/zenith';
+import type { HabitDbRow, Habit } from '../../../../types/zenith';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,12 +16,12 @@ export async function POST(request: Request) {
 }
 
 async function handleCronJob(request: Request) {
+  const url = new URL(request.url);
   const authHeader = request.headers.get('authorization');
   const cronSecret = process.env.CRON_SECRET;
 
   // Verify authorization if CRON_SECRET is configured
   if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
-    const url = new URL(request.url);
     const querySecret =
       url.searchParams.get('secret') ||
       url.searchParams.get('cron_secret') ||
@@ -83,6 +83,10 @@ async function handleCronJob(request: Request) {
         success: true,
         message: 'No users with active Telegram notifications found.',
         dispatchedCount: 0,
+        diagnostics: {
+          hasServiceRoleKey: Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY),
+          supabaseUrlConfigured: Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL),
+        },
       });
     }
 
@@ -91,21 +95,76 @@ async function handleCronJob(request: Request) {
     const todayIndex = dayInfo.dayIndex;
     const dayName = new Date().toLocaleDateString('en-US', { weekday: 'long' });
 
+    const isForced = url.searchParams.get('force') === 'true' || url.searchParams.get('test') === 'true';
+
     let dispatchedCount = 0;
     const results: Array<{ userId: string; unloggedCount: number; status: string }> = [];
 
     // 2. Iterate through each connected user
     for (const profile of profiles) {
-      const { data: habitsData, error: habitsError } = await supabase
-        .from('habits')
-        .select('*')
-        .eq('user_id', profile.id);
+      if (!profile.telegram_chat_id) continue;
 
-      if (habitsError || !habitsData) {
-        continue;
+      // Check if current time in user's timezone matches their chosen EOD time (unless forced/testing)
+      if (!isForced) {
+        const workingWindow = profile.working_window as { endTime?: string; timezone?: string } | undefined;
+        const userTimezone = workingWindow?.timezone || 'UTC';
+        const targetTimeStr = workingWindow?.endTime || '20:00';
+        const targetHour = parseInt(targetTimeStr.split(':')[0], 10) || 20;
+
+        try {
+          const userLocalString = new Date().toLocaleString('en-US', { timeZone: userTimezone });
+          const userLocalDate = new Date(userLocalString);
+          const currentHour = userLocalDate.getHours();
+
+          // Only send during the user's chosen EOD hour
+          if (currentHour !== targetHour) {
+            results.push({
+              userId: profile.id,
+              unloggedCount: 0,
+              status: `skipped_time_mismatch (current: ${currentHour}:00, target: ${targetHour}:00 ${userTimezone})`,
+            });
+            continue;
+          }
+        } catch {
+          // If invalid timezone, proceed to send
+        }
       }
 
-      const habits = habitsData.map((row) => mapDbRowToHabit(row as HabitDbRow));
+      let habits: Habit[] = [];
+
+      // 2a. Try SECURITY DEFINER RPC get_telegram_status
+      try {
+        const { data: statusData, error: statusErr } = await supabase.rpc('get_telegram_status', {
+          p_chat_id: profile.telegram_chat_id,
+        });
+
+        if (!statusErr && statusData && Array.isArray(statusData.habits)) {
+          habits = statusData.habits.map((h: any) => mapDbRowToHabit(h as HabitDbRow));
+        }
+      } catch {
+        // fallback
+      }
+
+      // 2b. Direct table fallback
+      if (habits.length === 0) {
+        const { data: habitsData } = await supabase
+          .from('habits')
+          .select('*')
+          .eq('user_id', profile.id);
+
+        if (habitsData && habitsData.length > 0) {
+          habits = habitsData.map((row) => mapDbRowToHabit(row as HabitDbRow));
+        }
+      }
+
+      if (habits.length === 0) {
+        results.push({
+          userId: profile.id,
+          unloggedCount: 0,
+          status: 'no_habits_found',
+        });
+        continue;
+      }
 
       // Filter unlogged rituals for today
       const unloggedHabits = habits.filter((h) => {
