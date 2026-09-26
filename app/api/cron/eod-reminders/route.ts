@@ -67,14 +67,15 @@ async function handleCronJob(request: Request) {
       const { data: tableProfiles, error: profilesError } = await supabase
         .from('profiles')
         .select('id, full_name, telegram_chat_id, telegram_reminders_enabled, working_window')
-        .not('telegram_chat_id', 'is', null)
-        .eq('telegram_reminders_enabled', true);
+        .not('telegram_chat_id', 'is', null);
 
       if (profilesError) {
         console.error('Error querying profiles for EOD cron:', profilesError);
         return NextResponse.json({ error: profilesError.message }, { status: 500 });
       }
-      profiles = tableProfiles;
+      profiles = (tableProfiles || []).filter(
+        (p) => p.telegram_chat_id && p.telegram_reminders_enabled !== false
+      );
     }
 
     if (!profiles || profiles.length === 0) {

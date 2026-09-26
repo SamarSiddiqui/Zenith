@@ -45,19 +45,23 @@ async function handleMiddayNudge(request: Request) {
   }
 
   try {
-    // 1. Query all users with Telegram notifications enabled and chat ID configured
-    const { data: profiles, error: profilesError } = await supabase
+    // 1. Query all users with Telegram chat ID configured
+    const { data: rawProfiles, error: profilesError } = await supabase
       .from('profiles')
       .select('id, full_name, telegram_chat_id, telegram_reminders_enabled')
-      .not('telegram_chat_id', 'is', null)
-      .eq('telegram_reminders_enabled', true);
+      .not('telegram_chat_id', 'is', null);
 
     if (profilesError) {
       console.error('Error querying profiles for midday nudge:', profilesError);
       return NextResponse.json({ error: profilesError.message }, { status: 500 });
     }
 
-    if (!profiles || profiles.length === 0) {
+    // Filter to users who haven't explicitly disabled reminders (null or true = enabled)
+    const profiles = (rawProfiles || []).filter(
+      (p) => p.telegram_chat_id && p.telegram_reminders_enabled !== false
+    );
+
+    if (profiles.length === 0) {
       return NextResponse.json({
         success: true,
         message: 'No users with active Telegram notifications found.',
