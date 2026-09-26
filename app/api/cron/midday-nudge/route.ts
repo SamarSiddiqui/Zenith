@@ -3,7 +3,7 @@ import { createAdminClient } from '../../../../lib/supabase/admin';
 import { sendTelegramMessage, formatMiddayMicroNudge } from '../../../../lib/services/telegram';
 import { calculateSprintDayInfo, getMondayOfWeek } from '../../../../lib/utils/sprintDate';
 import { mapDbRowToHabit } from '../../../../lib/services/habits';
-import type { HabitDbRow } from '../../../../types/zenith';
+import type { HabitDbRow, Habit } from '../../../../types/zenith';
 
 export const dynamic = 'force-dynamic';
 
@@ -45,23 +45,41 @@ async function handleMiddayNudge(request: Request) {
   }
 
   try {
-    // 1. Query all users with Telegram chat ID configured
-    const { data: rawProfiles, error: profilesError } = await supabase
-      .from('profiles')
-      .select('id, full_name, telegram_chat_id, telegram_reminders_enabled')
-      .not('telegram_chat_id', 'is', null);
+    // 1. Query all users with Telegram notifications enabled
+    let profiles: Array<{
+      id: string;
+      full_name?: string | null;
+      telegram_chat_id?: string | null;
+      telegram_reminders_enabled?: boolean;
+    }> | null = null;
 
-    if (profilesError) {
-      console.error('Error querying profiles for midday nudge:', profilesError);
-      return NextResponse.json({ error: profilesError.message }, { status: 500 });
+    try {
+      // 1a. Try SECURITY DEFINER RPC first (bypasses RLS seamlessly)
+      const { data: rpcProfiles, error: rpcErr } = await supabase.rpc('get_telegram_eod_users');
+      if (!rpcErr && rpcProfiles && rpcProfiles.length > 0) {
+        profiles = rpcProfiles;
+      }
+    } catch {
+      // fallback to direct table query
     }
 
-    // Filter to users who haven't explicitly disabled reminders (null or true = enabled)
-    const profiles = (rawProfiles || []).filter(
-      (p) => p.telegram_chat_id && p.telegram_reminders_enabled !== false
-    );
+    if (!profiles || profiles.length === 0) {
+      // 1b. Direct table query fallback
+      const { data: rawProfiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, full_name, telegram_chat_id, telegram_reminders_enabled')
+        .not('telegram_chat_id', 'is', null);
 
-    if (profiles.length === 0) {
+      if (profilesError) {
+        console.error('Error querying profiles for midday nudge:', profilesError);
+      } else if (rawProfiles) {
+        profiles = rawProfiles.filter(
+          (p) => p.telegram_chat_id && p.telegram_reminders_enabled !== false
+        );
+      }
+    }
+
+    if (!profiles || profiles.length === 0) {
       return NextResponse.json({
         success: true,
         message: 'No users with active Telegram notifications found.',
@@ -81,16 +99,36 @@ async function handleMiddayNudge(request: Request) {
     for (const profile of profiles) {
       if (!profile.telegram_chat_id) continue;
 
-      const { data: habitsData, error: habitsError } = await supabase
-        .from('habits')
-        .select('*')
-        .eq('user_id', profile.id);
+      let habits: Habit[] = [];
 
-      if (habitsError || !habitsData || habitsData.length === 0) {
-        continue;
+      // 2a. Try SECURITY DEFINER RPC get_telegram_status
+      try {
+        const { data: statusData, error: statusErr } = await supabase.rpc('get_telegram_status', {
+          p_chat_id: profile.telegram_chat_id,
+        });
+
+        if (!statusErr && statusData && Array.isArray(statusData.habits)) {
+          habits = statusData.habits.map((h: any) => mapDbRowToHabit(h as HabitDbRow));
+        }
+      } catch {
+        // fallback
       }
 
-      const habits = habitsData.map((row) => mapDbRowToHabit(row as HabitDbRow));
+      // 2b. Direct table fallback
+      if (habits.length === 0) {
+        const { data: habitsData } = await supabase
+          .from('habits')
+          .select('*')
+          .eq('user_id', profile.id);
+
+        if (habitsData && habitsData.length > 0) {
+          habits = habitsData.map((row) => mapDbRowToHabit(row as HabitDbRow));
+        }
+      }
+
+      if (habits.length === 0) {
+        continue;
+      }
 
       // Filter unlogged rituals for today
       const unloggedHabits = habits.filter((h) => {
