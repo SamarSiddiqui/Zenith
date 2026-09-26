@@ -154,7 +154,11 @@ Defined in root [`vercel.json`](file:///c:/Users/samsi/Desktop/feb-projects/Zeni
   "crons": [
     {
       "path": "/api/cron/eod-reminders",
-      "schedule": "0 * * * *"
+      "schedule": "0 15 * * *"
+    },
+    {
+      "path": "/api/cron/midnight-rollover",
+      "schedule": "0 0 * * *"
     }
   ]
 }
