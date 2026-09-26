@@ -16,12 +16,12 @@ export async function POST(request: Request) {
 }
 
 async function handleCronJob(request: Request) {
+  const url = new URL(request.url);
   const authHeader = request.headers.get('authorization');
   const cronSecret = process.env.CRON_SECRET;
 
   // Verify authorization if CRON_SECRET is configured
   if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
-    const url = new URL(request.url);
     const querySecret =
       url.searchParams.get('secret') ||
       url.searchParams.get('cron_secret') ||
@@ -95,12 +95,40 @@ async function handleCronJob(request: Request) {
     const todayIndex = dayInfo.dayIndex;
     const dayName = new Date().toLocaleDateString('en-US', { weekday: 'long' });
 
+    const isForced = url.searchParams.get('force') === 'true' || url.searchParams.get('test') === 'true';
+
     let dispatchedCount = 0;
     const results: Array<{ userId: string; unloggedCount: number; status: string }> = [];
 
     // 2. Iterate through each connected user
     for (const profile of profiles) {
       if (!profile.telegram_chat_id) continue;
+
+      // Check if current time in user's timezone matches their chosen EOD time (unless forced/testing)
+      if (!isForced) {
+        const workingWindow = profile.working_window as { endTime?: string; timezone?: string } | undefined;
+        const userTimezone = workingWindow?.timezone || 'UTC';
+        const targetTimeStr = workingWindow?.endTime || '20:00';
+        const targetHour = parseInt(targetTimeStr.split(':')[0], 10) || 20;
+
+        try {
+          const userLocalString = new Date().toLocaleString('en-US', { timeZone: userTimezone });
+          const userLocalDate = new Date(userLocalString);
+          const currentHour = userLocalDate.getHours();
+
+          // Only send during the user's chosen EOD hour
+          if (currentHour !== targetHour) {
+            results.push({
+              userId: profile.id,
+              unloggedCount: 0,
+              status: `skipped_time_mismatch (current: ${currentHour}:00, target: ${targetHour}:00 ${userTimezone})`,
+            });
+            continue;
+          }
+        } catch {
+          // If invalid timezone, proceed to send
+        }
+      }
 
       let habits: Habit[] = [];
 
