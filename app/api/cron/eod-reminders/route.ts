@@ -3,7 +3,7 @@ import { createAdminClient } from '../../../../lib/supabase/admin';
 import { sendTelegramMessage, formatEodReminder } from '../../../../lib/services/telegram';
 import { calculateSprintDayInfo, getMondayOfWeek } from '../../../../lib/utils/sprintDate';
 import { mapDbRowToHabit } from '../../../../lib/services/habits';
-import type { HabitDbRow } from '../../../../types/zenith';
+import type { HabitDbRow, Habit } from '../../../../types/zenith';
 
 export const dynamic = 'force-dynamic';
 
@@ -83,6 +83,10 @@ async function handleCronJob(request: Request) {
         success: true,
         message: 'No users with active Telegram notifications found.',
         dispatchedCount: 0,
+        diagnostics: {
+          hasServiceRoleKey: Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY),
+          supabaseUrlConfigured: Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL),
+        },
       });
     }
 
@@ -96,16 +100,43 @@ async function handleCronJob(request: Request) {
 
     // 2. Iterate through each connected user
     for (const profile of profiles) {
-      const { data: habitsData, error: habitsError } = await supabase
-        .from('habits')
-        .select('*')
-        .eq('user_id', profile.id);
+      if (!profile.telegram_chat_id) continue;
 
-      if (habitsError || !habitsData) {
-        continue;
+      let habits: Habit[] = [];
+
+      // 2a. Try SECURITY DEFINER RPC get_telegram_status
+      try {
+        const { data: statusData, error: statusErr } = await supabase.rpc('get_telegram_status', {
+          p_chat_id: profile.telegram_chat_id,
+        });
+
+        if (!statusErr && statusData && Array.isArray(statusData.habits)) {
+          habits = statusData.habits.map((h: any) => mapDbRowToHabit(h as HabitDbRow));
+        }
+      } catch {
+        // fallback
       }
 
-      const habits = habitsData.map((row) => mapDbRowToHabit(row as HabitDbRow));
+      // 2b. Direct table fallback
+      if (habits.length === 0) {
+        const { data: habitsData } = await supabase
+          .from('habits')
+          .select('*')
+          .eq('user_id', profile.id);
+
+        if (habitsData && habitsData.length > 0) {
+          habits = habitsData.map((row) => mapDbRowToHabit(row as HabitDbRow));
+        }
+      }
+
+      if (habits.length === 0) {
+        results.push({
+          userId: profile.id,
+          unloggedCount: 0,
+          status: 'no_habits_found',
+        });
+        continue;
+      }
 
       // Filter unlogged rituals for today
       const unloggedHabits = habits.filter((h) => {
