@@ -139,14 +139,14 @@ export function SprintHorizonWidget({
 
       {/* Horizon Day Progress Bar & Timeline Indicator */}
       <div className="space-y-3">
-        <div className="flex items-center justify-between text-xs font-mono">
-          <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-mono">
+          <div className="flex flex-wrap items-center gap-2">
             <span className="font-bold text-ink text-sm">
               Day {currentDayNumber} of {durationDays}
             </span>
             <span className="text-faint">·</span>
-            <span className="text-muted flex items-center gap-1">
-              <Clock className="h-3.5 w-3.5 text-sage-deep inline-block" />
+            <span className="text-muted flex items-center gap-1.5">
+              <Clock className="h-3.5 w-3.5 text-sage-deep inline-block shrink-0" />
               {isPastMidnightEnd ? (
                 <span className="text-sage-deep font-semibold">
                   Sprint concluded at midnight · Ready to wrap up
@@ -167,11 +167,20 @@ export function SprintHorizonWidget({
               )}
             </span>
           </div>
-          <span className="font-bold text-sage-deep">{progressPercent}% elapsed</span>
+
+          <div className="flex items-center gap-2 font-mono">
+            {!isPastMidnightEnd && (
+              <span className="inline-flex items-center gap-1 rounded-full border border-sage/30 bg-sage-wash/80 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-sage-deep shadow-xs">
+                <span className="h-1.5 w-1.5 rounded-full bg-sage-deep animate-pulse" />
+                Today {todayPercent}%
+              </span>
+            )}
+            <span className="font-bold text-sage-deep text-xs">{progressPercent}% elapsed</span>
+          </div>
         </div>
 
         {/* Dynamic Segmented Days Track */}
-        <div className="flex items-center gap-1 sm:gap-1.5">
+        <div className="flex items-center gap-1 sm:gap-1.5 pt-1">
           {Array.from({ length: durationDays }).map((_, i) => {
             const isCompletedDay = i < currentDayIndex;
             const isToday = i === currentDayIndex;
@@ -180,6 +189,7 @@ export function SprintHorizonWidget({
               <div
                 key={i}
                 className="relative flex-1 group"
+                title={`Day ${i + 1} of ${durationDays}${isToday ? ` (Today: ${todayPercent}%)` : isCompletedDay ? ' (Completed)' : ''}`}
               >
                 {/* Segment Bar Container */}
                 <div className="h-2.5 w-full rounded-full bg-canvas border border-line overflow-hidden">
@@ -202,16 +212,20 @@ export function SprintHorizonWidget({
                     </div>
                   ) : null}
                 </div>
-
-                {isToday && !isPastMidnightEnd && (
-                  <span className="absolute -top-6 left-1/2 -translate-x-1/2 hidden sm:flex items-center gap-1 text-[9px] font-mono font-bold uppercase tracking-widest text-sage-deep">
-                    <span className="h-1.5 w-1.5 rounded-full bg-sage-deep animate-pulse" />
-                    Today ({todayPercent}%)
-                  </span>
-                )}
               </div>
             );
           })}
+        </div>
+
+        {/* Sub-track horizon label indicators */}
+        <div className="flex items-center justify-between text-[10px] font-mono text-faint px-0.5">
+          <span>Day 1</span>
+          <span className="text-center text-muted font-medium">
+            {isPastMidnightEnd
+              ? 'Sprint Horizon Completed'
+              : `Day ${currentDayNumber} in progress (${todayPercent}% today)`}
+          </span>
+          <span>Day {durationDays}</span>
         </div>
       </div>
     </motion.div>
