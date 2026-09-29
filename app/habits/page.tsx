@@ -202,7 +202,7 @@ export default function HabitsPage() {
       list = list.filter((h) => (h.circadianSlot || 'morning') === slotFilter);
     }
 
-    // 3. Sorting Mode
+    // 3. Sorting Mode with Deterministic Tiebreaking
     const SLOT_ORDER: Record<string, number> = {
       morning: 1,
       afternoon: 2,
@@ -212,19 +212,27 @@ export default function HabitsPage() {
 
     return [...list].sort((a, b) => {
       if (sortMode === 'time-desc') {
-        return (b.minutes || 0) - (a.minutes || 0);
+        const diff = (b.minutes || 0) - (a.minutes || 0);
+        if (diff !== 0) return diff;
+        return (a.id || '').localeCompare(b.id || '');
       }
       if (sortMode === 'time-asc') {
-        return (a.minutes || 0) - (b.minutes || 0);
+        const diff = (a.minutes || 0) - (b.minutes || 0);
+        if (diff !== 0) return diff;
+        return (a.id || '').localeCompare(b.id || '');
       }
       if (sortMode === 'health-desc') {
-        return (b.health || 0) - (a.health || 0);
+        const diff = (b.health || 0) - (a.health || 0);
+        if (diff !== 0) return diff;
+        return (a.id || '').localeCompare(b.id || '');
       }
       // Circadian Flow
       const slotA = SLOT_ORDER[a.circadianSlot || 'morning'] || 99;
       const slotB = SLOT_ORDER[b.circadianSlot || 'morning'] || 99;
       if (slotA !== slotB) return slotA - slotB;
-      return (b.minutes || 0) - (a.minutes || 0);
+      const minDiff = (b.minutes || 0) - (a.minutes || 0);
+      if (minDiff !== 0) return minDiff;
+      return (a.id || '').localeCompare(b.id || '');
     });
   }, [activeHabitsPool, searchQuery, slotFilter, sortMode]);
 

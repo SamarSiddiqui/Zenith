@@ -174,7 +174,7 @@ export function DynamicSprintMatrix({
 
       {/* Sprint Matrix Horizon Table Container */}
       <div className="overflow-x-auto rounded-3xl border border-line bg-surface shadow-calm">
-        <table className="w-full min-w-[720px] border-collapse">
+        <table className="w-full min-w-[760px] table-fixed border-collapse">
           <caption className="sr-only">
             Dynamic {config.durationDays}-Day Sprint Habit Matrix
           </caption>
@@ -184,7 +184,7 @@ export function DynamicSprintMatrix({
             <tr className="border-b border-line bg-canvas/60">
               <th
                 scope="col"
-                className="px-6 py-4 text-left text-xs font-mono font-semibold uppercase tracking-[0.14em] text-faint"
+                className="w-[34%] min-w-[220px] px-6 py-4 text-left text-xs font-mono font-semibold uppercase tracking-[0.14em] text-faint"
               >
                 <button
                   type="button"
@@ -215,12 +215,15 @@ export function DynamicSprintMatrix({
                   <th
                     key={day.isoDate || day.index}
                     scope="col"
-                    className={`px-3 py-3.5 text-center transition-colors ${
+                    className={`px-2 py-3.5 text-center transition-colors ${
                       isCurrentActiveDay
                         ? 'bg-sage-wash/60 border-x border-sage/30 shadow-inner'
                         : 'border-r border-line/40'
                     }`}
-                    style={{ minWidth: config.durationDays > 10 ? '48px' : '64px' }}
+                    style={{
+                      width: `${52 / config.durationDays}%`,
+                      minWidth: config.durationDays > 10 ? '48px' : '58px',
+                    }}
                   >
                     <div className="flex flex-col items-center">
                       <span
@@ -252,7 +255,7 @@ export function DynamicSprintMatrix({
 
               <th
                 scope="col"
-                className="px-6 py-4 text-right text-xs font-mono font-semibold uppercase tracking-[0.14em] text-faint"
+                className="w-[14%] min-w-[110px] px-6 py-4 text-right text-xs font-mono font-semibold uppercase tracking-[0.14em] text-faint"
               >
                 Sprint Health
               </th>
@@ -288,28 +291,28 @@ export function DynamicSprintMatrix({
               return (
                 <tr
                   key={habit.id}
-                  className="group transition-colors duration-150 ease-out hover:bg-canvas/50"
+                  className="group h-16 transition-colors duration-150 ease-out hover:bg-canvas/50"
                 >
                   {/* Habit Info Column */}
-                  <th scope="row" className="px-6 py-4 text-left font-normal">
+                  <th scope="row" className="px-6 py-3 text-left font-normal overflow-hidden">
                     <div
                       className="cursor-pointer"
                       onClick={() => onSelectHabit && onSelectHabit(habit)}
                     >
                       <div className="flex items-center gap-2">
-                        <span className="block text-sm font-semibold text-ink group-hover:text-sage-deep transition-colors">
+                        <span className="block text-sm font-semibold text-ink group-hover:text-sage-deep transition-colors truncate">
                           {habit.name}
                         </span>
                         {habit.category && (
-                          <span className="rounded-full border border-line/60 bg-canvas px-2 py-0.5 text-[9px] font-mono uppercase text-muted">
+                          <span className="shrink-0 rounded-full border border-line/60 bg-canvas px-2 py-0.5 text-[9px] font-mono uppercase text-muted">
                             {habit.category}
                           </span>
                         )}
                       </div>
                       <div className="mt-1 flex items-center gap-2 text-xs text-muted font-mono">
-                        <span>{habit.window || 'Anytime'}</span>
+                        <span className="shrink-0">{habit.window || 'Anytime'}</span>
                         <span>·</span>
-                        <span>{habit.minutes}m</span>
+                        <span className="shrink-0">{habit.minutes}m</span>
                         {habit.microVersion && (
                           <>
                             <span>·</span>
@@ -333,7 +336,7 @@ export function DynamicSprintMatrix({
                     return (
                       <td
                         key={`${habit.id}-day-${i}`}
-                        className={`px-2 py-4 text-center transition-colors ${
+                        className={`px-1 py-3 text-center transition-colors ${
                           isToday
                             ? 'bg-sage-wash/30 border-x border-sage/20'
                             : 'border-r border-line/30'
@@ -342,9 +345,9 @@ export function DynamicSprintMatrix({
                         <div className="relative flex items-center justify-center">
                           <motion.button
                             type="button"
-                            whileHover={{ scale: 1.15 }}
-                            whileTap={{ scale: 0.88 }}
-                            transition={{ duration: 0.12 }}
+                            whileHover={{ scale: 1.12 }}
+                            whileTap={{ scale: 0.9 }}
+                            transition={{ duration: 0.1 }}
                             onClick={() => {
                               if (status === 'completed') {
                                 onOpenSkipModal(habit, i);
@@ -353,7 +356,7 @@ export function DynamicSprintMatrix({
                               }
                             }}
                             aria-label={`${habit.name} Day ${i + 1} (${day.dayName}) — ${status}`}
-                            className={`mx-auto flex h-8 w-8 items-center justify-center rounded-full border transition-all ${
+                            className={`mx-auto flex h-8 w-8 min-w-[32px] min-h-[32px] shrink-0 items-center justify-center rounded-full border transition-colors ${
                               isCompleted
                                 ? 'border-sage bg-sage text-white shadow-xs'
                                 : isMissed
@@ -361,13 +364,15 @@ export function DynamicSprintMatrix({
                                 : 'border-dashed border-line bg-surface text-transparent hover:border-sage'
                             }`}
                           >
-                            <AnimatePresence mode="wait" initial={false}>
+                            <AnimatePresence mode="popLayout" initial={false}>
                               {isCompleted && (
                                 <motion.span
                                   key="c"
-                                  initial={{ scale: 0 }}
-                                  animate={{ scale: 1 }}
-                                  exit={{ scale: 0 }}
+                                  initial={{ scale: 0, opacity: 0 }}
+                                  animate={{ scale: 1, opacity: 1 }}
+                                  exit={{ scale: 0, opacity: 0 }}
+                                  transition={{ duration: 0.15 }}
+                                  className="flex items-center justify-center shrink-0"
                                 >
                                   <Check className="h-3.5 w-3.5 stroke-[2.5]" />
                                 </motion.span>
@@ -375,9 +380,11 @@ export function DynamicSprintMatrix({
                               {isMissed && (
                                 <motion.span
                                   key="m"
-                                  initial={{ scale: 0 }}
-                                  animate={{ scale: 1 }}
-                                  exit={{ scale: 0 }}
+                                  initial={{ scale: 0, opacity: 0 }}
+                                  animate={{ scale: 1, opacity: 1 }}
+                                  exit={{ scale: 0, opacity: 0 }}
+                                  transition={{ duration: 0.15 }}
+                                  className="flex items-center justify-center shrink-0"
                                 >
                                   <X className="h-3.5 w-3.5 stroke-[2.5]" />
                                 </motion.span>
@@ -390,10 +397,10 @@ export function DynamicSprintMatrix({
                   })}
 
                   {/* Habit Sprint Health Column */}
-                  <td className="px-6 py-4 text-right">
+                  <td className="px-6 py-3 text-right">
                     <div className="flex flex-col items-end gap-1">
                       <span
-                        className={`inline-block rounded-full border px-3 py-0.5 text-xs font-mono font-bold ${
+                        className={`inline-flex items-center justify-center min-w-[52px] rounded-full border px-2.5 py-0.5 text-xs font-mono font-bold transition-colors ${
                           habitSprintRate >= 75
                             ? 'border-sage/40 bg-sage-wash text-sage-deep'
                             : habitSprintRate >= 50
@@ -426,7 +433,7 @@ export function DynamicSprintMatrix({
                 return (
                   <td
                     key={i}
-                    className={`px-2 py-3 text-center ${
+                    className={`px-1 py-3 text-center ${
                       isToday
                         ? 'bg-sage-wash/40 border-x border-sage/30'
                         : 'border-r border-line/30'
