@@ -53,7 +53,6 @@ export function SprintHorizonWidget({
   const currentDayNumber = currentDayIndex + 1;
   const isPastMidnightEnd = now.getTime() > endDate.getTime();
   const isConcludingToday = currentDayNumber === durationDays && !isPastMidnightEnd;
-  const daysRemaining = Math.max(0, durationDays - currentDayNumber);
 
   // Intra-day fraction (0 to 1) for today
   const todayElapsedMs = Math.max(0, Math.min(24 * 60 * 60 * 1000, now.getTime() - todayStart.getTime()));
@@ -161,9 +160,7 @@ export function SprintHorizonWidget({
                   </strong>
                 </span>
               ) : (
-                <span>
-                  {daysRemaining} {daysRemaining === 1 ? 'day' : 'days'} remaining · Ends at midnight
-                </span>
+                <span>Ends at midnight</span>
               )}
             </span>
           </div>
