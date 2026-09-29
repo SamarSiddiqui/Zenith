@@ -67,8 +67,8 @@ export function Sidebar({ userName, isOpen = true, onCloseMobile }: SidebarProps
       {/* Logo Area */}
       <div className="p-6 pb-8 border-b border-line/50">
         <Link href="/dashboard" className="flex items-center gap-2.5 group">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-sage-wash text-sage-deep font-serif text-lg font-bold border border-sage/30 group-hover:scale-105 transition-transform">
-            <img src="/zenithBot.webp" alt="" />
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-sage-wash overflow-hidden border border-sage/30 group-hover:scale-105 transition-transform shadow-xs">
+            <img src="/zenithBot.webp" alt="Zenith Logo" className="h-full w-full object-cover" />
           </div>
           <div>
             <h1 className="font-serif text-2xl text-ink tracking-tight">Zenith</h1>

@@ -25,9 +25,11 @@ export function useHabits() {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Load habits on mount or user change
-  const loadHabits = useCallback(async () => {
-    setIsLoading(true);
+  // Load habits on mount or user change (showLoading: false for silent background refreshes)
+  const loadHabits = useCallback(async (showLoading: boolean = false) => {
+    if (showLoading) {
+      setIsLoading(true);
+    }
     try {
       const data = await getHabits(user?.id);
       setHabits(data);
@@ -36,18 +38,20 @@ export function useHabits() {
       console.error('Failed to load habits:', err);
       setError('Could not load habits');
     } finally {
-      setIsLoading(false);
+      if (showLoading) {
+        setIsLoading(false);
+      }
     }
   }, [user?.id]);
 
   useEffect(() => {
-    loadHabits();
+    loadHabits(true);
   }, [loadHabits]);
 
   // Real-time synchronization across multiple components on the same page
   useEffect(() => {
     const handleSync = () => {
-      loadHabits();
+      loadHabits(false);
     };
     if (typeof window !== 'undefined') {
       window.addEventListener('zenith_habits_sync', handleSync);
