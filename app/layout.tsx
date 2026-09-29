@@ -5,6 +5,11 @@ import { AuthProvider } from "../context/AuthContext";
 export const metadata: Metadata = {
   title: "Zenith — Circadian Habits & Usable Working Window",
   description: "A mindful habit planner with circadian working windows and automated recovery protocols.",
+  icons: {
+    icon: "/zenithBot.webp",
+    shortcut: "/zenithBot.webp",
+    apple: "/zenithBot.webp",
+  },
 };
 
 export default function RootLayout({

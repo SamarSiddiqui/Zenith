@@ -31,8 +31,11 @@ export function AuthLayout({
       {/* Minimal Top Header */}
       <header className="w-full border-b border-line/40 bg-canvas/60 backdrop-blur-md">
         <div className="mx-auto flex w-full max-w-5xl items-center justify-between px-6 py-4">
-          <Link href="/" className="font-serif text-2xl tracking-tight text-ink hover:opacity-80 transition-opacity">
-            Zenith
+          <Link href="/" className="flex items-center gap-2.5 group font-serif text-2xl tracking-tight text-ink hover:opacity-85 transition-opacity">
+            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-sage-wash overflow-hidden border border-sage/30 group-hover:scale-105 transition-transform shadow-xs">
+              <img src="/zenithBot.webp" alt="Zenith Logo" className="h-full w-full object-cover" />
+            </div>
+            <span>Zenith</span>
           </Link>
           <Link
             href="/"

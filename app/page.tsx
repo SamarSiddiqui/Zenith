@@ -42,7 +42,12 @@ export default function LandingPage() {
       {/* Header */}
       <header className="sticky top-0 z-30 border-b border-line/70 bg-canvas/85 backdrop-blur">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-5 py-4 lg:px-10">
-          <span className="font-serif text-2xl tracking-tight text-ink">Zenith</span>
+          <Link href="/" className="flex items-center gap-2.5 group">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-sage-wash overflow-hidden border border-sage/30 group-hover:scale-105 transition-transform shadow-xs">
+              <img src="/zenithBot.webp" alt="Zenith Logo" className="h-full w-full object-cover" />
+            </div>
+            <span className="font-serif text-2xl tracking-tight text-ink">Zenith</span>
+          </Link>
           <nav className="hidden items-center gap-8 md:flex" aria-label="Main">
             {[
               ['Features', '#features'],
