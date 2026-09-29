@@ -79,21 +79,24 @@ export function calculateHabitHealth(week: HabitStatus[], currentDayIndex?: numb
 }
 
 /**
- * Automatically rolls over past unlogged days (< currentDayIndex) to 'missed' status.
- * This runs when midnight passes, ensuring habits left unlogged on past days become 'missed' (❌).
+ * Automatically rolls over days older than yesterday (< currentDayIndex - 1) to 'missed' status.
+ * Yesterday (currentDayIndex - 1) is intentionally preserved as 'unlogged' so the user can review it
+ * in the Morning Yesterday Check-in Modal on morning launch.
  */
 export function rolloverPastUnloggedDays(
   habit: Habit,
   currentDayIndex: number
 ): { habit: Habit; changed: boolean } {
-  if (currentDayIndex <= 0 || !Array.isArray(habit.week)) {
+  if (currentDayIndex <= 1 || !Array.isArray(habit.week)) {
     return { habit, changed: false };
   }
 
   let changed = false;
   const newWeek: HabitStatus[] = [...habit.week];
 
-  for (let i = 0; i < currentDayIndex && i < newWeek.length; i++) {
+  // Only rollover days strictly before yesterday (< currentDayIndex - 1)
+  const cutoffIndex = currentDayIndex - 1;
+  for (let i = 0; i < cutoffIndex && i < newWeek.length; i++) {
     if (newWeek[i] === 'unlogged') {
       newWeek[i] = 'missed';
       changed = true;
