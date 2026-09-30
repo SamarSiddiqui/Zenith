@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import { LayoutDashboard, CalendarRange, Stethoscope, HeartPulse, Settings, LogOut } from 'lucide-react';
+import { LayoutDashboard, CalendarRange, Sparkles, HeartPulse, Settings, LogOut } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -31,8 +31,8 @@ export function Sidebar({ userName, isOpen = true, onCloseMobile }: SidebarProps
     },
     {
       id: '/diagnosis',
-      label: 'Diagnosis & Retro',
-      icon: Stethoscope,
+      label: 'AI Diagnosis & Growth',
+      icon: Sparkles,
     },
     {
       id: '/recovery',

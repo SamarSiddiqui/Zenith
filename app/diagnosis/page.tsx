@@ -1,145 +1,229 @@
 "use client";
 
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Sparkles, ArrowRight } from 'lucide-react';
+import React, { useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  Sparkles,
+  RotateCcw,
+  Clock,
+  Zap,
+  ShieldCheck,
+  Award,
+  CalendarRange,
+  ArrowRight,
+  Lightbulb,
+} from 'lucide-react';
+import Link from 'next/link';
 import { Layout } from '../../components/Layout';
-import { WeekChart } from '../../components/diagnosis/WeekChart';
-import { Reveal } from '../../components/visuals/Reveal';
-import { CountUp } from '../../components/visuals/CountUp';
-import { HealthRing } from '../../components/visuals/HealthRing';
-
-const retroMetrics = [
-  { label: 'Consistency', value: '87%', tone: 'good' as const, note: 'Above your 30-day average' },
-  { label: 'Recovery rate', value: 'Good', tone: 'good' as const, note: '4 of 6 slips recovered' },
-  { label: 'Overcommitment', value: 'High', tone: 'warn' as const, note: '42 planned · 36 done' },
-  { label: 'Timing mismatch', value: 'Needs attention', tone: 'warn' as const, note: '5 habits ran past window' }
-];
+import { useAuth } from '../../context/AuthContext';
+import { useHabits } from '../../hooks/useHabits';
+import { useSprint } from '../../hooks/useSprint';
+import { useDiagnosis } from '../../hooks/useDiagnosis';
+import {
+  ZenithGrowthRadar,
+  ExecutiveSynthesisCard,
+  FrictionAutopsyMatrix,
+  HabitLabCard,
+  StepUpRecoveryCard,
+} from '../../components/diagnosis';
+import { formatFullTodayDate } from '../../lib/utils/sprintDate';
 
 export default function DiagnosisPage() {
-  const [accepted, setAccepted] = useState<'accepted' | 'kept' | null>(null);
+  const { user } = useAuth();
+  const { habits, isLoading: habitsLoading, refreshHabits } = useHabits();
+  const { session: sprintSession } = useSprint(habits, refreshHabits);
+
+  const {
+    diagnosis,
+    isLoading: diagnosisLoading,
+    isAnalyzing,
+    error,
+    lastAnalyzedAt,
+    appliedActions,
+    reAnalyze,
+    applySlotRecommendation,
+    applyMicroVersion,
+    applyTieredDuration,
+    applyRecoveryProtocol,
+  } = useDiagnosis(habits, user?.workingWindow, sprintSession);
+
+  const habitLabRef = useRef<HTMLDivElement>(null);
+  const todayLabel = formatFullTodayDate();
+  const isLoading = habitsLoading || (diagnosisLoading && !diagnosis);
+
+  const handleScrollToLab = () => {
+    habitLabRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  const formattedAnalysisTime = lastAnalyzedAt
+    ? lastAnalyzedAt.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+      })
+    : null;
 
   return (
-    <Layout userName="Samar">
-      <div className="flex flex-col gap-10">
-        <header>
-          <p className="text-sm text-muted">Week of Oct 12</p>
-          <h1 className="mt-1.5 font-serif text-4xl text-ink md:text-5xl">Weekly diagnosis</h1>
-          <p className="mt-3 max-w-2xl text-base leading-relaxed text-muted">
-            What actually happened this week, and what your schedule says about it.
-          </p>
-        </header>
-
-        <Reveal
-          as="section"
-          className="rounded-3xl border border-line bg-surface p-7 shadow-calm sm:p-9"
-        >
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {retroMetrics.map((m) => (
-              <div key={m.label} className="flex flex-col border-t border-line pt-4">
-                <p className="text-xs uppercase tracking-[0.14em] text-faint">{m.label}</p>
-                <p
-                  className={`mt-2 font-serif text-2xl ${m.tone === 'warn' ? 'text-clay' : 'text-ink'}`}
-                >
-                  {m.value}
-                </p>
-                <p className="mt-auto pt-2 text-xs text-muted">{m.note}</p>
+    <Layout>
+      <div className="flex flex-col gap-8 pb-16">
+        {/* Top Header Row */}
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <div className="flex flex-wrap items-center gap-2 mb-2">
+              <div className="inline-flex items-center gap-1.5 rounded-full border border-sage/30 bg-sage-wash/70 px-3 py-1 text-[11px] font-mono font-semibold uppercase tracking-wider text-sage-deep shadow-xs">
+                <Sparkles className="h-3 w-3 text-sage-deep" />
+                <span>AI Circadian Intelligence</span>
               </div>
-            ))}
-          </div>
 
-          <div className="mt-8 rounded-2xl border border-line bg-canvas p-6">
-            <WeekChart />
-          </div>
-
-          <div className="mt-4 rounded-2xl bg-sidebar p-6">
-            <div className="flex gap-3">
-              <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-sage-deep" strokeWidth={1.9} aria-hidden />
-              <div>
-                <p className="max-w-2xl text-base leading-relaxed text-ink">
-                  You planned <span className="font-medium">42 habit sessions</span> this week but
-                  completed 36. You are overcommitting on late workdays.
-                </p>
-                <p className="mt-3 text-sm text-muted">
-                  Recommendation: reduce your daily target from 6 habits to 4.
-                </p>
-              </div>
+              {formattedAnalysisTime && (
+                <div className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface px-3 py-1 text-[11px] font-mono text-muted shadow-xs">
+                  <Clock className="h-3 w-3 text-faint" />
+                  <span>Audit: {formattedAnalysisTime} (Gemini 3.5 Flash-Lite)</span>
+                </div>
+              )}
             </div>
 
-            {accepted ? (
-              <motion.p
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.2, ease: 'easeOut' }}
-                className="mt-5 rounded-xl border border-sage/35 bg-sage-wash px-4 py-3 text-sm text-ink"
-              >
-                {accepted === 'accepted'
-                  ? 'Daily target set to 4 habits starting Monday. Zenith will re-evaluate in 7 days.'
-                  : 'Keeping 6 habits. Zenith will watch for overcommitment again next week.'}
-              </motion.p>
-            ) : (
-              <div className="mt-5 flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={() => setAccepted('accepted')}
-                  className="rounded-full bg-sage px-5 py-2.5 text-sm font-medium text-white transition-colors duration-150 ease-out hover:bg-sage-deep"
-                >
-                  Accept recommendation
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setAccepted('kept')}
-                  className="rounded-full border border-line bg-surface px-5 py-2.5 text-sm font-medium text-ink transition-colors duration-150 ease-out hover:bg-sidebar"
-                >
-                  Keep current plan
-                </button>
-              </div>
-            )}
+            <h1 className="font-serif text-3xl sm:text-4xl text-ink tracking-tight">
+              Diagnosis & Growth Hub
+            </h1>
+            <p className="mt-1 text-xs sm:text-sm text-muted font-light max-w-2xl">
+              Circadian behavioral analysis powered by Gemini. We diagnose schedule friction, protect your identity momentum, and eliminate willpower guilt.
+            </p>
           </div>
-        </Reveal>
 
-        <Reveal as="section" className="rounded-3xl border border-clay/30 bg-clay-wash p-7 sm:p-9">
-          <p className="text-xs uppercase tracking-[0.16em] text-clay">Habit autopsy</p>
-          <h2 className="mt-2 font-serif text-3xl text-ink">What happened to Gym 5x/week?</h2>
+          {/* Action Trigger Buttons */}
+          <div className="flex items-center gap-2.5 self-start lg:self-auto flex-wrap">
+            <button
+              type="button"
+              disabled={isAnalyzing || habits.length === 0}
+              onClick={() => reAnalyze()}
+              className={`inline-flex items-center gap-2 rounded-2xl border px-4 py-2.5 text-xs font-mono font-semibold transition-all shadow-calm cursor-pointer ${
+                isAnalyzing
+                  ? 'border-sage/40 bg-sage-wash text-sage-deep animate-pulse'
+                  : 'border-line bg-surface text-ink hover:border-sage hover:text-sage-deep'
+              }`}
+              title="Click to run a fresh Gemini diagnosis with latest habit logs"
+            >
+              <RotateCcw
+                className={`h-3.5 w-3.5 text-sage-deep ${isAnalyzing ? 'animate-spin' : ''}`}
+              />
+              <span>{isAnalyzing ? 'Analyzing Horizon...' : 'Re-Analyze with Gemini'}</span>
+            </button>
 
-          <dl className="mt-6 flex flex-wrap items-center gap-x-12 gap-y-6">
-            {[
-              { k: 'Active for', node: <><CountUp value={16} /> days</> },
-              { k: 'Completion', node: <CountUp value={69} suffix="%" /> }
-            ].map(({ k, node }) => (
-              <div key={k}>
-                <dt className="text-xs uppercase tracking-[0.14em] text-clay/80">{k}</dt>
-                <dd className="mt-1 font-serif text-xl text-ink">{node}</dd>
-              </div>
-            ))}
-            <div>
-              <dt className="text-xs uppercase tracking-[0.14em] text-clay/80">Final health</dt>
-              <dd className="mt-2">
-                <HealthRing value={38} tone="clay" size={68} stroke={6} />
-              </dd>
-            </div>
-          </dl>
+            <Link
+              href="/habits"
+              className="inline-flex items-center gap-1.5 rounded-2xl bg-sage px-4 py-2.5 text-xs font-mono font-medium text-white shadow-xs hover:bg-sage-deep transition-all"
+            >
+              <span>Habit Matrix</span>
+              <CalendarRange className="h-3.5 w-3.5" />
+            </Link>
+          </div>
+        </div>
 
-          <p className="mt-7 max-w-2xl text-base leading-relaxed text-ink">
-            4 of 5 skips happened after you worked past 7 PM. The frequency was unrealistic for your
-            actual work schedule — not for you.
-          </p>
-
-          <motion.button
-            type="button"
-            whileHover={{ y: -2 }}
-            whileTap={{ scale: 0.98 }}
-            transition={{ duration: 0.14, ease: 'easeOut' }}
-            className="group mt-7 inline-flex items-center gap-2 rounded-full bg-ink px-6 py-3 text-sm font-medium text-white transition-colors duration-150 ease-out hover:bg-ink/85"
+        {/* Error Notification */}
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="rounded-2xl border border-clay/30 bg-clay-wash/60 p-4 text-xs font-mono text-clay shadow-xs flex items-center justify-between gap-4"
           >
-            Switch to Gym 3x/week (Mon / Wed / Fri)
-            <ArrowRight
-              className="h-4 w-4 transition-transform duration-150 ease-out group-hover:translate-x-0.5"
-              strokeWidth={1.9}
-              aria-hidden
+            <span>{error}</span>
+            <button
+              type="button"
+              onClick={() => reAnalyze()}
+              className="underline font-bold hover:text-ink transition-colors cursor-pointer shrink-0"
+            >
+              Try Again
+            </button>
+          </motion.div>
+        )}
+
+        {/* Empty State: No Habits Created */}
+        {!isLoading && habits.length === 0 && (
+          <div className="rounded-3xl border border-line bg-surface p-12 text-center shadow-calm space-y-3">
+            <ShieldCheck className="h-10 w-10 text-sage-deep mx-auto stroke-[1.5]" />
+            <h3 className="font-serif text-xl font-bold text-ink">
+              No active rituals found to diagnose
+            </h3>
+            <p className="text-xs sm:text-sm text-muted font-light max-w-md mx-auto">
+              Anchor your first mindful rituals in the Habit Planner. Zenith will automatically evaluate their circadian resonance and schedule friction.
+            </p>
+            <div className="pt-2">
+              <Link
+                href="/habits"
+                className="inline-flex items-center gap-1.5 rounded-xl bg-sage px-4 py-2 text-xs font-mono font-medium text-white shadow-xs hover:bg-sage-deep transition-all"
+              >
+                <span>Open Habit Planner</span>
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            </div>
+          </div>
+        )}
+
+        {/* Loading Skeleton */}
+        {isLoading && (
+          <div className="space-y-6 animate-pulse">
+            <div className="h-56 rounded-3xl bg-surface border border-line" />
+            <div className="h-44 rounded-3xl bg-surface border border-line" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="h-64 rounded-3xl bg-surface border border-line" />
+              <div className="h-64 rounded-3xl bg-surface border border-line" />
+            </div>
+          </div>
+        )}
+
+        {/* Main Flagship Diagnostic Grid */}
+        {!isLoading && diagnosis && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+            className="space-y-8"
+          >
+            {/* Top Row: Growth Radar + Executive Synthesis */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+              <div className="lg:col-span-5 flex">
+                <ZenithGrowthRadar score={diagnosis.zenithScore} />
+              </div>
+              <div className="lg:col-span-7 flex">
+                <ExecutiveSynthesisCard
+                  synthesis={diagnosis.executiveSynthesis}
+                  onExploreOptimizations={handleScrollToLab}
+                />
+              </div>
+            </div>
+
+            {/* Section 2: Friction vs. Willpower Autopsy */}
+            <FrictionAutopsyMatrix
+              collisions={diagnosis.frictionAutopsy.scheduleCollisions}
+              zoneFriction={diagnosis.frictionAutopsy.circadianZoneFriction}
+              overallVerdict={diagnosis.frictionAutopsy.overallFrictionVerdict}
+              appliedActions={appliedActions}
+              onApplySlot={applySlotRecommendation}
+              onApplyDuration={applyTieredDuration}
             />
-          </motion.button>
-        </Reveal>
+
+            {/* Section 3: Gemini Habit Laboratory & Tiered Scaler */}
+            <div ref={habitLabRef}>
+              <HabitLabCard
+                optimizations={diagnosis.habitOptimizations}
+                appliedActions={appliedActions}
+                onApplySlot={applySlotRecommendation}
+                onApplyMicro={applyMicroVersion}
+                onApplyDuration={applyTieredDuration}
+              />
+            </div>
+
+            {/* Section 4: 3-Day Step-Up Recovery Protocol (if available) */}
+            {diagnosis.recoveryProtocols && diagnosis.recoveryProtocols.length > 0 && (
+              <StepUpRecoveryCard
+                protocols={diagnosis.recoveryProtocols}
+                appliedActions={appliedActions}
+                onApplyProtocol={applyRecoveryProtocol}
+              />
+            )}
+          </motion.div>
+        )}
       </div>
     </Layout>
   );
