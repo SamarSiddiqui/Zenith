@@ -1,4 +1,5 @@
 import type { Habit, CircadianSlot } from './zenith';
+export type { CircadianSlot };
 
 export type CollisionType =
   | 'late_workday_overrun'
