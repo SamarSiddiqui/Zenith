@@ -108,15 +108,29 @@ Zenith uses a user-empowering, mindful approach to overnight habits rather than 
 
 ---
 
-### H. Dashboard Priority Friction Radar (`RiskBanner.tsx`)
-- **File:** [`components/dashboard/RiskBanner.tsx`](file:///c:/Users/samsi/Desktop/feb-projects/Zenith/components/dashboard/RiskBanner.tsx)
-- **Philosophy ("Never Miss Twice"):** 1 miss is an accident; 2 misses in a row starts a negative habit loop. The Friction Radar only flags habits that were missed for 2 consecutive days leading into today (yesterday and the day before yesterday).
-- **Trigger Condition:**
-  $$\text{habit.week}[d - 1] == \text{'missed'} \quad \text{AND} \quad \text{habit.week}[d - 2] == \text{'missed'}$$
-- **Focused 2-Action Interface:**
-  1. ⚡ **`Shrink to 5 min`** — Instantly locks today as a 5-minute micro-fallback (`logMicroStep`), maintaining identity momentum with minimal willpower.
-  2. ✅ **`Mark as Completed`** — Direct 1-click completion for today (`toggleStatus`).
-- **Auto-Dismiss:** Stays hidden when all habits are on track or after being resolved for today.
+### I. Dashboard Sprint Horizon & Intra-Day Working Window (`SprintHorizonWidget.tsx`)
+- **File:** [`components/dashboard/SprintHorizonWidget.tsx`](file:///c:/Users/samsi/Desktop/feb-projects/Zenith/components/dashboard/SprintHorizonWidget.tsx)
+- **Intra-Day Working Window Progress (`Today %`):**
+  - Rather than a flat 24-hour clock, intra-day progress is strictly bound to the user's configured focus window (`user.workingWindow.startTime` to `user.workingWindow.endTime`, e.g. `10:00 AM – 7:00 PM`):
+    - **Before window start:** `0%`
+    - **During working window:** Real-time percentage of elapsed focus hours
+    - **After window closure:** `100%` (focus window concluded for today)
+- **Macro-Sprint Horizon Progress (`% Elapsed`):**
+  - Measures continuous time progression across the full 1–15 day sprint duration:
+    $$\text{Dynamic Elapsed Days} = \text{Completed Prior Days} + \left(\frac{\text{Today \%}}{100}\right)$$
+    $$\text{Sprint Elapsed \%} = \frac{\text{Dynamic Elapsed Days}}{\text{Sprint Duration Days}} \times 100$$
+- **Interactive `(i)` Tooltips:** Clean hover/focus tooltip cards explaining both metrics in plain English with dynamic time formatting.
+
+---
+
+### J. Silent Real-Time Sync & Smooth Matrix Rendering
+- **Silent Background Sync (`useHabits.ts`):**
+  - `loadHabits(showLoading: boolean)` only triggers full-page loading skeletons on initial mount.
+  - Background synchronizations and `zenith_habits_sync` events perform silent revalidation, preventing table unmounting or skeleton flashing when toggling habits.
+- **Fixed Table Layout & Anti-Jitter Engine (`DynamicSprintMatrix.tsx`):**
+  - Uses `table-fixed` with proportional column slicing (`34%` ritual info, balanced daily day slices, `14%` health badge).
+  - Pinned metric badge widths (`min-w-[52px]`) and fixed row heights (`h-16`) prevent cell width shifts as numbers/percentages change.
+  - Checkmark toggle animations use `<AnimatePresence mode="popLayout">` and `transition-colors` for instant, silky-smooth completion feedback.
 
 ---
 
@@ -124,12 +138,14 @@ Zenith uses a user-empowering, mindful approach to overnight habits rather than 
 
 | File | Purpose |
 | :--- | :--- |
-| [`app/habits/page.tsx`](file:///c:/Users/samsi/Desktop/feb-projects/Zenith/app/habits/page.tsx) | Main Habit Planner controller, search/slot filtering, sorting pipeline, and modal orchestrator. |
+| [`app/habits/page.tsx`](file:///c:/Users/samsi/Desktop/feb-projects/Zenith/app/habits/page.tsx) | Main Habit Planner controller, search/slot filtering, sorting pipeline with deterministic tiebreaking, and modal orchestrator. |
 | [`components/dashboard/RiskBanner.tsx`](file:///c:/Users/samsi/Desktop/feb-projects/Zenith/components/dashboard/RiskBanner.tsx) | Priority Friction Radar for 2-consecutive-miss detection with 5-min shrink & mark complete actions. |
-| [`components/habits/DynamicSprintMatrix.tsx`](file:///c:/Users/samsi/Desktop/feb-projects/Zenith/components/habits/DynamicSprintMatrix.tsx) | Sprint horizon matrix table, interactive sort header, slot tabs, and day cell toggles. |
+| [`components/dashboard/SprintHorizonWidget.tsx`](file:///c:/Users/samsi/Desktop/feb-projects/Zenith/components/dashboard/SprintHorizonWidget.tsx) | Dashboard sprint horizon widget with working-window intra-day tracking and interactive info tooltips. |
+| [`components/habits/DynamicSprintMatrix.tsx`](file:///c:/Users/samsi/Desktop/feb-projects/Zenith/components/habits/DynamicSprintMatrix.tsx) | Sprint horizon matrix table, fixed column layout, interactive sort header, slot tabs, and day cell toggles. |
 | [`components/habits/HabitHeader.tsx`](file:///c:/Users/samsi/Desktop/feb-projects/Zenith/components/habits/HabitHeader.tsx) | Habit header, aggregate stats (Today's Rituals, Avg Health), sprint navigation, and search input. |
-| [`hooks/useHabits.ts`](file:///c:/Users/samsi/Desktop/feb-projects/Zenith/hooks/useHabits.ts) | Habit state management, optimistic status cycling, and auto-rollover on fetch. |
+| [`hooks/useHabits.ts`](file:///c:/Users/samsi/Desktop/feb-projects/Zenith/hooks/useHabits.ts) | Habit state management, silent background sync, optimistic status cycling, and auto-rollover on fetch. |
 | [`lib/services/habits.ts`](file:///c:/Users/samsi/Desktop/feb-projects/Zenith/lib/services/habits.ts) | CRUD Supabase operations, `calculateHabitHealth` momentum algorithm, and `rolloverPastUnloggedDays`. |
 | [`lib/utils/sprintDate.ts`](file:///c:/Users/samsi/Desktop/feb-projects/Zenith/lib/utils/sprintDate.ts) | Sprint date calculations, week numbers, day indices, and localized date formatting. |
 | [`app/api/cron/midnight-rollover/route.ts`](file:///c:/Users/samsi/Desktop/feb-projects/Zenith/app/api/cron/midnight-rollover/route.ts) | Midnight background worker for converting past unlogged habits to missed. |
+| [`app/api/cron/midday-nudge/route.ts`](file:///c:/Users/samsi/Desktop/feb-projects/Zenith/app/api/cron/midday-nudge/route.ts) | Circadian midday micro-nudge cron worker for dispatching 1-habit quick wins via Telegram. |
 | [`vercel.json`](file:///c:/Users/samsi/Desktop/feb-projects/Zenith/vercel.json) | Cron scheduler configuration for EOD reminders and midnight rollover. |

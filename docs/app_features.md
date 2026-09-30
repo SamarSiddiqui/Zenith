@@ -89,27 +89,36 @@ Zenith Application Architecture
 
 ---
 
-### Section 3: Diagnosis & Intelligence Engine (`/diagnosis`) — Root Cause & Retrospectives
-*The analytics core. Proves that consistency dips stem from schedule collisions, not weak willpower.*
+### Section 3: AI Diagnosis & Growth Engine (`/diagnosis`) — Root Cause & Retrospectives
+*The intelligence core powered by Google Gemini 3.5 Flash-Lite. Proves that consistency dips stem from schedule collisions, not weak willpower.*
 
 #### Core Features:
-1. **Weekly Retrospective Diagnosis**:
-   - Four high-level diagnostic dimensions:
-     - **Consistency Score**: Overall execution fidelity over the last 7 and 30 days.
-     - **Recovery Rate**: Ratio of slips recovered within 48 hours vs abandoned.
-     - **Overcommitment Level**: Difference between planned habit minutes vs usable evening minutes.
-     - **Timing Mismatch Index**: Percentage of habits forced outside optimal energy windows.
+1. **Zenith Growth Radar & Executive Synthesis**:
+   - **Personal Zenith Index (0–100)**: Multi-variable score combining *Circadian Fidelity*, *Recovery Resilience*, and *Schedule Balance*.
+   - **Gemini Mindful Briefing**: Editorial headline and compassionate 2-3 sentence diagnostic context explaining root causes without willpower blame.
+   - **Primary Growth Opportunity Callout**: High-leverage 1-step change with quick-jump action.
+   - **Demonstrated Strengths**: Highlighted positive execution milestones.
 
-2. **Schedule-Tied Correlation Engine**:
-   - Interactive root-cause cards pinpointing exact triggers:
-     - *"73% of missed workouts occurred on days working past 19:00."*
-     - *"81% of skipped reading sessions correlated with workdays > 9.5 hours."*
-   - Visual correlation chart: Workday End Time vs Habit Completion Rate.
+2. **Schedule vs. Willpower Friction Autopsy (`FrictionAutopsyMatrix.tsx`)**:
+   - **Circadian Zone Friction**: Visual heat levels (*Morning*, *Afternoon*, *Evening*).
+   - **Schedule Collision Cards**: Pinpoints late workday overruns, duration overload, and energy mismatches with confidence percentages and evidence text.
+   - **1-Click AI Optimizations**: Direct `[ 🔄 Shift to Morning ]` and `[ ⚡ Apply Micro-Step ]` action buttons with instant `Applied ✓` visual confirmation.
 
-3. **Habit Autopsy Flow (For Abandoned or Chronic-Slip Habits)**:
-   - When a habit's health drops below 50% for 2 weeks, an optional **Autopsy Card** activates:
-     - Analyzes active lifespan, total completion %, and primary failure reasons.
-     - Actionable AI recommendation: `[ Downscale Frequency: 5x/wk → 3x/wk ]` or `[ Shift Window: Evening → Morning ]`.
+3. **Gemini Habit Laboratory & Identity Scaler (`HabitLabCard.tsx`)**:
+   - Habit-by-habit calibration with 3 flexible horizon tiers:
+     - 🥇 **Gold (Full Routine)**: 100% intended duration.
+     - 🥈 **Silver (Standard Flow)**: 50% duration with 1-click target adjustment.
+     - 🥉 **Bronze (3-Min Micro-Fallback)**: 2–5 min emergency identity anchor with 1-click fallback saver.
+   - **Identity Motive Upgrade**: Mindful identity statement reframing.
+
+4. **3-Day Step-Up Recovery Protocol (`StepUpRecoveryCard.tsx`)**:
+   - Guided ramp-up (*Day 1 Micro-Spark (2m) $\rightarrow$ Day 2 Half-Power Flow $\rightarrow$ Day 3 Full Horizon (100%)*) for rituals with consecutive misses.
+   - 1-Click **`[ 🚀 Apply 3-Day Protocol ]`** trigger.
+
+5. **Smart Client Caching & Fast Execution (`useDiagnosis.ts`)**:
+   - 4-hour `localStorage` caching with timestamp to eliminate redundant API token consumption.
+   - Direct native REST client targeting **Gemini 3.5 Flash-Lite** with zero external npm dependencies.
+   - Manual **`[ 🔄 Re-Analyze with Gemini ]`** fresh trigger.
 
 ---
 

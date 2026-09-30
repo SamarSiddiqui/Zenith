@@ -1,26 +1,29 @@
-# Zenith — Mindful Habit Planner (Project Overview)
+# Zenith — Circadian Habit & Sprint Planner (Project Overview)
 
-> **"Reach your personal zenith through consistent, daily mindful habits."**  
-> Zenith (written in Arabic as **زينيث**) represents the highest point or peak of accomplishment. Zenith is designed as a serene, distraction-free habit tracking platform designed to help users build focus, maintain daily streaks, and cultivate long-term self-improvement.
+> **"Reach your personal zenith through consistent, mindful circadian habits."**  
+> Zenith (written in Arabic as **زينيث**) represents the highest point or peak of accomplishment. Zenith is designed as a serene, distraction-free habit tracking and sprint horizon platform designed to help users build focus, maintain identity momentum without guilt, and cultivate long-term self-improvement.
 
 ---
 
 ## 📌 Executive Summary
 
-**Zenith** is a modern, responsive web application engineered to transform habit tracking from a stressful chore into a calm, mindful ritual. Featuring clean visual hierarchy, soothing pastel earth tones, elegant typography, and micro-animations, Zenith provides intuitive tools for weekly habit planning, progress analysis, and daily habit execution.
+**Zenith** is a production-grade full-stack web application engineered to transform habit tracking from a stressful chore into a calm, mindful ritual. Featuring clean visual hierarchy, soothing earth tones, elegant typography (`DM Serif Display` + `Inter` + monospace data tokens), and micro-animations, Zenith provides powerful tools for dynamic sprint horizon planning (1–15 day horizons), real-time Telegram bot companion integration, priority friction detection, and intelligent micro-fallbacks.
 
 ---
 
-## 🛠️ Technology Stack & Languages Used
+## 🛠️ Technology Stack & Architecture
 
 | Layer | Technology / Library | Purpose |
 | :--- | :--- | :--- |
-| **Primary Language** | **TypeScript (`.ts`, `.tsx`)** | Type safety, clear interface contracts, compile-time safety |
-| **Frontend Framework** | **Next.js 16.1.6** (React 19.2.3) | App Router, Server/Client components, optimized routing |
-| **Styling Engine** | **Tailwind CSS v4** | Modern utility-first styling with `@tailwindcss/postcss` |
-| **Design System Tokens** | **CSS Theme Variables (`globals.css`)** | Custom Zenith design tokens (`zen-primary`, `zen-bg`, etc.) |
-| **Typography** | **Google Fonts** | `DM Serif Display` (Headings), `Inter` (Body text) |
-| **Animations** | **Framer Motion 12** | Smooth page transitions, staggered grid load, spring micro-interactions |
+| **Primary Language** | **TypeScript (`.ts`, `.tsx`)** | End-to-end type safety and compile-time contract validation |
+| **Frontend Framework** | **Next.js 16.1.6** (React 19.2.3) | App Router, Server/Client components, optimized route handlers |
+| **Database & Auth** | **Supabase PostgreSQL** | User authentication, Row Level Security (RLS), and JSONB weekly histories |
+| **Styling Engine** | **Tailwind CSS v4** | Utility-first styling with `@tailwindcss/postcss` and CSS design tokens |
+| **Design System Tokens** | **CSS Variables (`globals.css`)** | Custom earth-toned palette (`sage`, `sand`, `clay`, `ink`, `surface`, `canvas`) |
+| **Typography** | **Google Fonts** | `DM Serif Display` (Headings), `Inter` (Body UI), `JetBrains Mono` (Data) |
+| **Animations** | **Framer Motion 12** | Layout-preserving page transitions, checkmark popLayouts, spring micro-interactions |
+| **Companion Bot** | **Telegram Bot API (Node.js)** | Bidirectional in-chat habit logging, quick-step buttons, and circadian cron reminders |
+| **Cron Scheduling** | **Vercel Cron Jobs** | Daily midnight rollover, circadian EOD digests, and midday micro-nudges |
 | **Icons** | **Lucide React** | Minimalist vector icon set |
 
 ---
@@ -29,68 +32,67 @@
 
 ```
 Zenith/
-├── app/                      # Next.js App Router Pages & Layouts
-│   ├── globals.css           # Design tokens, custom variables, font imports
-│   ├── layout.tsx            # Root HTML layout wrapper
-│   ├── page.tsx              # Dashboard View (Main landing dashboard)
+├── app/                          # Next.js App Router Pages & API Endpoints
+│   ├── globals.css               # Design tokens, CSS variables, typography imports
+│   ├── layout.tsx                # Root layout wrapper with ZenithBot brand favicon
+│   ├── page.tsx                  # Dashboard View (Sprint Horizon, Friction Radar, Today's Habits)
 │   ├── habits/
-│   │   └── page.tsx          # Habit Planner View (Weekly habit matrix)
+│   │   └── page.tsx              # Habit Planner Hub (Dynamic sprint matrix & history)
 │   ├── settings/
-│   │   └── page.tsx          # User Settings & Preferences
-│   ├── login/
-│   │   └── page.tsx          # Mindful Login Page
-│   └── register/
-│       └── page.tsx          # Mindful Registration Page
+│   │   └── page.tsx              # User Preferences & 1-Click Telegram Bot Pairing
+│   ├── login/ & register/        # Mindful Authentication Pages
+│   └── api/                      # Backend API Route Handlers
+│       ├── cron/                 # Midnight rollover, EOD reminders, Midday micro-nudges
+│       └── telegram/             # Webhook, Link Token Generator, Connection Status Polling
 │
-├── components/               # Reusable Client Components
-│   ├── Layout.tsx            # Main shell with responsive sidebar integration
-│   ├── Sidebar.tsx           # Fixed desktop navigation / Slide-over mobile drawer
-│   ├── PageTransition.tsx    # Motion wrapper for page transitions
-│   ├── StatCard.tsx          # Analytics widget card with trends & icons
-│   ├── StatusCircle.tsx      # Tri-state interactive habit status button
-│   └── HabitGrid.tsx         # Weekly habits matrix with inline status toggles
+├── components/                   # Reusable UI & Domain Components
+│   ├── Layout.tsx & Sidebar.tsx  # Main shell with ZenithBot logo and mobile drawer
+│   ├── dashboard/                # SprintHorizonWidget, RiskBanner, TodayHabitList, WorkingWindow
+│   ├── habits/                   # DynamicSprintMatrix, HabitHeader, GenesisModal, SkipModal, CheckinModal
+│   └── auth/                     # AuthLayout, OnboardingModal
 │
-├── docs/                     # Project Documentation
-│   └── PROJECT_OVERVIEW.md   # Complete technical overview & roadmap
+├── hooks/                        # Custom React Hooks
+│   ├── useHabits.ts              # Optimistic habit state, silent sync, and auto-rollover
+│   ├── useSprint.ts              # Dynamic 1–15 day sprint horizon engine & archive snapshots
+│   └── useYesterdayCheckin.ts    # Morning reconciliation workflow for yesterday's unlogged rituals
 │
-├── public/                   # Static assets & favicon
-├── package.json              # Project dependencies & scripts
-└── tsconfig.json             # TypeScript config
+├── lib/                          # Services, Utilities, & Database Clients
+│   ├── services/                 # habits.ts, sprintAnalytics.ts, telegram.ts
+│   ├── supabase/                 # client.ts (Singleton), server.ts, env.ts
+│   └── utils/                    # sprintDate.ts, telegramFormatters.ts
+│
+├── public/                       # Brand assets: zenithBot.webp, manifest, icons
+└── docs/                         # Technical documentation & blueprints
 ```
 
 ---
 
-## ⚙️ Core Code Components & Features
+## ⚙️ Core Modules & Capabilities
 
 ### 1. 📊 Interactive Dashboard (`app/page.tsx`)
-- **Dynamic Time Greeting**: Automatically calculates time of day (`Good morning`, `Good afternoon`, `Good evening`).
-- **Performance Stat Cards (`StatCard.tsx`)**: Displays Total Habits (6), Completion Rate (50%), Current Streak (12 days), and Weekly Rate (78%).
-- **Today's Focus Section**: Displays today's scheduled habits with live status indicators and quick-completion states.
+- **Sprint Horizon Widget (`SprintHorizonWidget.tsx`)**: Live intra-day working window progression (`Today %` based on user's focus window) and macro sprint progress (`% Elapsed`) with interactive `(i)` info tooltips.
+- **Priority Friction Radar (`RiskBanner.tsx`)**: "Never Miss Twice" early intervention system flagging 2-consecutive-miss rituals with 1-click **⚡ Shrink to 5 min** and **✅ Mark Completed** actions.
+- **Circadian Habit List & Working Window**: Visual tracker of today's rituals and active working hours.
 
-### 2. 🗓️ Weekly Habit Matrix & Planner (`app/habits/page.tsx`, `HabitGrid.tsx`)
-- **7-Day Dynamic Calendar Grid**: Shows habit completion across the current week with date navigation (`Prev Week` / `Next Week`).
-- **Tri-State Habit Statuses (`StatusCircle.tsx`)**:
-  - 🟢 **Completed** (`bg-zen-primary` - `#8BA888` Sage Green)
-  - 🔴 **Missed** (`bg-zen-missed` - `#C4756E` Soft Terracotta)
-  - ⚪ **Unlogged** (`transparent` border - Light Slate)
-- **Inline Habit Creation**: Dynamic creation of new habits with instant client state updating.
+### 2. 🗓️ Dynamic Sprint Matrix & Planner (`app/habits/page.tsx`)
+- **1–15 Day Sprint Matrix (`DynamicSprintMatrix.tsx`)**: Flexible sprint windows with `table-fixed` column stability and instant `mode="popLayout"` checkmark animations.
+- **Circadian Energy Slots**: Habits organized into *Morning*, *Afternoon*, *Evening*, and *Anytime* energy buckets.
+- **Deterministic Dynamic Sorting**: Sort by *Circadian Flow*, *Longest First*, *Quick Wins*, or *Health Score* with stable tiebreaking.
+- **Morning Yesterday Reconciliation (`YesterdayCheckinModal.tsx`)**: Mindful check-in prompt on morning launch to review yesterday's unlogged habits before midnight rollover locks them.
+- **5-Minute Micro-Fallbacks (`SkipModal.tsx`)**: "Shrink, Don't Skip" engine allowing users to log 5-minute fallback steps that award health boosts and maintain identity momentum.
 
-### 3. 🎨 Serene Design System (`app/globals.css`)
-- **Palette**: Earth-toned pastel scheme featuring `#F7F6F3` (Warm Background), `#FFFFFF` (Surface), `#EDEAE5` (Sidebar), `#8BA888` (Primary Sage), and `#3D3D3D` (Charcoal Text).
-- **Typography Hierarchy**: Classical serif headers (`DM Serif Display`) paired with clean sans-serif UI font (`Inter`).
-
-### 4. ⚙️ User Settings (`app/settings/page.tsx`)
-- Configurable display name, email, start-of-week preference (Sunday/Monday), and daily reminder timers.
+### 3. 🤖 Telegram Companion Bot (`/api/telegram/*`)
+- **1-Click Deep-Link Pairing**: Single-tap account linking via deep-link tokens and live status polling.
+- **In-Chat Habit Tracking**: `/status` command displays today's habits with interactive inline buttons (`[✅ Complete]`, `[⚡ Micro-Step]`).
+- **Circadian Cron Reminders**: Daily EOD digests (`/api/cron/eod-reminders`) and midday micro-nudges (`/api/cron/midday-nudge`) dispatched directly to Telegram.
 
 ---
 
-## 🚀 Roadmap & Next Steps for Feature Building
+## 🚀 Active Roadmap & Next Horizon: Diagnosis Engine (`/diagnosis`)
 
-1. **Persisted Database Integration**: Connect PostgreSQL / Supabase or Prisma to save habits, logs, and user sessions.
-2. **Advanced Analytics & Heatmaps**: Add GitHub-style 365-day habit heatmaps and weekly completion charts.
-3. **Habit Categories & Tagging**: Enable categorization (Mindfulness, Health, Productivity, Fitness) with custom color badges.
-4. **Dark Mode & Theme Switching**: Implement a dark serene theme mode.
-5. **Habit Streaks & Milestone Rewards**: Celebrate habit milestones with subtle particle animations and streak protection tools.
+1. **Root-Cause Correlation Engine (`/diagnosis`)**: Cross-reference habit execution with working window overruns to prove schedule friction over willpower deficits.
+2. **Weekly Retrospectives & Habit Autopsies**: Comprehensive analytics on consistency rates, recovery efficiency, and overcommitment scores.
+3. **Step-Up Recovery Protocol (`/recovery`)**: Structured 3-day momentum rebuilders for rituals recovering from consecutive misses.
 
 ---
-*Created for Zenith Project — Developed by Samar 🖤*
+*Created for Zenith Project — Crafted with calm precision by Samar 🖤*

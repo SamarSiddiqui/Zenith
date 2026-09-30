@@ -13,6 +13,7 @@ export interface Habit {
   microVersion: string; // 5-minute fallback version for crunch days
   circadianSlot: CircadianSlot;
   category?: 'focus' | 'mindfulness' | 'physical' | 'craft' | 'rest';
+  identityMotive?: string;
   createdAt?: string;
   updatedAt?: string;
 }
