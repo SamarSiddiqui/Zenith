@@ -46,15 +46,15 @@ export function FrictionAutopsyMatrix({
           <div className="flex items-center gap-2">
             <span className="font-mono text-xs font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400 flex items-center gap-1">
               <Zap className="h-3.5 w-3.5" />
-              Root-Cause Analysis
+              Schedule Reflections
             </span>
           </div>
           <h3 className="font-serif text-2xl font-bold text-ink mt-0.5">
-            Schedule vs. Willpower Autopsy
+            Where Life & Habits Collided (And Why It&apos;s Okay)
           </h3>
           <p className="text-xs sm:text-sm text-muted font-light mt-1 max-w-xl">
             {overallVerdict ||
-              'Zenith proves that habit friction stems from schedule compression and time overruns, not personal discipline.'}
+              'When habits slip, it is almost always because your day got squeezed or energy dipped — never a lack of willpower.'}
           </p>
         </div>
 
@@ -64,7 +64,7 @@ export function FrictionAutopsyMatrix({
             <Sun className="h-3.5 w-3.5 text-amber-500" />
             <span className="text-muted text-[11px]">Morning</span>
             <span className={`text-[10px] rounded-md px-1.5 py-0.5 uppercase border ${getSeverityBadge(zoneFriction.morning)}`}>
-              {zoneFriction.morning}
+              {zoneFriction.morning === 'low' ? 'Gentle' : zoneFriction.morning === 'moderate' ? 'Moderate' : 'Squeezed'}
             </span>
           </div>
 
@@ -72,7 +72,7 @@ export function FrictionAutopsyMatrix({
             <Sunset className="h-3.5 w-3.5 text-sky-500" />
             <span className="text-muted text-[11px]">Afternoon</span>
             <span className={`text-[10px] rounded-md px-1.5 py-0.5 uppercase border ${getSeverityBadge(zoneFriction.afternoon)}`}>
-              {zoneFriction.afternoon}
+              {zoneFriction.afternoon === 'low' ? 'Gentle' : zoneFriction.afternoon === 'moderate' ? 'Moderate' : 'Squeezed'}
             </span>
           </div>
 
@@ -80,7 +80,7 @@ export function FrictionAutopsyMatrix({
             <Moon className="h-3.5 w-3.5 text-indigo-500" />
             <span className="text-muted text-[11px]">Evening</span>
             <span className={`text-[10px] rounded-md px-1.5 py-0.5 uppercase border ${getSeverityBadge(zoneFriction.evening)}`}>
-              {zoneFriction.evening}
+              {zoneFriction.evening === 'low' ? 'Gentle' : zoneFriction.evening === 'moderate' ? 'Moderate' : 'Squeezed'}
             </span>
           </div>
         </div>
@@ -89,8 +89,8 @@ export function FrictionAutopsyMatrix({
       {/* Collision Cards Grid */}
       {collisions.length === 0 ? (
         <div className="py-8 text-center text-muted font-light">
-          <p className="text-sm text-ink font-serif">No schedule collisions detected in this sprint horizon.</p>
-          <p className="text-xs font-mono text-muted mt-1">Your habits are flowing in harmony with your working window.</p>
+          <p className="text-sm text-ink font-serif">No schedule friction noticed this week!</p>
+          <p className="text-xs font-mono text-muted mt-1">Your habits are flowing in wonderful harmony with your daily schedule.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -113,7 +113,7 @@ export function FrictionAutopsyMatrix({
                       {collision.habitName}
                     </span>
                     <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[10px] font-mono text-amber-700 dark:text-amber-400 font-semibold">
-                      {collision.confidencePercent}% Confidence
+                      Pattern Noticed ({collision.confidencePercent}%)
                     </span>
                   </div>
 
@@ -127,7 +127,7 @@ export function FrictionAutopsyMatrix({
 
                   {collision.evidence && (
                     <div className="mt-2.5 rounded-xl border border-line/60 bg-surface/80 px-3 py-2 text-[11px] font-mono text-faint">
-                      <span className="font-semibold text-muted">Evidence: </span>
+                      <span className="font-semibold text-muted">What we noticed: </span>
                       <span>{collision.evidence}</span>
                     </div>
                   )}
@@ -137,13 +137,13 @@ export function FrictionAutopsyMatrix({
                 {collision.suggestedAction && (
                   <div className="mt-4 pt-3 border-t border-line/60 flex items-center justify-between gap-3">
                     <span className="text-[11px] font-mono text-muted">
-                      AI Recommendation:
+                      Gentle Suggestion:
                     </span>
 
                     {isApplied ? (
                       <span className="inline-flex items-center gap-1 rounded-xl border border-sage/40 bg-sage-wash px-3 py-1.5 text-xs font-mono font-bold text-sage-deep">
                         <Check className="h-3.5 w-3.5 stroke-[2.5]" />
-                        <span>Applied</span>
+                        <span>Applied with Ease</span>
                       </span>
                     ) : (
                       <button
@@ -157,7 +157,7 @@ export function FrictionAutopsyMatrix({
                         }}
                         className="inline-flex items-center gap-1.5 rounded-xl bg-sage px-3 py-1.5 text-xs font-mono font-semibold text-white shadow-xs hover:bg-sage-deep transition-all cursor-pointer"
                       >
-                        <span>{collision.suggestedAction.label || 'Apply Optimization'}</span>
+                        <span>{collision.suggestedAction.label || 'Try This Adjustment'}</span>
                         <ArrowRight className="h-3 w-3" />
                       </button>
                     )}
