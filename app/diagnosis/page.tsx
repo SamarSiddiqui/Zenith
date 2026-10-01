@@ -45,7 +45,7 @@ export default function DiagnosisPage() {
     applyMicroVersion,
     applyTieredDuration,
     applyRecoveryProtocol,
-  } = useDiagnosis(habits, user?.workingWindow, sprintSession);
+  } = useDiagnosis(habits, user?.workingWindow, sprintSession, habitsLoading);
 
   const habitLabRef = useRef<HTMLDivElement>(null);
   const todayLabel = formatFullTodayDate();

@@ -20,7 +20,8 @@ interface CachePayload {
 export function useDiagnosis(
   habits: Habit[],
   workingWindow?: WorkingWindow,
-  sprintSession?: SprintSession
+  sprintSession?: SprintSession,
+  isHabitsLoading: boolean = false
 ) {
   const { user } = useAuth();
   const userId = user?.id || 'local-user';
@@ -33,7 +34,7 @@ export function useDiagnosis(
   const [lastAnalyzedAt, setLastAnalyzedAt] = useState<Date | null>(null);
   const [appliedActions, setAppliedActions] = useState<Record<string, boolean>>({});
 
-  // Load applied action tags from localStorage
+  // 1. Initial synchronous cache hydration on mount
   useEffect(() => {
     if (typeof window !== 'undefined') {
       try {
@@ -41,11 +42,22 @@ export function useDiagnosis(
         if (stored) {
           setAppliedActions(JSON.parse(stored));
         }
+
+        const cached = localStorage.getItem(cacheKey);
+        if (cached) {
+          const parsed = JSON.parse(cached) as CachePayload;
+          const isFresh = Date.now() - parsed.timestamp < CACHE_TTL_MS;
+          if (isFresh && parsed.data) {
+            setDiagnosis(parsed.data);
+            setLastAnalyzedAt(new Date(parsed.timestamp));
+            setIsLoading(false);
+          }
+        }
       } catch (err) {
-        console.error('Failed to load applied actions from cache:', err);
+        console.error('Failed to load diagnosis cache from localStorage:', err);
       }
     }
-  }, []);
+  }, [cacheKey]);
 
   const markActionApplied = useCallback((actionKey: string) => {
     setAppliedActions((prev) => {
@@ -61,7 +73,9 @@ export function useDiagnosis(
   const runDiagnosis = useCallback(
     async (forceFresh: boolean = false): Promise<DiagnosisResult | null> => {
       if (!habits || habits.length === 0) {
-        setIsLoading(false);
+        if (!isHabitsLoading) {
+          setIsLoading(false);
+        }
         return null;
       }
 
@@ -84,6 +98,7 @@ export function useDiagnosis(
         }
       }
 
+      setIsLoading(true);
       setIsAnalyzing(true);
       setError(null);
 
@@ -137,17 +152,17 @@ export function useDiagnosis(
         setIsAnalyzing(false);
       }
     },
-    [habits, workingWindow, user, sprintSession, cacheKey]
+    [habits, workingWindow, user, sprintSession, cacheKey, isHabitsLoading]
   );
 
-  // Initial load on mount or when habits become available
+  // Auto-trigger analysis when habits are loaded and no diagnosis is present yet
   useEffect(() => {
-    if (habits.length > 0 && !diagnosis && isLoading) {
+    if (!isHabitsLoading && habits.length > 0 && !diagnosis && !isAnalyzing) {
       runDiagnosis(false);
-    } else if (habits.length === 0) {
+    } else if (!isHabitsLoading && habits.length === 0) {
       setIsLoading(false);
     }
-  }, [habits, diagnosis, isLoading, runDiagnosis]);
+  }, [habits, isHabitsLoading, diagnosis, isAnalyzing, runDiagnosis]);
 
   // 1-Click Action 1: Re-anchor Circadian Slot
   const applySlotRecommendation = useCallback(
