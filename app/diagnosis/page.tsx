@@ -72,22 +72,22 @@ export default function DiagnosisPage() {
             <div className="flex flex-wrap items-center gap-2 mb-2">
               <div className="inline-flex items-center gap-1.5 rounded-full border border-sage/30 bg-sage-wash/70 px-3 py-1 text-[11px] font-mono font-semibold uppercase tracking-wider text-sage-deep shadow-xs">
                 <Sparkles className="h-3 w-3 text-sage-deep" />
-                <span>AI Circadian Intelligence</span>
+                <span>🌿 Mindful Growth &amp; Check-in</span>
               </div>
 
               {formattedAnalysisTime && (
                 <div className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface px-3 py-1 text-[11px] font-mono text-muted shadow-xs">
                   <Clock className="h-3 w-3 text-faint" />
-                  <span>Audit: {formattedAnalysisTime} (Gemini 3.5 Flash-Lite)</span>
+                  <span>Reflected at: {formattedAnalysisTime} (AI Mentor)</span>
                 </div>
               )}
             </div>
 
             <h1 className="font-serif text-3xl sm:text-4xl text-ink tracking-tight">
-              Diagnosis & Growth Hub
+              Weekly Mindful Check-in
             </h1>
             <p className="mt-1 text-xs sm:text-sm text-muted font-light max-w-2xl">
-              Circadian behavioral analysis powered by Gemini. We diagnose schedule friction, protect your identity momentum, and eliminate willpower guilt.
+              A calm, supportive reflection on your week. We look at where your time flowed naturally, where your days got squeezed, and how to keep growing with ease.
             </p>
           </div>
 
@@ -102,19 +102,19 @@ export default function DiagnosisPage() {
                   ? 'border-sage/40 bg-sage-wash text-sage-deep animate-pulse'
                   : 'border-line bg-surface text-ink hover:border-sage hover:text-sage-deep'
               }`}
-              title="Click to run a fresh Gemini diagnosis with latest habit logs"
+              title="Click to reflect on your latest habit logs"
             >
               <RotateCcw
                 className={`h-3.5 w-3.5 text-sage-deep ${isAnalyzing ? 'animate-spin' : ''}`}
               />
-              <span>{isAnalyzing ? 'Analyzing Horizon...' : 'Re-Analyze with Gemini'}</span>
+              <span>{isAnalyzing ? 'Reflecting on your week...' : '🔄 Refresh Reflections'}</span>
             </button>
 
             <Link
               href="/habits"
               className="inline-flex items-center gap-1.5 rounded-2xl bg-sage px-4 py-2.5 text-xs font-mono font-medium text-white shadow-xs hover:bg-sage-deep transition-all"
             >
-              <span>Habit Matrix</span>
+              <span>Habits Planner</span>
               <CalendarRange className="h-3.5 w-3.5" />
             </Link>
           </div>
@@ -143,10 +143,10 @@ export default function DiagnosisPage() {
           <div className="rounded-3xl border border-line bg-surface p-12 text-center shadow-calm space-y-3">
             <ShieldCheck className="h-10 w-10 text-sage-deep mx-auto stroke-[1.5]" />
             <h3 className="font-serif text-xl font-bold text-ink">
-              No active rituals found to diagnose
+              Ready when you are! Let&apos;s plant your first habits.
             </h3>
             <p className="text-xs sm:text-sm text-muted font-light max-w-md mx-auto">
-              Anchor your first mindful rituals in the Habit Planner. Zenith will automatically evaluate their circadian resonance and schedule friction.
+              Add a couple of habits to your weekly planner, and your AI mentor will share warm insights, celebrate your wins, and help you find your natural rhythm.
             </p>
             <div className="pt-2">
               <Link

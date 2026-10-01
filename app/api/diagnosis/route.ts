@@ -3,17 +3,19 @@ import { callGeminiStructured } from '../../../lib/gemini/client';
 import type { DiagnosisRequest, DiagnosisResult } from '../../../types/diagnosis';
 import type { Habit } from '../../../types/zenith';
 
-const SYSTEM_INSTRUCTION = `You are the Zenith Circadian Performance Strategist and Behavioral Scientist.
-Your mission is to analyze the user's habit execution data, working window, and circadian slots to provide an empowering, guilt-free diagnostic evaluation.
+const SYSTEM_INSTRUCTION = `You are Zenith, a wise, calm, and deeply encouraging habit mentor and supportive companion.
+Think of yourself as a kind, thoughtful friend sitting down with the user over coffee to reflect on their week.
 
-CORE PRINCIPLES:
-1. NEVER blame willpower or discipline. Habit skips are almost always schedule collisions, duration fatigue, or biological energy misalignments.
-2. Value "Shrink, Don't Skip" micro-fallbacks (2–5 minute versions) as high-value momentum preservers.
-3. Circadian Slots:
-   - Morning: High cognitive focus, clarity, grounding.
-   - Afternoon: Steady execution, meetings, physical movement.
-   - Evening: Decompression, reflection, recovery. Avoid high-willpower routines late at night.
-4. Output strictly valid JSON conforming exactly to the requested schema.`;
+TONE & VOICE GUIDELINES:
+1. WARM, CALM, AND SUPPORTIVE: Speak warmly, conversationally, and with genuine empathy. Use "we" and "you" in an encouraging, friendly way.
+2. ZERO GUILT OR SHAME: Never blame willpower, discipline, or laziness. Treat any skipped habit as a natural schedule squeeze or energy mismatch.
+3. HUMAN & DOWN-TO-EARTH: Avoid clinical jargon (no "autopsy", "collision compliance", "failure pathology"). Use gentle, human expressions like "where your day got squeezed", "giving yourself breathing room", "your best next step", "gentle momentum reset".
+4. CELEBRATE MICRO-STEPS: Emphasize that doing a 2-minute version on busy days is a huge win for self-trust.
+5. Circadian Harmony:
+   - Morning: Natural focus and morning clarity.
+   - Afternoon: Steady execution and physical energy.
+   - Evening: Decompression, reflection, and restorative rest. Avoid heavy-willpower demands late at night.
+6. Output strictly valid JSON conforming to the requested schema.`;
 
 function buildPrompt(req: DiagnosisRequest): string {
   const {
@@ -62,21 +64,21 @@ ACTIVE HABITS DATA:
 ${JSON.stringify(habitsSummary, null, 2)}
 
 INSTRUCTIONS:
-Perform an in-depth circadian diagnosis. Analyze where schedule collisions and fatigue occur.
-Produce a JSON response matching the following TypeScript interface structure:
+Reflect on the user's week like a thoughtful, supportive mentor. Analyze where time flowed naturally and where days got squeezed.
+Produce a JSON response matching the following structure:
 
 {
   "zenithScore": {
     "overall": <number 0-100 calculated from consistency, resilience, and balance>,
-    "circadianFidelity": <number 0-100 % of habits in optimal slot>,
-    "recoveryResilience": <number 0-100 % of slips prevented from 2nd miss>,
-    "balanceScore": <number 0-100 planned load vs usable window reality>,
-    "levelLabel": "<e.g., 'Ascending Momentum' | 'Peak Flow' | 'Compressed Horizon' | 'Sustained Equilibrium'>"
+    "circadianFidelity": <number 0-100 % of habits in their natural energy slot>,
+    "recoveryResilience": <number 0-100 % of slips prevented from turning into second misses>,
+    "balanceScore": <number 0-100 planned load vs usable day reality>,
+    "levelLabel": "<e.g., 'In Gentle Flow' | 'Growing Steadily' | 'Finding Your Rhythm' | 'Slightly Overextended'>"
   },
   "executiveSynthesis": {
-    "headline": "<Inspiring, analytical 1-sentence breakthrough headline>",
-    "briefing": "<2-3 mindful, compassionate sentences explaining why slips happened due to schedule/time, not weakness>",
-    "primaryGrowthOpportunity": "<The single highest leverage 1-step change the user can make this week>",
+    "headline": "<Encouraging, inspiring, warm 1-sentence insight celebrating progress and identifying the root schedule gap>",
+    "briefing": "<2-3 warm, compassionate, friend-like sentences explaining that slips were caused by busy work hours or timing mismatches, not discipline>",
+    "primaryGrowthOpportunity": "<The single kindest, highest-leverage 1-step change the user can make this week>",
     "strengths": ["<Strength 1>", "<Strength 2>", "<Strength 3>"]
   },
   "frictionAutopsy": {
@@ -85,15 +87,15 @@ Produce a JSON response matching the following TypeScript interface structure:
         "habitId": "<matching habit id>",
         "habitName": "<matching habit name>",
         "collisionType": "<'late_workday_overrun' | 'duration_fatigue' | 'energy_misalignment' | 'weekend_drift' | 'unanchored_trigger'>",
-        "title": "<Concise collision title>",
-        "description": "<Why this habit hits friction relative to the user's working hours or daily energy>",
-        "evidence": "<Direct evidence from weekly history or minutes>",
+        "title": "<Warm, human title like 'Evening Squeeze After Work' or 'Ambitious Target Length'>",
+        "description": "<Kind explanation of how work hours or energy drop squeezed this ritual>",
+        "evidence": "<What we noticed in the logs>",
         "confidencePercent": <e.g., 85>,
         "suggestedAction": {
           "actionType": "<'reschedule_slot' | 'shrink_duration' | 'split_routine'>",
           "newSlot": "<'morning' | 'afternoon' | 'evening' | 'anytime'>",
           "newMinutes": <number or undefined>,
-          "label": "<Short 1-click button action label, e.g. 'Shift to Morning (08:30)'>"
+          "label": "<Friendly 1-click button text, e.g. 'Shift to Morning (08:30)' or 'Try 15m Flow'>"
         }
       }
     ],
@@ -102,7 +104,7 @@ Produce a JSON response matching the following TypeScript interface structure:
       "afternoon": "<'low' | 'moderate' | 'high'>",
       "evening": "<'low' | 'moderate' | 'high'>"
     },
-    "overallFrictionVerdict": "<1 concise sentence summarizing friction status>"
+    "overallFrictionVerdict": "<1 kind, reassuring sentence summarizing how the schedule felt this week>"
   },
   "habitOptimizations": [
     {
@@ -111,46 +113,45 @@ Produce a JSON response matching the following TypeScript interface structure:
       "currentSlot": "<current slot>",
       "recommendedSlot": "<'morning' | 'afternoon' | 'evening' | 'anytime'>",
       "isSlotOptimal": <boolean>,
-      "reasoning": "<Why this slot maximizes retention>",
+      "reasoning": "<Why this slot gives the user more ease and natural flow>",
       "tieredVersions": {
-        "gold": { "durationMins": <full minutes>, "label": "Gold Horizon", "description": "<full routine description>" },
-        "silver": { "durationMins": <half minutes>, "label": "Silver Flow", "description": "<standard compressed version>" },
-        "bronzeMicro": { "durationMins": <2-5>, "label": "Bronze Micro-Fallback", "description": "<ultra-fast identity preserver>" }
+        "gold": { "durationMins": <full minutes>, "label": "Full Flow", "description": "<full intended routine when time is abundant>" },
+        "silver": { "durationMins": <half minutes>, "label": "Gentle Flow", "description": "<peaceful standard flow for regular busy days>" },
+        "bronzeMicro": { "durationMins": <2-5>, "label": "2-Min Spark", "description": "<ultra-light identity anchor when your day is packed>" }
       },
-      "identityMotiveUpgrade": "<A strengthened identity statement, e.g. 'I am an athlete who values daily mobility'>"
+      "identityMotiveUpgrade": "<A warm, empowering identity statement, e.g. 'I am someone who cares for my body with daily gentle movement'>"
     }
   ],
   "recoveryProtocols": [
-    // Include 3-day recovery ramp for ANY habit with 2 consecutive misses or high friction (or for the top 1-2 most at-risk habits)
     {
       "habitId": "<matching habit id>",
       "habitName": "<matching habit name>",
       "consecutiveMisses": <number>,
-      "triggerReason": "<Why momentum dipped>",
+      "triggerReason": "<Compassionate note on why momentum paused>",
       "steps": [
         {
           "dayNumber": 1,
-          "stepName": "Micro-Spark Reignition",
+          "stepName": "Just 2 Minutes",
           "tier": "micro",
           "targetMinutes": 2,
-          "actionPrompt": "<Easy 2-minute version to eliminate friction>",
-          "mindsetGrounding": "Showing up for 120 seconds re-establishes self-trust."
+          "actionPrompt": "<Ultra-easy 2-minute action to show up with zero stress>",
+          "mindsetGrounding": "Showing up for just 120 seconds gently re-ignites your self-trust."
         },
         {
           "dayNumber": 2,
-          "stepName": "Half-Power Flow",
+          "stepName": "Gentle Stretch",
           "tier": "half",
           "targetMinutes": <approx half duration>,
-          "actionPrompt": "<Medium version>",
-          "mindsetGrounding": "Sustaining momentum with zero exhaustion."
+          "actionPrompt": "<Easy relaxed version>",
+          "mindsetGrounding": "Finding your groove with ease and zero pressure."
         },
         {
           "dayNumber": 3,
-          "stepName": "Full Zenith Horizon",
+          "stepName": "Back in Full Flow",
           "tier": "full",
           "targetMinutes": <full minutes>,
-          "actionPrompt": "<Full standard routine>",
-          "mindsetGrounding": "Complete baseline restored with full momentum."
+          "actionPrompt": "<Full enjoyable routine>",
+          "mindsetGrounding": "You're fully back in your natural rhythm."
         }
       ]
     }
@@ -174,7 +175,7 @@ export async function POST(req: NextRequest) {
 
     // Attach metadata
     diagnosis.generatedAt = new Date().toISOString();
-    diagnosis.modelUsed = 'Gemini 2.5 Flash-Lite';
+    diagnosis.modelUsed = 'Gemini 3.5 Flash-Lite';
 
     return NextResponse.json(diagnosis, { status: 200 });
   } catch (err: any) {

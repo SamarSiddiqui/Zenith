@@ -68,7 +68,7 @@ export function ZenithGrowthRadar({ score }: ZenithGrowthRadarProps) {
             {overall}
           </motion.span>
           <span className="text-[10px] font-mono uppercase tracking-widest text-muted font-semibold">
-            Zenith Index
+            Rhythm Score
           </span>
         </div>
       </div>
@@ -80,11 +80,11 @@ export function ZenithGrowthRadar({ score }: ZenithGrowthRadarProps) {
             <div className="flex items-center gap-2">
               <span className="font-mono text-xs font-semibold uppercase tracking-wider text-sage-deep flex items-center gap-1">
                 <Sparkles className="h-3.5 w-3.5" />
-                AI Growth Evaluation
+                Your Weekly Rhythm Evaluation
               </span>
             </div>
             <h3 className="mt-0.5 font-serif text-xl sm:text-2xl font-bold text-ink">
-              {score.levelLabel || 'Sustained Momentum'}
+              {score.levelLabel || 'In Gentle Flow'}
             </h3>
           </div>
 
@@ -93,18 +93,18 @@ export function ZenithGrowthRadar({ score }: ZenithGrowthRadarProps) {
               overall
             )}`}
           >
-            {overall >= 80 ? 'Peak Alignment' : overall >= 65 ? 'Active Ascendance' : 'Compression Warning'}
+            {overall >= 80 ? 'In Beautiful Flow' : overall >= 65 ? 'Steady Momentum' : 'Slightly Squeezed'}
           </span>
         </div>
 
         {/* Sub-Metric Bars */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
-          {/* Metric 1: Circadian Fidelity */}
+          {/* Metric 1: Energy Fit */}
           <div className="rounded-2xl border border-line bg-canvas/70 p-3 shadow-xs">
             <div className="flex items-center justify-between text-xs font-mono">
               <span className="text-muted flex items-center gap-1">
                 <Zap className="h-3 w-3 text-amber-600 dark:text-amber-400" />
-                Circadian
+                Energy Fit
               </span>
               <span className="font-bold text-ink">{score.circadianFidelity}%</span>
             </div>
@@ -116,15 +116,15 @@ export function ZenithGrowthRadar({ score }: ZenithGrowthRadarProps) {
                 transition={{ duration: 0.8, delay: 0.2 }}
               />
             </div>
-            <span className="block mt-1.5 text-[10px] font-mono text-faint">Biological alignment</span>
+            <span className="block mt-1.5 text-[10px] font-mono text-faint">Habits in natural slots</span>
           </div>
 
-          {/* Metric 2: Recovery Resilience */}
+          {/* Metric 2: Kind Resilience */}
           <div className="rounded-2xl border border-line bg-canvas/70 p-3 shadow-xs">
             <div className="flex items-center justify-between text-xs font-mono">
               <span className="text-muted flex items-center gap-1">
                 <ShieldCheck className="h-3 w-3 text-sage-deep" />
-                Resilience
+                Kind Resilience
               </span>
               <span className="font-bold text-ink">{score.recoveryResilience}%</span>
             </div>
@@ -136,15 +136,15 @@ export function ZenithGrowthRadar({ score }: ZenithGrowthRadarProps) {
                 transition={{ duration: 0.8, delay: 0.4 }}
               />
             </div>
-            <span className="block mt-1.5 text-[10px] font-mono text-faint">48h bounce-back rate</span>
+            <span className="block mt-1.5 text-[10px] font-mono text-faint">Bouncing back with ease</span>
           </div>
 
-          {/* Metric 3: Horizon Balance */}
+          {/* Metric 3: Breathing Room */}
           <div className="rounded-2xl border border-line bg-canvas/70 p-3 shadow-xs">
             <div className="flex items-center justify-between text-xs font-mono">
               <span className="text-muted flex items-center gap-1">
                 <Activity className="h-3 w-3 text-sky-600 dark:text-sky-400" />
-                Balance
+                Breathing Room
               </span>
               <span className="font-bold text-ink">{score.balanceScore}%</span>
             </div>
@@ -156,7 +156,7 @@ export function ZenithGrowthRadar({ score }: ZenithGrowthRadarProps) {
                 transition={{ duration: 0.8, delay: 0.6 }}
               />
             </div>
-            <span className="block mt-1.5 text-[10px] font-mono text-faint">Schedule capacity fit</span>
+            <span className="block mt-1.5 text-[10px] font-mono text-faint">Comfortable day balance</span>
           </div>
         </div>
       </div>

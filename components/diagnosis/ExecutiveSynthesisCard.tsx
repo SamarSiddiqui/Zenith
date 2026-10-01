@@ -23,7 +23,7 @@ export function ExecutiveSynthesisCard({
             <Compass className="h-4 w-4" />
           </div>
           <span className="text-xs font-mono font-semibold uppercase tracking-wider text-sage-deep">
-            Circadian AI Synthesis
+            A Note From Your AI Mentor
           </span>
         </div>
 
@@ -45,7 +45,7 @@ export function ExecutiveSynthesisCard({
             </div>
             <div>
               <span className="block text-[11px] font-mono font-bold uppercase tracking-wider text-sage-deep">
-                Primary Growth Opportunity
+                Your Best Next Step
               </span>
               <p className="text-xs sm:text-sm font-medium text-ink mt-0.5">
                 {synthesis.primaryGrowthOpportunity}
@@ -59,7 +59,7 @@ export function ExecutiveSynthesisCard({
               onClick={onExploreOptimizations}
               className="inline-flex items-center gap-1.5 self-start sm:self-center rounded-xl bg-sage px-3.5 py-1.5 text-xs font-mono font-medium text-white shadow-xs hover:bg-sage-deep transition-all cursor-pointer shrink-0"
             >
-              <span>View Habit Lab</span>
+              <span>Explore Gentle Adjustments</span>
               <ArrowRight className="h-3 w-3" />
             </button>
           )}
@@ -70,7 +70,7 @@ export function ExecutiveSynthesisCard({
       {synthesis.strengths && synthesis.strengths.length > 0 && (
         <div className="pt-2 border-t border-line/60">
           <span className="block text-[11px] font-mono text-faint mb-2">
-            Demonstrated Strengths This Sprint:
+            Things you handled beautifully this week:
           </span>
           <div className="flex flex-wrap items-center gap-2">
             {synthesis.strengths.map((str, idx) => (

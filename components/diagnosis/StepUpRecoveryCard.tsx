@@ -27,14 +27,14 @@ export function StepUpRecoveryCard({
         <div className="flex items-center gap-2">
           <span className="font-mono text-xs font-semibold uppercase tracking-wider text-sage-deep flex items-center gap-1">
             <Flame className="h-3.5 w-3.5 text-amber-500" />
-            Adaptive Momentum Restorer
+            Kind Momentum Restorer
           </span>
         </div>
         <h3 className="font-serif text-2xl font-bold text-ink mt-0.5">
-          3-Day Step-Up Recovery Protocol
+          Gentle 3-Day Momentum Reset
         </h3>
         <p className="text-xs sm:text-sm text-muted font-light mt-1">
-          When life causes a friction dip, this 3-day guided ramp-up rebuilds self-trust and momentum with zero willpower exhaustion.
+          No guilt, no shame. When life pauses a habit, ease back into your natural groove over 3 gentle days.
         </p>
       </div>
 
@@ -60,7 +60,7 @@ export function StepUpRecoveryCard({
                       {proto.habitName}
                     </h4>
                     <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-0.5 text-[10px] font-mono text-amber-700 dark:text-amber-400 font-bold uppercase">
-                      Momentum Dip
+                      Gentle Reset Ready
                     </span>
                   </div>
                   <p className="text-xs text-muted font-light mt-0.5">
@@ -71,7 +71,7 @@ export function StepUpRecoveryCard({
                 {isApplied ? (
                   <span className="inline-flex items-center gap-1 self-start sm:self-center rounded-xl border border-sage/40 bg-sage-wash px-3.5 py-1.5 text-xs font-mono font-bold text-sage-deep">
                     <Check className="h-3.5 w-3.5 stroke-[2.5]" />
-                    <span>Protocol Active</span>
+                    <span>Reset Active (Day 1)</span>
                   </span>
                 ) : (
                   <button
@@ -79,7 +79,7 @@ export function StepUpRecoveryCard({
                     onClick={() => onApplyProtocol?.(proto.habitId, proto)}
                     className="inline-flex items-center gap-1.5 self-start sm:self-center rounded-xl bg-sage px-3.5 py-1.5 text-xs font-mono font-semibold text-white shadow-xs hover:bg-sage-deep transition-all cursor-pointer shrink-0"
                   >
-                    <span>Apply 3-Day Protocol</span>
+                    <span>🌿 Start 3-Day Reset</span>
                     <ArrowRight className="h-3.5 w-3.5" />
                   </button>
                 )}

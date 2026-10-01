@@ -27,14 +27,14 @@ export function HabitLabCard({
         <div className="flex items-center gap-2">
           <span className="font-mono text-xs font-semibold uppercase tracking-wider text-sage-deep flex items-center gap-1">
             <Sparkles className="h-3.5 w-3.5" />
-            AI Calibration Lab
+            Habit Playground & Easy Fallbacks
           </span>
         </div>
         <h3 className="font-serif text-2xl font-bold text-ink mt-0.5">
-          Gemini Habit Laboratory & Identity Scaler
+          Flexible Habit Tiers for Real Life
         </h3>
         <p className="text-xs sm:text-sm text-muted font-light mt-1">
-          Scale rituals into flexible 3-tier horizons to protect your identity momentum on both peak and crunch days.
+          Make every habit flexible so you never have to skip completely when life gets busy. On tough days, even 2 minutes keeps your self-trust alive.
         </p>
       </div>
 
@@ -94,36 +94,36 @@ export function HabitLabCard({
 
               {/* 3-Tier Horizon Grid */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                {/* Tier 1: Gold Horizon */}
+                {/* Tier 1: Full Flow */}
                 <div className="rounded-xl border border-line bg-surface p-3.5 space-y-1.5 shadow-xs">
                   <div className="flex items-center justify-between">
                     <span className="inline-flex items-center gap-1 text-xs font-mono font-bold text-amber-600 dark:text-amber-400 uppercase">
                       <Award className="h-3.5 w-3.5" />
-                      Gold (Full)
+                      Full Flow
                     </span>
                     <span className="text-xs font-mono font-bold text-ink">
                       {opt.tieredVersions?.gold?.durationMins || 30}m
                     </span>
                   </div>
                   <p className="text-xs text-muted font-light leading-snug">
-                    {opt.tieredVersions?.gold?.description || 'Full intended ritual routine.'}
+                    {opt.tieredVersions?.gold?.description || 'Full intended ritual when time is abundant.'}
                   </p>
                 </div>
 
-                {/* Tier 2: Silver Flow */}
+                {/* Tier 2: Gentle Flow */}
                 <div className="rounded-xl border border-line bg-surface p-3.5 space-y-1.5 shadow-xs flex flex-col justify-between">
                   <div>
                     <div className="flex items-center justify-between">
                       <span className="inline-flex items-center gap-1 text-xs font-mono font-bold text-sky-600 dark:text-sky-400 uppercase">
                         <Zap className="h-3.5 w-3.5" />
-                        Silver (Flow)
+                        Gentle Flow
                       </span>
                       <span className="text-xs font-mono font-bold text-ink">
                         {opt.tieredVersions?.silver?.durationMins || 15}m
                       </span>
                     </div>
                     <p className="text-xs text-muted font-light leading-snug mt-1">
-                      {opt.tieredVersions?.silver?.description || 'Compressed routine during standard busy days.'}
+                      {opt.tieredVersions?.silver?.description || 'Peaceful standard flow for regular busy days.'}
                     </p>
                   </div>
 
@@ -131,7 +131,7 @@ export function HabitLabCard({
                     {appliedActions[`duration_${opt.habitId}_${opt.tieredVersions?.silver?.durationMins}`] ? (
                       <span className="inline-flex items-center gap-1 text-[11px] font-mono text-sage-deep font-bold">
                         <Check className="h-3 w-3 stroke-[2.5]" />
-                        <span>Active Target</span>
+                        <span>Target Set</span>
                       </span>
                     ) : (
                       <button
@@ -147,20 +147,20 @@ export function HabitLabCard({
                   </div>
                 </div>
 
-                {/* Tier 3: Bronze Micro-Fallback */}
+                {/* Tier 3: 2-Min Spark */}
                 <div className="rounded-xl border border-sage/30 bg-sage-wash/40 p-3.5 space-y-1.5 shadow-xs flex flex-col justify-between">
                   <div>
                     <div className="flex items-center justify-between">
                       <span className="inline-flex items-center gap-1 text-xs font-mono font-bold text-sage-deep uppercase">
                         <ShieldCheck className="h-3.5 w-3.5" />
-                        Bronze (Micro)
+                        2-Min Spark
                       </span>
                       <span className="text-xs font-mono font-bold text-sage-deep">
                         {opt.tieredVersions?.bronzeMicro?.durationMins || 3}m
                       </span>
                     </div>
                     <p className="text-xs text-ink font-medium leading-snug mt-1">
-                      {opt.tieredVersions?.bronzeMicro?.description || '2-5 minute zero-guilt identity anchor.'}
+                      {opt.tieredVersions?.bronzeMicro?.description || 'Ultra-light identity anchor when your day is packed.'}
                     </p>
                   </div>
 
@@ -168,7 +168,7 @@ export function HabitLabCard({
                     {isMicroApplied ? (
                       <span className="inline-flex items-center gap-1 text-[11px] font-mono text-sage-deep font-bold">
                         <Check className="h-3 w-3 stroke-[2.5]" />
-                        <span>Saved as Micro-Step</span>
+                        <span>2-Min Spark Saved</span>
                       </span>
                     ) : (
                       <button
@@ -181,7 +181,7 @@ export function HabitLabCard({
                         }
                         className="inline-flex items-center gap-1 text-[11px] font-mono font-bold text-sage-deep hover:text-ink transition-colors cursor-pointer"
                       >
-                        <span>Save as Fallback</span>
+                        <span>Use as 2-Min Spark</span>
                         <ArrowRight className="h-3 w-3" />
                       </button>
                     )}
@@ -192,7 +192,7 @@ export function HabitLabCard({
               {/* Identity Motive Statement */}
               {opt.identityMotiveUpgrade && (
                 <div className="rounded-xl border border-line/60 bg-surface/80 px-3.5 py-2 text-xs font-mono text-muted flex items-center gap-2">
-                  <span className="text-sage-deep font-bold shrink-0">Identity Anchor:</span>
+                  <span className="text-sage-deep font-bold shrink-0">Your Daily Identity Anchor:</span>
                   <span className="italic text-ink font-serif text-sm">&ldquo;{opt.identityMotiveUpgrade}&rdquo;</span>
                 </div>
               )}
