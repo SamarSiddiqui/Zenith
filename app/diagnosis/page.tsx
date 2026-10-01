@@ -57,10 +57,10 @@ export default function DiagnosisPage() {
 
   const formattedAnalysisTime = lastAnalyzedAt
     ? lastAnalyzedAt.toLocaleTimeString('en-US', {
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true,
-      })
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    })
     : null;
 
   return (
@@ -72,7 +72,7 @@ export default function DiagnosisPage() {
             <div className="flex flex-wrap items-center gap-2 mb-2">
               <div className="inline-flex items-center gap-1.5 rounded-full border border-sage/30 bg-sage-wash/70 px-3 py-1 text-[11px] font-mono font-semibold uppercase tracking-wider text-sage-deep shadow-xs">
                 <Sparkles className="h-3 w-3 text-sage-deep" />
-                <span>🌿 Mindful Growth &amp; Check-in</span>
+                <span>Mindful Growth &amp; Check-in</span>
               </div>
 
               {formattedAnalysisTime && (
@@ -93,30 +93,33 @@ export default function DiagnosisPage() {
 
           {/* Action Trigger Buttons */}
           <div className="flex items-center gap-2.5 self-start lg:self-auto flex-wrap">
-            <button
+            <motion.button
               type="button"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               disabled={isAnalyzing || habits.length === 0}
               onClick={() => reAnalyze()}
-              className={`inline-flex items-center gap-2 rounded-2xl border px-4 py-2.5 text-xs font-mono font-semibold transition-all shadow-calm cursor-pointer ${
-                isAnalyzing
-                  ? 'border-sage/40 bg-sage-wash text-sage-deep animate-pulse'
-                  : 'border-line bg-surface text-ink hover:border-sage hover:text-sage-deep'
-              }`}
+              className={`group relative inline-flex items-center gap-2 rounded-2xl border px-4 py-2.5 text-xs font-mono font-semibold transition-all shadow-calm cursor-pointer ${isAnalyzing
+                ? 'border-sage/40 bg-sage-wash text-sage-deep animate-pulse'
+                : 'border-line bg-surface text-ink hover:border-sage/50 hover:bg-sage-wash/30 hover:text-sage-deep hover:shadow-md'
+                }`}
               title="Click to reflect on your latest habit logs"
             >
               <RotateCcw
-                className={`h-3.5 w-3.5 text-sage-deep ${isAnalyzing ? 'animate-spin' : ''}`}
+                className={`h-3.5 w-3.5 text-sage-deep transition-transform duration-300 ${isAnalyzing ? 'animate-spin' : 'group-hover:rotate-45'}`}
               />
-              <span>{isAnalyzing ? 'Reflecting on your week...' : '🔄 Refresh Reflections'}</span>
-            </button>
+              <span>{isAnalyzing ? 'Reflecting on your week...' : 'Refresh Reflections'}</span>
+            </motion.button>
 
-            <Link
-              href="/habits"
-              className="inline-flex items-center gap-1.5 rounded-2xl bg-sage px-4 py-2.5 text-xs font-mono font-medium text-white shadow-xs hover:bg-sage-deep transition-all"
-            >
-              <span>Habits Planner</span>
-              <CalendarRange className="h-3.5 w-3.5" />
-            </Link>
+            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+              <Link
+                href="/habits"
+                className="inline-flex items-center gap-1.5 rounded-2xl bg-sage px-4 py-2.5 text-xs font-mono font-medium text-white shadow-xs hover:bg-sage-deep hover:shadow-md transition-all"
+              >
+                <span>Habits Planner</span>
+                <CalendarRange className="h-3.5 w-3.5" />
+              </Link>
+            </motion.div>
           </div>
         </div>
 
