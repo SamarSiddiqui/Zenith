@@ -121,14 +121,49 @@ export function rolloverPastUnloggedDays(
 }
 
 /**
+/**
+ * Helper: Fire-and-forget server cache invalidation for Redis
+ */
+export async function invalidateHabitsCache(userId?: string): Promise<void> {
+  if (!userId || userId === 'local-user' || typeof window === 'undefined') return;
+  try {
+    fetch('/api/habits/invalidate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId }),
+    }).catch(() => {});
+  } catch {
+    // Ignore network failures for background invalidation
+  }
+}
+
+/**
  * Fetch all habits for the authenticated user.
- * Executes indexed query: `WHERE user_id = $1 ORDER BY created_at ASC`
+ * 1. Tries Redis Cache via /api/habits in ~10ms
+ * 2. Falls back to direct Supabase query
+ * 3. Falls back to localStorage for offline mode
  */
 export async function getHabits(userId?: string): Promise<Habit[]> {
+  // 1. Try Cached API route if running on browser client
+  if (typeof window !== 'undefined' && userId && userId !== 'local-user') {
+    try {
+      const res = await fetch(`/api/habits?userId=${encodeURIComponent(userId)}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data.habits)) {
+          return data.habits;
+        }
+      }
+    } catch (err) {
+      console.warn('[getHabits] API route failed, falling back to direct Supabase client:', err);
+    }
+  }
+
+  // 2. Direct Supabase Query
   const supabase = createClient();
   const configured = isSupabaseConfigured();
 
-  if (supabase && configured && userId) {
+  if (supabase && configured && userId && userId !== 'local-user') {
     try {
       const { data, error } = await supabase
         .from('habits')
@@ -146,7 +181,7 @@ export async function getHabits(userId?: string): Promise<Habit[]> {
     }
   }
 
-  // Local storage fallback for unconfigured / offline state
+  // 3. Local storage fallback for unconfigured / offline state
   if (typeof window !== 'undefined') {
     const cached = localStorage.getItem(LOCAL_STORAGE_HABITS_KEY);
     if (cached) {
@@ -189,7 +224,10 @@ export async function createHabit(userId: string, input: CreateHabitInput): Prom
         .single();
 
       if (error) throw error;
-      if (data) return mapDbRowToHabit(data as HabitDbRow);
+      if (data) {
+        invalidateHabitsCache(userId);
+        return mapDbRowToHabit(data as HabitDbRow);
+      }
     } catch (err) {
       console.error('Failed to create habit in Supabase:', err);
     }
@@ -222,7 +260,7 @@ export async function createHabit(userId: string, input: CreateHabitInput): Prom
 }
 
 /** Update an existing habit */
-export async function updateHabit(habitId: string, updates: UpdateHabitInput): Promise<boolean> {
+export async function updateHabit(habitId: string, updates: UpdateHabitInput, userId?: string): Promise<boolean> {
   const supabase = createClient();
   const configured = isSupabaseConfigured();
 
@@ -258,12 +296,20 @@ export async function updateHabit(habitId: string, updates: UpdateHabitInput): P
         .from('habits')
         .update(dbPayload)
         .eq('id', habitId)
-        .select();
+        .select('user_id')
+        .single();
 
       if (error) {
         console.error('Supabase habit update error:', error);
         throw error;
       }
+
+      // Bust Redis cache for this user
+      const targetUserId = userId || data?.user_id;
+      if (targetUserId) {
+        invalidateHabitsCache(targetUserId);
+      }
+
       return true;
     } catch (err) {
       console.error('Failed to update habit in Supabase:', err);
@@ -275,7 +321,7 @@ export async function updateHabit(habitId: string, updates: UpdateHabitInput): P
 }
 
 /** Delete a habit */
-export async function deleteHabit(habitId: string): Promise<boolean> {
+export async function deleteHabit(habitId: string, userId?: string): Promise<boolean> {
   const supabase = createClient();
   const configured = isSupabaseConfigured();
 
@@ -301,6 +347,11 @@ export async function deleteHabit(habitId: string): Promise<boolean> {
         .eq('id', habitId);
 
       if (error) throw error;
+
+      if (userId) {
+        invalidateHabitsCache(userId);
+      }
+
       return true;
     } catch (err) {
       console.error('Failed to delete habit in Supabase:', err);
