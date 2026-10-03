@@ -9,7 +9,7 @@ if (redis) {
   try {
     diagnosisRateLimiter = new Ratelimit({
       redis,
-      limiter: Ratelimit.slidingWindow(10, '10 m'), // 10 requests per 10 minutes per user/IP
+      limiter: Ratelimit.slidingWindow(5, '15 m'), // 5 requests per 15 minutes (~1 per 3 mins)
       analytics: true,
       prefix: 'zenith:rl:diagnosis',
     });
@@ -21,13 +21,13 @@ if (redis) {
 
 export async function checkDiagnosisRateLimit(identifier: string) {
   if (!diagnosisRateLimiter) {
-    return { success: true, remaining: 10, limit: 10, reset: 0 };
+    return { success: true, remaining: 5, limit: 5, reset: 0 };
   }
 
   try {
     return await diagnosisRateLimiter.limit(identifier);
   } catch (err) {
     console.warn('[Ratelimit] Rate limit check failed, allowing request as fallback:', err);
-    return { success: true, remaining: 10, limit: 10, reset: 0 };
+    return { success: true, remaining: 5, limit: 5, reset: 0 };
   }
 }

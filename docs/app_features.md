@@ -118,7 +118,7 @@ Zenith Application Architecture
 5. **Upstash Serverless Redis Edge Caching Layer**:
    - **Server-Side AI Diagnosis Caching**: 4-hour Redis TTL keyed to deterministic habit state hash (`zenith:diag:${userId}:${hash}`). Latency drops from ~2,000ms to **~15ms**.
    - **Habits Cache-Aside**: Serves user habits in **~10ms** via `/api/habits` (30-min TTL), reducing Supabase reads by ~80%.
-   - **Sliding-Window Rate Limiting**: 10 requests / 10 mins protection on expensive Gemini endpoints via `@upstash/ratelimit`.
+   - **Sliding-Window Rate Limiting**: 5 requests / 15 mins (~1 req every 3 mins) protection on expensive Gemini endpoints via `@upstash/ratelimit`.
    - Complete technical specifications documented in [docs/redis_architecture.md](file:///c:/Users/samsi/Desktop/feb-projects/Zenith/docs/redis_architecture.md).
 
 ---

@@ -52,7 +52,7 @@ Zenith integrates **Upstash Serverless Redis** as an ultra-low-latency edge cach
 | :--- | :--- | :--- | :--- | :--- |
 | **Habits Matrix** | `zenith:habits:${userId}` | `JSON (Habit[])` | **30 Mins** (1,800s) | Instant habit planner and dashboard loads. |
 | **AI Diagnosis** | `zenith:diag:${userId}:${hash}` | `JSON (DiagnosisResult)` | **4 Hours** (14,400s) | Cache Gemini reflections for identical habit logs. |
-| **AI Rate Limit** | `zenith:rl:diagnosis:${userId}` | `Sorted Set / String` | **10 Mins** (Sliding) | Limits user to 10 AI diagnosis calls per 10 minutes. |
+| **AI Rate Limit** | `zenith:rl:diagnosis:${userId}` | `Sorted Set / String` | **15 Mins** (Sliding) | Limits user to 5 AI diagnosis calls per 15 minutes (~1 per 3 mins). |
 
 ---
 
@@ -93,7 +93,7 @@ export async function invalidateHabitsCache(userId: string) {
 
 The AI diagnosis endpoint is protected by `@upstash/ratelimit`:
 - **Algorithm**: Sliding Window.
-- **Threshold**: 10 requests per 10 minutes per authenticated user (or IP address for guests).
+- **Threshold**: **5 requests per 15 minutes** (~1 request every 3 minutes) per authenticated user (or IP address for guests).
 - **HTTP Response on Breach**:
   ```json
   HTTP/1.1 429 Too Many Requests
