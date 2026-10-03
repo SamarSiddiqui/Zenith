@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { callGeminiStructured } from '../../../lib/gemini/client';
+import { getCached, setCached, hashHabitsState } from '../../../lib/redis/client';
+import { checkDiagnosisRateLimit } from '../../../lib/redis/ratelimit';
 import type { DiagnosisRequest, DiagnosisResult } from '../../../types/diagnosis';
 import type { Habit } from '../../../types/zenith';
+
+const DIAGNOSIS_CACHE_TTL_SECONDS = 4 * 60 * 60; // 4 Hours TTL
 
 const SYSTEM_INSTRUCTION = `You are Zenith, a wise, calm, and deeply encouraging habit mentor and supportive companion.
 Think of yourself as a kind, thoughtful friend sitting down with the user over coffee to reflect on their week.
@@ -160,6 +164,7 @@ Produce a JSON response matching the following structure:
 }
 
 export async function POST(req: NextRequest) {
+  const startTime = Date.now();
   try {
     const body = (await req.json()) as DiagnosisRequest;
 
@@ -170,14 +175,69 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const userId = body.userId || req.headers.get('x-forwarded-for') || 'anonymous_user';
+
+    // 1. Sliding-Window Rate Limiting Check (10 reqs / 10 mins)
+    const rateLimit = await checkDiagnosisRateLimit(userId);
+    if (!rateLimit.success) {
+      return NextResponse.json(
+        {
+          error: 'Rate limit reached. Please pause a moment before requesting fresh reflections.',
+          retryAfterSeconds: Math.ceil((rateLimit.reset - Date.now()) / 1000),
+        },
+        {
+          status: 429,
+          headers: {
+            'x-ratelimit-limit': String(rateLimit.limit),
+            'x-ratelimit-remaining': String(rateLimit.remaining),
+            'x-ratelimit-reset': String(rateLimit.reset),
+          },
+        }
+      );
+    }
+
+    // 2. Cache Key Construction
+    const stateHash = hashHabitsState(body.habits, body.currentDayIndex, body.workingWindow);
+    const cacheKey = `zenith:diag:${userId}:${stateHash}`;
+
+    // 3. Cache-Aside Check (if not force-refreshed)
+    if (!body.forceRefresh) {
+      const cachedDiagnosis = await getCached<DiagnosisResult>(cacheKey);
+      if (cachedDiagnosis) {
+        cachedDiagnosis.isCached = true;
+        const duration = Date.now() - startTime;
+        return NextResponse.json(cachedDiagnosis, {
+          status: 200,
+          headers: {
+            'x-cache': 'HIT',
+            'x-cache-key': cacheKey,
+            'x-response-time-ms': String(duration),
+          },
+        });
+      }
+    }
+
+    // 4. Cache Miss / Force Fresh -> Call Gemini 3.5 Flash-Lite
     const prompt = buildPrompt(body);
     const diagnosis = await callGeminiStructured<DiagnosisResult>(prompt, SYSTEM_INSTRUCTION);
 
     // Attach metadata
     diagnosis.generatedAt = new Date().toISOString();
     diagnosis.modelUsed = 'Gemini 3.5 Flash-Lite';
+    diagnosis.isCached = false;
 
-    return NextResponse.json(diagnosis, { status: 200 });
+    // 5. Store in Redis with 4-hour TTL
+    await setCached(cacheKey, diagnosis, DIAGNOSIS_CACHE_TTL_SECONDS);
+
+    const duration = Date.now() - startTime;
+    return NextResponse.json(diagnosis, {
+      status: 200,
+      headers: {
+        'x-cache': 'MISS',
+        'x-cache-key': cacheKey,
+        'x-response-time-ms': String(duration),
+      },
+    });
   } catch (err: any) {
     console.error('Diagnosis API Error:', err);
     return NextResponse.json(
@@ -188,3 +248,4 @@ export async function POST(req: NextRequest) {
     );
   }
 }
+
