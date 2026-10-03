@@ -95,10 +95,13 @@ export interface DiagnosisResult {
   recoveryProtocols: RecoveryProtocol[];
   generatedAt: string;
   modelUsed: string;
+  isCached?: boolean;
 }
 
 export interface DiagnosisRequest {
   habits: Habit[];
+  userId?: string;
+  forceRefresh?: boolean;
   workingWindow?: {
     startTime?: string;
     endTime?: string;

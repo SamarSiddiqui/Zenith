@@ -105,6 +105,8 @@ export function useDiagnosis(
       try {
         const requestPayload: DiagnosisRequest = {
           habits,
+          userId: user?.id || 'local-user',
+          forceRefresh: forceFresh,
           workingWindow: {
             startTime: workingWindow?.startTime || user?.workingWindow?.startTime || '09:00',
             endTime: workingWindow?.endTime || user?.workingWindow?.endTime || '19:00',
