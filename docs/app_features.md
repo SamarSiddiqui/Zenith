@@ -180,6 +180,35 @@ Zenith Application Architecture
 
 ---
 
+### Section 7: Philosopher Focus Sanctuary & Forest Garden (`/focus`)
+*The cognitive flow sanctum. Fuses historical wisdom protocols with living organic growth mechanics to build unbreakable monotasking discipline.*
+
+#### Core Features:
+1. **Philosopher Focus Archetypes**:
+   - **Marcus Aurelius**: 50m Focus / 10m Reflection (Stoic presence, monotasking, wisdom reflections from *Meditations*).
+   - **Cal Newport**: 90m Deep Work blocks (High cognitive output, distraction shielding, shallow work elimination).
+   - **Francesco Cirillo**: 25m Pomodoro sprints / 5m Rest (4-cycle tracking with active rejuvenation).
+   - **Ultradian Wave**: 90m natural biological neurochemical rhythm with restorative consolidation troughs.
+   - **Custom Zen**: Configurable durations, custom intentions, and personal sandbox.
+
+2. **Living Forest & Bonsai Growth Engine**:
+   - Procedural SVG growth progression across 5 species (*Stoic Oak, Alpine Pine, Cherry Blossom, Ancient Bonsai, Weeping Willow*).
+   - Real-time growth stages: `seed` ($<25\%$) $\rightarrow$ `sprout` ($25\text{--}50\%$) $\rightarrow$ `sapling` ($50\text{--}75\%$) $\rightarrow$ `blooming` ($75\text{--}99\%$) $\rightarrow$ `mature` ($100\%$).
+   - Discipline mechanics: withering tree recorded if abandoned early ($>2\text{ mins}$ elapsed but $<80\%$ complete).
+   - **Daily Zen Grove**: Permanent visual garden recording trees cultivated today, total focus minutes, and depth stats.
+
+3. **Zero-Dependency Web Audio Soundscape Synthesizer**:
+   - Browser-native Web Audio API engine providing 🌧️ *Gentle Rain*, 🌲 *Forest Breeze*, 🌊 *Deep Brown Noise*, 🧠 *432Hz Alpha Binaural Waves*, and 🔔 *Tibetan Bowl Chimes*.
+
+4. **Live Zenith Habit Synchronization**:
+   - Connect active habits from Habit Planner to auto-complete them and boost health scores upon focus timer completion.
+
+5. **Distraction-Free Fullscreen & Global Floating Mini-Widget**:
+   - Fullscreen Zen Mode (`F` hotkey) with dark ambient backdrop and quote reflections.
+   - Persistent glassmorphic mini-widget visible across Dashboard and Habit Matrix during active sessions.
+
+---
+
 ## 🏗️ 3. Phased Implementation Roadmap
 
 ### Phase 1: Dashboard Usable Window & Live Health Data Layer
