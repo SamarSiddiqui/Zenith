@@ -266,11 +266,17 @@ export async function getPastSprintDetail(
 
       const { data, error } = await query
         .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+        .limit(5);
 
       if (error) throw error;
-      return (data as SprintDbRow) || null;
+      if (Array.isArray(data) && data.length > 0) {
+        // Prioritize a completed sprint or one that contains populated habit snapshots
+        const withSnapshots = data.find(
+          (row: SprintDbRow) => Array.isArray(row.habit_snapshots) && row.habit_snapshots.length > 0
+        );
+        return (withSnapshots || data[0]) as SprintDbRow;
+      }
+      return null;
     } catch (err) {
       console.error('Failed to fetch past sprint detail:', err);
     }

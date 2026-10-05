@@ -14,6 +14,7 @@ import {
   ChevronLeft,
   ChevronRight,
   RotateCcw,
+  TreePine,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import type { SprintSession } from '../../types/sprint';
@@ -267,15 +268,25 @@ export function HabitHeader({
           />
         </div>
 
-        {/* New Habit Anchor CTA */}
-        <button
-          type="button"
-          onClick={onOpenCreateModal}
-          className="flex items-center gap-1.5 rounded-2xl bg-sage px-5 py-2.5 text-xs font-semibold text-white shadow-xs hover:bg-sage-deep transition-colors shrink-0"
-        >
-          <Plus className="h-3.5 w-3.5 stroke-[2.5]" />
-          <span>Anchor Ritual</span>
-        </button>
+        {/* Actions CTA */}
+        <div className="flex items-center gap-2 shrink-0">
+          <Link
+            href="/focus"
+            className="flex items-center gap-1.5 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-2.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 transition-all shrink-0 shadow-xs"
+          >
+            <TreePine className="h-3.5 w-3.5" />
+            <span>Focus Mode</span>
+          </Link>
+
+          <button
+            type="button"
+            onClick={onOpenCreateModal}
+            className="flex items-center gap-1.5 rounded-2xl bg-sage px-5 py-2.5 text-xs font-semibold text-white shadow-xs hover:bg-sage-deep transition-colors shrink-0"
+          >
+            <Plus className="h-3.5 w-3.5 stroke-[2.5]" />
+            <span>Anchor Ritual</span>
+          </button>
+        </div>
       </div>
     </div>
   );

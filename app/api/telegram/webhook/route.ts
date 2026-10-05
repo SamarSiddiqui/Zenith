@@ -6,6 +6,7 @@ import {
   getTelegramConfig,
 } from '../../../../lib/services/telegram';
 import { calculateSprintDayInfo, getMondayOfWeek } from '../../../../lib/utils/sprintDate';
+import { deleteCached, deleteByPattern } from '../../../../lib/redis/client';
 
 interface HabitItem {
   id: string;
@@ -44,6 +45,7 @@ export async function POST(request: Request) {
 
           let recordedName = 'Ritual';
           let actionSuccess = false;
+          let targetUserId: string | null = null;
 
           // 1. Try RPC record function first (bypasses RLS via SECURITY DEFINER)
           try {
@@ -56,6 +58,7 @@ export async function POST(request: Request) {
 
             if (!rpcErr && rpcResult && rpcResult.length > 0) {
               recordedName = rpcResult[0].name || 'Ritual';
+              targetUserId = rpcResult[0].user_id || null;
               actionSuccess = true;
             }
           } catch (e) {
@@ -72,6 +75,7 @@ export async function POST(request: Request) {
 
             if (habitData) {
               recordedName = habitData.name;
+              targetUserId = habitData.user_id;
               const weekHistory = Array.isArray(habitData.weekly_history)
                 ? [...habitData.weekly_history]
                 : ['unlogged', 'unlogged', 'unlogged', 'unlogged', 'unlogged', 'unlogged', 'unlogged'];
@@ -98,6 +102,14 @@ export async function POST(request: Request) {
           }
 
           if (actionSuccess) {
+            // Invalidate Redis cache for this user so web app syncs instantly
+            if (targetUserId) {
+              await Promise.allSettled([
+                deleteCached(`zenith:habits:${targetUserId}`),
+                deleteByPattern(`zenith:diag:${targetUserId}:*`),
+              ]);
+            }
+
             const toastText = isMicro
               ? `⚡ 5m micro-step logged for "${recordedName}"! Identity momentum preserved.`
               : `✅ "${recordedName}" marked as completed!`;

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createAdminClient } from '../../../../lib/supabase/admin';
 import { calculateSprintDayInfo, getMondayOfWeek } from '../../../../lib/utils/sprintDate';
 import { mapDbRowToHabit, rolloverPastUnloggedDays } from '../../../../lib/services/habits';
+import { deleteCached, deleteByPattern } from '../../../../lib/redis/client';
 import type { HabitDbRow } from '../../../../types/zenith';
 
 export const dynamic = 'force-dynamic';
@@ -65,6 +66,7 @@ async function handleMidnightRollover(request: Request) {
     }
 
     let updatedCount = 0;
+    const affectedUserIds = new Set<string>();
 
     for (const row of rows) {
       const habit = mapDbRowToHabit(row as HabitDbRow);
@@ -81,8 +83,21 @@ async function handleMidnightRollover(request: Request) {
           })
           .eq('id', habit.id);
 
+        if (row.user_id) {
+          affectedUserIds.add(row.user_id);
+        }
         updatedCount++;
       }
+    }
+
+    // Invalidate Redis cache for all affected users
+    if (affectedUserIds.size > 0) {
+      await Promise.allSettled(
+        Array.from(affectedUserIds).flatMap((uid) => [
+          deleteCached(`zenith:habits:${uid}`),
+          deleteByPattern(`zenith:diag:${uid}:*`),
+        ])
+      );
     }
 
     return NextResponse.json({
@@ -91,6 +106,7 @@ async function handleMidnightRollover(request: Request) {
       currentDayIndex,
       totalHabitsChecked: rows.length,
       updatedCount,
+      affectedUsersCount: affectedUserIds.size,
       message: `Rolled over ${updatedCount} habits from unlogged to missed for past days.`,
     });
   } catch (err: unknown) {
