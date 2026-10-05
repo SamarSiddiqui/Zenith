@@ -21,7 +21,7 @@ import {
   getPastSprints,
   deletePastSprint as deletePastSprintApi,
 } from '../lib/services/sprintAnalytics';
-import { mapDbRowToHabit } from '../lib/services/habits';
+import { mapDbRowToHabit, invalidateHabitsCache } from '../lib/services/habits';
 import { useAuth } from '../context/AuthContext';
 import { createClient } from '../lib/supabase/client';
 import { isSupabaseConfigured } from '../lib/supabase/env';
@@ -172,6 +172,8 @@ export function useSprint(habits: Habit[], onSprintRollover?: () => void) {
               updated_at: new Date().toISOString(),
             })
             .eq('user_id', user.id);
+
+          invalidateHabitsCache(user.id);
 
           const newDayInfo = calculateSprintDayInfo(newStart, newDuration);
           const newSession: SprintSession = {
@@ -492,6 +494,8 @@ export function useSprint(habits: Habit[], onSprintRollover?: () => void) {
               updated_at: new Date().toISOString(),
             })
             .eq('user_id', user.id);
+
+          invalidateHabitsCache(user.id);
 
           if (onSprintRollover) onSprintRollover();
           loadPastSprints();
