@@ -136,11 +136,27 @@ function FocusContent() {
   // Tree Species Options
   const speciesOptions: { id: TreeSpecies; label: string; color: string }[] = [
     { id: 'oak', label: 'Stoic Oak', color: '#4ade80' },
-    { id: 'pine', label: 'Deep Pine', color: '#10b981' },
+    { id: 'pine', label: 'Alpine Pine', color: '#10b981' },
     { id: 'sakura', label: 'Sakura Blossom', color: '#f472b6' },
     { id: 'bonsai', label: 'Zen Bonsai', color: '#22c55e' },
     { id: 'willow', label: 'Weeping Willow', color: '#14b8a6' },
   ];
+
+  const speciesLabel = useMemo(() => {
+    switch (settings.species) {
+      case 'sakura':
+        return 'Sakura Blossom';
+      case 'pine':
+        return 'Alpine Pine';
+      case 'bonsai':
+        return 'Ancient Bonsai';
+      case 'willow':
+        return 'Weeping Willow';
+      case 'oak':
+      default:
+        return 'Stoic Oak';
+    }
+  }, [settings.species]);
 
   // Radial Timer Progress Ring
   const radius = 135;
@@ -329,8 +345,30 @@ function FocusContent() {
               </div>
             </div>
 
+            {/* Growth Stage Badge Positioned Cleanly Below the Circle */}
+            <div className="mt-5 flex items-center gap-1.5 rounded-full border border-border/80 bg-card/90 px-3.5 py-1 text-xs font-medium backdrop-blur-md shadow-xs">
+              <span
+                className="h-2 w-2 rounded-full animate-pulse"
+                style={{
+                  backgroundColor:
+                    growthStage === 'withered'
+                      ? '#78716c'
+                      : growthStage === 'mature'
+                      ? '#fbbf24'
+                      : activeArchetype.accentColor,
+                }}
+              />
+              <span className="text-muted">
+                {growthStage === 'withered'
+                  ? 'Withered · Focus Interrupted'
+                  : growthStage === 'mature'
+                  ? `Mature ${speciesLabel} Planted 🎉`
+                  : `${speciesLabel} · ${Math.round(progress * 100)}% Growth`}
+              </span>
+            </div>
+
             {/* Large Digital Countdown */}
-            <div className="mt-6 text-center select-none">
+            <div className="mt-4 text-center select-none">
               <div className="flex items-center justify-center font-mono text-5xl sm:text-6xl font-bold tracking-tight text-ink drop-shadow-md">
                 <span>{formattedTime.minutes}</span>
                 <span className="text-muted/40 animate-pulse">:</span>
@@ -641,6 +679,28 @@ function FocusContent() {
                     accentColor={activeArchetype.accentColor}
                     className="h-full w-full"
                   />
+                </div>
+
+                {/* Fullscreen Growth Stage Badge */}
+                <div className="mt-4 flex items-center gap-2 rounded-full border border-zinc-800 bg-zinc-900/90 px-4 py-1 text-xs font-medium text-zinc-300 backdrop-blur-md shadow-xs">
+                  <span
+                    className="h-2 w-2 rounded-full animate-pulse"
+                    style={{
+                      backgroundColor:
+                        growthStage === 'withered'
+                          ? '#78716c'
+                          : growthStage === 'mature'
+                          ? '#fbbf24'
+                          : activeArchetype.accentColor,
+                    }}
+                  />
+                  <span>
+                    {growthStage === 'withered'
+                      ? 'Withered · Focus Interrupted'
+                      : growthStage === 'mature'
+                      ? `Mature ${speciesLabel} Planted 🎉`
+                      : `${speciesLabel} · ${Math.round(progress * 100)}% Growth`}
+                  </span>
                 </div>
 
                 <div className="mt-4 text-center">
