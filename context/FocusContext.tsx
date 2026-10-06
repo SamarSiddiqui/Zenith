@@ -75,7 +75,7 @@ export function FocusProvider({ children }: { children: React.ReactNode }) {
       try {
         const saved = localStorage.getItem(LOCAL_STORAGE_SETTINGS_KEY);
         if (saved) return { ...DEFAULT_SETTINGS, ...JSON.parse(saved) };
-      } catch {}
+      } catch { }
     }
     return DEFAULT_SETTINGS;
   });
@@ -93,7 +93,7 @@ export function FocusProvider({ children }: { children: React.ReactNode }) {
       try {
         const saved = localStorage.getItem(LOCAL_STORAGE_TREES_KEY);
         if (saved) return JSON.parse(saved);
-      } catch {}
+      } catch { }
     }
     return [];
   });
@@ -337,6 +337,34 @@ export function FocusProvider({ children }: { children: React.ReactNode }) {
       soundscapeEngine.stopSoundscape();
     }
   }, [state, settings.soundscape, settings.soundVolume]);
+
+  // Dynamic Browser Tab Title with Live Timer
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+
+    const defaultTitle = 'Zenith — Circadian Habits & Usable Working Window';
+
+    if (state === 'focusing' || state === 'break' || state === 'paused') {
+      const mins = Math.floor(timeLeft / 60);
+      const secs = timeLeft % 60;
+      const formattedTime = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+      const label = settings.linkedHabitName || currentArchetypeConfig.name;
+
+      if (state === 'paused') {
+        document.title = `[⏸️ ${formattedTime}] ${label} | Zenith`;
+      } else if (isBreak) {
+        document.title = `(${formattedTime}) ☕ Rest: Break | Zenith`;
+      } else {
+        document.title = `${formattedTime} Focus: ${label} | Zenith`;
+      }
+    } else {
+      document.title = defaultTitle;
+    }
+
+    return () => {
+      document.title = defaultTitle;
+    };
+  }, [state, timeLeft, isBreak, settings.linkedHabitName, currentArchetypeConfig.name]);
 
   // Start Session
   const startSession = useCallback(
