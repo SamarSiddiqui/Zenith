@@ -181,10 +181,10 @@ function FocusContent() {
               </div>
               <div>
                 <h1 className="text-2xl font-bold tracking-tight text-ink">
-                  Focus Sanctuary & Garden
+                  Focus Mode & Garden
                 </h1>
                 <p className="text-xs text-muted">
-                  Cultivate deep attention through classical philosopher protocols & living forest growth
+                  Build deep focus and grow your tree garden with proven time presets
                 </p>
               </div>
             </div>
@@ -269,7 +269,7 @@ function FocusContent() {
             <button
               type="button"
               onClick={() => setIsFullscreen(true)}
-              className="flex items-center gap-2 rounded-2xl border border-border/80 bg-card/80 px-3.5 py-2 text-xs font-medium text-ink backdrop-blur-md shadow-xs transition-all hover:border-border hover:bg-card active:scale-95"
+              className="flex items-center gap-2 rounded-2xl border border-border/80 bg-card/80 px-3.5 py-2 text-xs font-medium text-ink backdrop-blur-md shadow-xs transition-all hover:border-border hover:bg-card active:scale-95 cursor-pointer"
             >
               <Maximize2 className="h-4 w-4 text-muted" />
               <span>Fullscreen</span>
@@ -297,7 +297,7 @@ function FocusContent() {
                   border: `1px solid ${isBreak ? '#10b98130' : `${activeArchetype.accentColor}30`}`,
                 }}
               >
-                {isBreak ? 'Restorative Rest' : `${activeArchetype.name} Protocol`}
+                {isBreak ? 'Rest Break' : `${activeArchetype.name} Mode`}
               </span>
 
               {activeArchetype.id === 'cirillo' && (

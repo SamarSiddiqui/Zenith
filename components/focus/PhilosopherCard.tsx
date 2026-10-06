@@ -55,10 +55,10 @@ export function PhilosopherCard({
       <div>
         <div className="mb-2.5 flex items-center justify-between">
           <label className="text-xs font-semibold uppercase tracking-wider text-muted">
-            Philosopher Protocol
+            Focus Rhythm
           </label>
           <span className="text-[11px] text-muted/80">
-            {isSessionActive ? 'Protocol locked during active session' : 'Choose cognitive framework'}
+            {isSessionActive ? 'Rhythm locked while session is running' : 'Select a focus style'}
           </span>
         </div>
 

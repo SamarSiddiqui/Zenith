@@ -92,7 +92,7 @@ export function ZenGrove({ trees, todayFocusedMinutes }: ZenGroveProps) {
         <div className="rounded-2xl border border-border/80 bg-card/60 p-4 backdrop-blur-md">
           <div className="flex items-center gap-2 text-muted mb-1">
             <Flame className="h-4 w-4 text-rose-500" />
-            <span className="text-[11px] font-medium uppercase tracking-wider">Total Depth</span>
+            <span className="text-[11px] font-medium uppercase tracking-wider">Total Focus</span>
           </div>
           <div className="flex items-baseline gap-1.5">
             <span className="text-2xl font-bold tracking-tight text-ink">
@@ -122,14 +122,14 @@ export function ZenGrove({ trees, todayFocusedMinutes }: ZenGroveProps) {
           <div>
             <h3 className="text-base font-bold text-ink tracking-tight flex items-center gap-2">
               <TreePine className="h-5 w-5 text-emerald-500" />
-              Daily Zen Grove
+              Daily Focus Garden
             </h3>
             <p className="text-xs text-muted mt-0.5">
-              Trees cultivated through unbroken cognitive presence
+              Trees grown from your completed focus sessions
             </p>
           </div>
           <span className="rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-500">
-            {todayTrees.filter((t) => t.stage === 'mature').length} Thriving Today
+            {todayTrees.filter((t) => t.stage === 'mature').length} Planted Today
           </span>
         </div>
 
@@ -138,9 +138,9 @@ export function ZenGrove({ trees, todayFocusedMinutes }: ZenGroveProps) {
             <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-muted/10 text-muted mb-3">
               <TreePine className="h-8 w-8 opacity-60" />
             </div>
-            <h4 className="text-sm font-semibold text-ink">Your Grove is Ready</h4>
+            <h4 className="text-sm font-semibold text-ink">Your Garden is Ready</h4>
             <p className="text-xs text-muted max-w-xs mt-1">
-              Start a focus session above to plant your first seed and grow a flourishing mind garden.
+              Start a focus session above to plant your first seed and grow your garden.
             </p>
           </div>
         ) : (
