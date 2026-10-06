@@ -52,6 +52,7 @@ function FocusContent() {
     resumeSession,
     cancelSession,
     skipToBreak,
+    skipBreakToFocus,
     startNextCycle,
     resetSession,
     selectArchetype,
@@ -82,6 +83,7 @@ function FocusContent() {
   const activeArchetype = PHILOSOPHER_CONFIGS[settings.archetype] || PHILOSOPHER_CONFIGS.marcus;
   const isRunning = state === 'focusing' || state === 'break';
   const isPaused = state === 'paused';
+  const isCompleted = state === 'completed';
   const isSessionActive = isRunning || isPaused;
 
   const formatTime = (seconds: number) => {
@@ -103,7 +105,11 @@ function FocusContent() {
 
       if (e.code === 'Space') {
         e.preventDefault();
-        if (state === 'idle') {
+        // Blur active element so Space doesn't re-trigger a focused button's native click
+        if (typeof document !== 'undefined' && document.activeElement instanceof HTMLElement) {
+          document.activeElement.blur();
+        }
+        if (state === 'idle' || state === 'completed') {
           startSession();
         } else if (state === 'focusing' || state === 'break') {
           pauseSession();
@@ -385,7 +391,61 @@ function FocusContent() {
 
             {/* Main Action Controls Bar */}
             <div className="mt-8 flex flex-wrap items-center justify-center gap-3.5">
-              {!isSessionActive ? (
+              {state === 'completed' ? (
+                <>
+                  {!isBreak ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={skipToBreak}
+                        className="flex items-center gap-2 rounded-full bg-emerald-500 px-6 py-3.5 text-xs font-semibold text-white shadow-xl transition-all hover:bg-emerald-600 hover:scale-105 active:scale-95 cursor-pointer"
+                      >
+                        <Coffee className="h-4 w-4" />
+                        <span>Start {settings.breakDuration}m Rest Break</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={startNextCycle}
+                        className="flex items-center gap-2 rounded-full border border-border/80 bg-card/90 px-5 py-3 text-xs font-semibold text-ink shadow-md transition-all hover:bg-card active:scale-95 cursor-pointer"
+                      >
+                        <Play className="h-3.5 w-3.5 fill-current" />
+                        <span>Start Next Focus</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={resetSession}
+                        className="flex items-center gap-1.5 rounded-full border border-border/60 bg-card/60 px-4 py-3 text-xs font-semibold text-muted hover:text-ink transition-all active:scale-95 cursor-pointer"
+                      >
+                        <RotateCcw className="h-3.5 w-3.5" />
+                        <span>Done</span>
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        onClick={startNextCycle}
+                        className="flex items-center gap-2 rounded-full px-6 py-3.5 text-xs font-semibold text-white shadow-xl transition-all hover:scale-105 active:scale-95 cursor-pointer"
+                        style={{ backgroundColor: activeArchetype.accentColor }}
+                      >
+                        <Play className="h-4 w-4 fill-current" />
+                        <span>Start Next Focus Cycle</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={resetSession}
+                        className="flex items-center gap-1.5 rounded-full border border-border/60 bg-card/60 px-4 py-3 text-xs font-semibold text-muted hover:text-ink transition-all active:scale-95 cursor-pointer"
+                      >
+                        <RotateCcw className="h-3.5 w-3.5" />
+                        <span>Done</span>
+                      </button>
+                    </>
+                  )}
+                </>
+              ) : state === 'idle' ? (
                 <button
                   type="button"
                   onClick={() => startSession()}
@@ -396,7 +456,7 @@ function FocusContent() {
                   }}
                 >
                   <Play className="h-4 w-4 fill-current" />
-                  <span>Begin Focus</span>
+                  <span>Begin Focus ({settings.focusDuration}m)</span>
                 </button>
               ) : isPaused ? (
                 <>
@@ -406,7 +466,7 @@ function FocusContent() {
                     className="flex items-center gap-2 rounded-full bg-emerald-500 px-6 py-3 text-xs font-semibold text-white shadow-lg transition-all hover:bg-emerald-600 active:scale-95 cursor-pointer"
                   >
                     <Play className="h-4 w-4 fill-current" />
-                    <span>Resume</span>
+                    <span>Resume ({formattedTime.minutes}:{formattedTime.seconds})</span>
                   </button>
 
                   <button
@@ -429,14 +489,25 @@ function FocusContent() {
                     <span>Pause</span>
                   </button>
 
-                  <button
-                    type="button"
-                    onClick={skipToBreak}
-                    className="flex items-center gap-1.5 rounded-full border border-border/80 bg-card/80 px-4 py-3 text-xs font-semibold text-muted hover:text-ink transition-all active:scale-95 cursor-pointer"
-                  >
-                    <SkipForward className="h-3.5 w-3.5" />
-                    <span>Skip to Rest</span>
-                  </button>
+                  {isBreak ? (
+                    <button
+                      type="button"
+                      onClick={skipBreakToFocus}
+                      className="flex items-center gap-1.5 rounded-full border border-border/80 bg-card/80 px-4 py-3 text-xs font-semibold text-muted hover:text-ink transition-all active:scale-95 cursor-pointer"
+                    >
+                      <Play className="h-3.5 w-3.5 fill-current" />
+                      <span>Skip Rest & Focus</span>
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={skipToBreak}
+                      className="flex items-center gap-1.5 rounded-full border border-border/80 bg-card/80 px-4 py-3 text-xs font-semibold text-muted hover:text-ink transition-all active:scale-95 cursor-pointer"
+                    >
+                      <Coffee className="h-3.5 w-3.5" />
+                      <span>Take Rest Break ({settings.breakDuration}m)</span>
+                    </button>
+                  )}
 
                   <button
                     type="button"
@@ -460,65 +531,11 @@ function FocusContent() {
               currentQuote={currentQuote}
               onRefreshQuote={refreshQuote}
               isSessionActive={isSessionActive}
+              isBreak={isBreak}
+              focusDuration={settings.focusDuration}
+              breakDuration={settings.breakDuration}
+              onDurationChange={setDuration}
             />
-
-            {/* Custom Duration Adjuster (Shown when Custom Archetype selected) */}
-            {settings.archetype === 'custom' && !isSessionActive && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                className="rounded-3xl border border-border/80 bg-card/60 p-5 backdrop-blur-xl shadow-lg space-y-4"
-              >
-                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted">
-                  <Sliders className="h-3.5 w-3.5 text-violet-500" />
-                  <span>Custom Duration Sliders</span>
-                </div>
-
-                <div>
-                  <div className="flex items-center justify-between text-xs font-medium text-ink mb-1.5">
-                    <span>Focus Interval</span>
-                    <span className="font-mono font-bold text-violet-500">{settings.focusDuration} mins</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="5"
-                    max="180"
-                    step="5"
-                    value={settings.focusDuration}
-                    onChange={(e) => setDuration(parseInt(e.target.value, 10))}
-                    className="w-full h-1.5 bg-border rounded-lg appearance-none cursor-pointer accent-violet-500"
-                  />
-                  <div className="flex justify-between text-[10px] text-muted font-mono mt-1">
-                    <span>5m</span>
-                    <span>45m</span>
-                    <span>90m</span>
-                    <span>180m</span>
-                  </div>
-                </div>
-
-                <div>
-                  <div className="flex items-center justify-between text-xs font-medium text-ink mb-1.5">
-                    <span>Rest Interval</span>
-                    <span className="font-mono font-bold text-emerald-500">{settings.breakDuration} mins</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="1"
-                    max="30"
-                    step="1"
-                    value={settings.breakDuration}
-                    onChange={(e) => setDuration(settings.focusDuration, parseInt(e.target.value, 10))}
-                    className="w-full h-1.5 bg-border rounded-lg appearance-none cursor-pointer accent-emerald-500"
-                  />
-                  <div className="flex justify-between text-[10px] text-muted font-mono mt-1">
-                    <span>1m</span>
-                    <span>5m</span>
-                    <span>15m</span>
-                    <span>30m</span>
-                  </div>
-                </div>
-              </motion.div>
-            )}
 
             {/* Habit Linking Block */}
             <div className="rounded-3xl border border-border/80 bg-card/60 p-5 backdrop-blur-xl shadow-lg">
@@ -716,7 +733,7 @@ function FocusContent() {
               </div>
 
               {/* Fullscreen Controls Bar */}
-              <div className="flex items-center gap-4">
+              <div className="flex flex-wrap items-center justify-center gap-4">
                 {!isSessionActive ? (
                   <button
                     type="button"
@@ -725,26 +742,67 @@ function FocusContent() {
                     style={{ backgroundColor: activeArchetype.accentColor }}
                   >
                     <Play className="h-4 w-4 fill-current" />
-                    <span>Begin Session</span>
+                    <span>Begin Focus</span>
                   </button>
                 ) : isPaused ? (
-                  <button
-                    type="button"
-                    onClick={resumeSession}
-                    className="flex items-center gap-2 rounded-full bg-emerald-500 px-8 py-3.5 text-sm font-semibold text-white shadow-2xl transition-all hover:bg-emerald-600 cursor-pointer"
-                  >
-                    <Play className="h-4 w-4 fill-current" />
-                    <span>Resume</span>
-                  </button>
+                  <>
+                    <button
+                      type="button"
+                      onClick={resumeSession}
+                      className="flex items-center gap-2 rounded-full bg-emerald-500 px-8 py-3.5 text-sm font-semibold text-white shadow-2xl transition-all hover:bg-emerald-600 cursor-pointer"
+                    >
+                      <Play className="h-4 w-4 fill-current" />
+                      <span>Resume</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={cancelSession}
+                      className="flex items-center gap-2 rounded-full bg-zinc-800/80 px-6 py-3.5 text-sm font-semibold text-rose-400 shadow-2xl transition-all hover:bg-zinc-800 cursor-pointer"
+                    >
+                      <RotateCcw className="h-4 w-4" />
+                      <span>Abandon</span>
+                    </button>
+                  </>
                 ) : (
-                  <button
-                    type="button"
-                    onClick={pauseSession}
-                    className="flex items-center gap-2 rounded-full bg-zinc-800 px-8 py-3.5 text-sm font-semibold text-white shadow-2xl transition-all hover:bg-zinc-700 cursor-pointer"
-                  >
-                    <Pause className="h-4 w-4 fill-current" />
-                    <span>Pause</span>
-                  </button>
+                  <>
+                    <button
+                      type="button"
+                      onClick={pauseSession}
+                      className="flex items-center gap-2 rounded-full bg-zinc-800 px-8 py-3.5 text-sm font-semibold text-white shadow-2xl transition-all hover:bg-zinc-700 cursor-pointer"
+                    >
+                      <Pause className="h-4 w-4 fill-current" />
+                      <span>Pause</span>
+                    </button>
+
+                    {isBreak ? (
+                      <button
+                        type="button"
+                        onClick={skipBreakToFocus}
+                        className="flex items-center gap-2 rounded-full bg-zinc-800/80 px-6 py-3.5 text-sm font-semibold text-zinc-300 shadow-2xl transition-all hover:bg-zinc-800 cursor-pointer"
+                      >
+                        <Play className="h-4 w-4 fill-current" />
+                        <span>Skip Rest</span>
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={skipToBreak}
+                        className="flex items-center gap-2 rounded-full bg-zinc-800/80 px-6 py-3.5 text-sm font-semibold text-zinc-300 shadow-2xl transition-all hover:bg-zinc-800 cursor-pointer"
+                      >
+                        <Coffee className="h-4 w-4" />
+                        <span>Rest ({settings.breakDuration}m)</span>
+                      </button>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={cancelSession}
+                      className="flex items-center gap-2 rounded-full bg-zinc-800/80 px-6 py-3.5 text-sm font-semibold text-rose-400 shadow-2xl transition-all hover:bg-zinc-800 cursor-pointer"
+                    >
+                      <RotateCcw className="h-4 w-4" />
+                      <span>Abandon</span>
+                    </button>
+                  </>
                 )}
               </div>
             </motion.div>

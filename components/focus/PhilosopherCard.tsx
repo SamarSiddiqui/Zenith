@@ -22,6 +22,10 @@ interface PhilosopherCardProps {
   currentQuote: string;
   onRefreshQuote: () => void;
   isSessionActive?: boolean;
+  isBreak?: boolean;
+  focusDuration?: number;
+  breakDuration?: number;
+  onDurationChange?: (focusMinutes: number, breakMinutes?: number) => void;
 }
 
 export function PhilosopherCard({
@@ -30,6 +34,10 @@ export function PhilosopherCard({
   currentQuote,
   onRefreshQuote,
   isSessionActive = false,
+  isBreak = false,
+  focusDuration = 45,
+  breakDuration = 10,
+  onDurationChange,
 }: PhilosopherCardProps) {
   const activeConfig = PHILOSOPHER_CONFIGS[selectedId] || PHILOSOPHER_CONFIGS.marcus;
 
@@ -49,6 +57,9 @@ export function PhilosopherCard({
     }
   };
 
+  const focusPresetChips = [15, 25, 30, 45, 60, 90, 120];
+  const breakPresetChips = [3, 5, 10, 15];
+
   return (
     <div className="space-y-6">
       {/* Archetype Selector Tabs */}
@@ -66,6 +77,7 @@ export function PhilosopherCard({
           {(Object.keys(PHILOSOPHER_CONFIGS) as PhilosopherId[]).map((id) => {
             const config = PHILOSOPHER_CONFIGS[id];
             const isSelected = selectedId === id;
+            const displayMinutes = id === 'custom' ? focusDuration : config.focusMinutes;
 
             return (
               <button
@@ -102,7 +114,7 @@ export function PhilosopherCard({
                     {getArchetypeIcon(id)}
                   </div>
                   <span className="text-[11px] font-mono text-muted/90">
-                    {config.focusMinutes}m
+                    {displayMinutes}m
                   </span>
                 </div>
 
@@ -157,33 +169,122 @@ export function PhilosopherCard({
                 <span
                   className="rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider"
                   style={{
-                    backgroundColor: `${activeConfig.accentColor}18`,
-                    color: activeConfig.accentColor,
+                    backgroundColor: isBreak ? '#10b98120' : `${activeConfig.accentColor}18`,
+                    color: isBreak ? '#10b981' : activeConfig.accentColor,
                   }}
                 >
-                  {activeConfig.title}
+                  {isBreak ? `Resting (${breakDuration || activeConfig.breakMinutes}m)` : selectedId === 'custom' ? `${focusDuration}m / ${breakDuration}m` : activeConfig.title}
                 </span>
               </div>
               <p className="text-xs text-muted mt-0.5">
-                {activeConfig.tagline}
+                {isBreak ? 'Step away, rest your eyes, and allow your brain to synthesize learning.' : activeConfig.tagline}
               </p>
             </div>
           </div>
 
           {/* Timing Protocol Specs */}
-          <div className="flex items-center gap-2 text-xs font-medium text-muted bg-canvas/60 rounded-xl px-3 py-1.5 border border-border/50 self-start md:self-auto">
+          <div className={`flex items-center gap-2 text-xs font-medium rounded-xl px-3 py-1.5 border self-start md:self-auto transition-colors ${
+            isBreak ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500 font-semibold' : 'bg-canvas/60 border-border/50 text-muted'
+          }`}>
             <Clock className="h-3.5 w-3.5 text-muted" />
-            <span>
-              <strong>{activeConfig.focusMinutes}m</strong> Focus
+            <span className={!isBreak ? 'text-ink font-bold' : 'opacity-70'}>
+              {selectedId === 'custom' ? focusDuration : activeConfig.focusMinutes}m Focus
             </span>
             <span className="text-muted/40">·</span>
-            <span>
-              <strong>{activeConfig.breakMinutes}m</strong> Rest
+            <span className={isBreak ? 'text-emerald-500 font-bold' : 'opacity-70'}>
+              {selectedId === 'custom' ? breakDuration : activeConfig.breakMinutes}m Rest
             </span>
           </div>
         </div>
 
-        {/* Dynamic Philosopher Quote Block */}
+        {/* CUSTOM TIMER DURATION ADJUSTER (Rendered directly in card) */}
+        {selectedId === 'custom' && onDurationChange && !isSessionActive && (
+          <motion.div
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-5 rounded-2xl bg-canvas/80 border border-violet-500/30 p-4 space-y-4"
+          >
+            {/* Focus Interval Slider */}
+            <div>
+              <div className="flex items-center justify-between text-xs font-medium text-ink mb-1.5">
+                <span className="flex items-center gap-1.5">
+                  <Clock className="h-3.5 w-3.5 text-violet-500" />
+                  <span>Set Focus Time</span>
+                </span>
+                <span className="font-mono font-bold text-sm text-violet-500">{focusDuration} mins</span>
+              </div>
+
+              <input
+                type="range"
+                min="5"
+                max="180"
+                step="5"
+                value={focusDuration}
+                onChange={(e) => onDurationChange(parseInt(e.target.value, 10), breakDuration)}
+                className="w-full h-2 bg-border rounded-lg appearance-none cursor-pointer accent-violet-500"
+              />
+
+              {/* Quick Focus Preset Chips */}
+              <div className="flex flex-wrap gap-1.5 mt-2">
+                {focusPresetChips.map((mins) => (
+                  <button
+                    key={mins}
+                    type="button"
+                    onClick={() => onDurationChange(mins, breakDuration)}
+                    className={`rounded-lg px-2.5 py-1 text-[11px] font-mono transition-all ${
+                      focusDuration === mins
+                        ? 'bg-violet-500 text-white font-bold shadow-xs'
+                        : 'bg-card text-muted border border-border/60 hover:text-ink hover:border-violet-500/40'
+                    }`}
+                  >
+                    {mins}m
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Break Interval Slider */}
+            <div className="border-t border-border/50 pt-3">
+              <div className="flex items-center justify-between text-xs font-medium text-ink mb-1.5">
+                <span className="flex items-center gap-1.5">
+                  <Clock className="h-3.5 w-3.5 text-emerald-500" />
+                  <span>Set Rest Break</span>
+                </span>
+                <span className="font-mono font-bold text-sm text-emerald-500">{breakDuration} mins</span>
+              </div>
+
+              <input
+                type="range"
+                min="1"
+                max="30"
+                step="1"
+                value={breakDuration}
+                onChange={(e) => onDurationChange(focusDuration, parseInt(e.target.value, 10))}
+                className="w-full h-2 bg-border rounded-lg appearance-none cursor-pointer accent-emerald-500"
+              />
+
+              {/* Quick Rest Preset Chips */}
+              <div className="flex flex-wrap gap-1.5 mt-2">
+                {breakPresetChips.map((mins) => (
+                  <button
+                    key={mins}
+                    type="button"
+                    onClick={() => onDurationChange(focusDuration, mins)}
+                    className={`rounded-lg px-2.5 py-1 text-[11px] font-mono transition-all ${
+                      breakDuration === mins
+                        ? 'bg-emerald-500 text-white font-bold shadow-xs'
+                        : 'bg-card text-muted border border-border/60 hover:text-ink hover:border-emerald-500/40'
+                    }`}
+                  >
+                    {mins}m
+                  </button>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Dynamic Quote Block */}
         <div className="relative mt-5 rounded-2xl bg-canvas/70 border border-border/60 p-4 sm:p-5">
           <div className="flex items-start justify-between gap-3">
             <Quote
