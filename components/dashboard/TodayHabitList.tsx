@@ -17,6 +17,7 @@ import {
   Clock,
   ChevronDown,
   CheckCircle2,
+  TreePine,
 } from 'lucide-react';
 import { useHabits } from '../../hooks/useHabits';
 import { useSprint } from '../../hooks/useSprint';
@@ -217,23 +218,34 @@ export function TodayHabitList({ currentDayIndex }: TodayHabitListProps) {
           </div>
         </div>
 
-        {/* Right: Quick Micro-Fallback Action & Health Badge */}
-        <div className="flex items-center justify-between sm:justify-end gap-2.5 pt-2 sm:pt-0 border-t sm:border-t-0 border-line/50">
+        {/* Right: Quick Micro-Fallback Action, Focus Launcher & Health Badge */}
+        <div className="flex items-center justify-between sm:justify-end gap-2 pt-2 sm:pt-0 border-t sm:border-t-0 border-line/50">
           {!isCompleted && (
-            <motion.button
-              type="button"
-              whileTap={{ scale: 0.92 }}
-              onClick={() => handleMicroStep(habit.id)}
-              title={`Do 5-minute fallback: ${habit.microVersion || '5m micro session'}`}
-              className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-mono font-medium transition-all shadow-xs ${
-                isMicroFeedback
-                  ? 'border-sage bg-sage text-white'
-                  : 'border-sage/40 bg-sage-wash text-sage-deep hover:bg-sage hover:text-white'
-              }`}
-            >
-              <Zap className="h-3.5 w-3.5 fill-current" />
-              <span>{isMicroFeedback ? '5m Saved!' : '5m Micro'}</span>
-            </motion.button>
+            <>
+              <Link
+                href={`/focus?habitId=${habit.id}&habitName=${encodeURIComponent(habit.name)}`}
+                title={`Enter Focus Sanctuary for "${habit.name}"`}
+                className="inline-flex items-center gap-1 rounded-xl border border-line bg-canvas px-2.5 py-1.5 text-xs font-mono font-medium text-muted hover:border-emerald-500/40 hover:text-emerald-500 transition-all shadow-xs"
+              >
+                <TreePine className="h-3.5 w-3.5 text-emerald-500" />
+                <span className="hidden sm:inline">Focus</span>
+              </Link>
+
+              <motion.button
+                type="button"
+                whileTap={{ scale: 0.92 }}
+                onClick={() => handleMicroStep(habit.id)}
+                title={`Do 5-minute fallback: ${habit.microVersion || '5m micro session'}`}
+                className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-mono font-medium transition-all shadow-xs ${
+                  isMicroFeedback
+                    ? 'border-sage bg-sage text-white'
+                    : 'border-sage/40 bg-sage-wash text-sage-deep hover:bg-sage hover:text-white'
+                }`}
+              >
+                <Zap className="h-3.5 w-3.5 fill-current" />
+                <span>{isMicroFeedback ? '5m Saved!' : '5m Micro'}</span>
+              </motion.button>
+            </>
           )}
 
           <span

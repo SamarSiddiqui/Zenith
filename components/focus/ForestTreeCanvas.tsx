@@ -11,6 +11,7 @@ interface ForestTreeCanvasProps {
   isBreak?: boolean;
   accentColor?: string;
   className?: string;
+  showBadge?: boolean;
 }
 
 export function ForestTreeCanvas({
@@ -20,6 +21,7 @@ export function ForestTreeCanvas({
   isBreak = false,
   accentColor = '#10b981',
   className = '',
+  showBadge = false,
 }: ForestTreeCanvasProps) {
   // Generate distinct species colors and aesthetic accents
   const speciesTheme = useMemo(() => {
@@ -359,22 +361,24 @@ export function ForestTreeCanvas({
         )}
       </svg>
 
-      {/* Growth Stage Badge */}
-      <div className="absolute bottom-2 flex items-center gap-1.5 rounded-full border border-border/60 bg-card/80 px-3 py-1 text-[11px] font-medium backdrop-blur-md shadow-xs">
-        <span
-          className="h-2 w-2 rounded-full animate-pulse"
-          style={{
-            backgroundColor: isWithered ? '#78716c' : isMature ? '#fbbf24' : accentColor,
-          }}
-        />
-        <span className="text-muted">
-          {isWithered
-            ? 'Withered · Focus Interrupted'
-            : isMature
-            ? `Mature ${speciesTheme.name} Planted 🎉`
-            : `${speciesTheme.name} · ${Math.round(progress * 100)}% Growth`}
-        </span>
-      </div>
+      {/* Optional Embedded Growth Stage Badge */}
+      {showBadge && (
+        <div className="absolute -bottom-6 flex items-center gap-1.5 rounded-full border border-border/60 bg-card/90 px-3 py-1 text-[11px] font-medium backdrop-blur-md shadow-xs">
+          <span
+            className="h-2 w-2 rounded-full animate-pulse"
+            style={{
+              backgroundColor: isWithered ? '#78716c' : isMature ? '#fbbf24' : accentColor,
+            }}
+          />
+          <span className="text-muted">
+            {isWithered
+              ? 'Withered · Focus Interrupted'
+              : isMature
+              ? `Mature ${speciesTheme.name} Planted 🎉`
+              : `${speciesTheme.name} · ${Math.round(progress * 100)}% Growth`}
+          </span>
+        </div>
+      )}
     </div>
   );
 }

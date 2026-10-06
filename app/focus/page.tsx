@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Play,
@@ -31,7 +32,8 @@ import { ZenGrove } from '../../components/focus/ZenGrove';
 import type { SoundscapeId, TreeSpecies } from '../../types/focus';
 import { PHILOSOPHER_CONFIGS } from '../../types/focus';
 
-export default function FocusPage() {
+function FocusContent() {
+  const searchParams = useSearchParams();
   const {
     state,
     settings,
@@ -50,6 +52,7 @@ export default function FocusPage() {
     resumeSession,
     cancelSession,
     skipToBreak,
+    skipBreakToFocus,
     startNextCycle,
     resetSession,
     selectArchetype,
@@ -67,11 +70,20 @@ export default function FocusPage() {
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const [isHabitDropdownOpen, setIsHabitDropdownOpen] = useState<boolean>(false);
   const [isSoundDropdownOpen, setIsSoundDropdownOpen] = useState<boolean>(false);
-  const [customFocusMinutes, setCustomFocusMinutes] = useState<number>(settings.focusDuration);
+
+  // Auto-link habit from URL search params if present
+  useEffect(() => {
+    const urlHabitId = searchParams.get('habitId');
+    const urlHabitName = searchParams.get('habitName');
+    if (urlHabitId && urlHabitName && !settings.linkedHabitId) {
+      linkHabit(urlHabitId, urlHabitName);
+    }
+  }, [searchParams, settings.linkedHabitId, linkHabit]);
 
   const activeArchetype = PHILOSOPHER_CONFIGS[settings.archetype] || PHILOSOPHER_CONFIGS.marcus;
   const isRunning = state === 'focusing' || state === 'break';
   const isPaused = state === 'paused';
+  const isCompleted = state === 'completed';
   const isSessionActive = isRunning || isPaused;
 
   const formatTime = (seconds: number) => {
@@ -93,7 +105,11 @@ export default function FocusPage() {
 
       if (e.code === 'Space') {
         e.preventDefault();
-        if (state === 'idle') {
+        // Blur active element so Space doesn't re-trigger a focused button's native click
+        if (typeof document !== 'undefined' && document.activeElement instanceof HTMLElement) {
+          document.activeElement.blur();
+        }
+        if (state === 'idle' || state === 'completed') {
           startSession();
         } else if (state === 'focusing' || state === 'break') {
           pauseSession();
@@ -126,11 +142,27 @@ export default function FocusPage() {
   // Tree Species Options
   const speciesOptions: { id: TreeSpecies; label: string; color: string }[] = [
     { id: 'oak', label: 'Stoic Oak', color: '#4ade80' },
-    { id: 'pine', label: 'Deep Pine', color: '#10b981' },
+    { id: 'pine', label: 'Alpine Pine', color: '#10b981' },
     { id: 'sakura', label: 'Sakura Blossom', color: '#f472b6' },
     { id: 'bonsai', label: 'Zen Bonsai', color: '#22c55e' },
     { id: 'willow', label: 'Weeping Willow', color: '#14b8a6' },
   ];
+
+  const speciesLabel = useMemo(() => {
+    switch (settings.species) {
+      case 'sakura':
+        return 'Sakura Blossom';
+      case 'pine':
+        return 'Alpine Pine';
+      case 'bonsai':
+        return 'Ancient Bonsai';
+      case 'willow':
+        return 'Weeping Willow';
+      case 'oak':
+      default:
+        return 'Stoic Oak';
+    }
+  }, [settings.species]);
 
   // Radial Timer Progress Ring
   const radius = 135;
@@ -155,10 +187,10 @@ export default function FocusPage() {
               </div>
               <div>
                 <h1 className="text-2xl font-bold tracking-tight text-ink">
-                  Focus Sanctuary & Garden
+                  Focus Mode & Garden
                 </h1>
                 <p className="text-xs text-muted">
-                  Cultivate deep attention through classical philosopher protocols & living forest growth
+                  Build deep focus and grow your tree garden with proven time presets
                 </p>
               </div>
             </div>
@@ -243,7 +275,7 @@ export default function FocusPage() {
             <button
               type="button"
               onClick={() => setIsFullscreen(true)}
-              className="flex items-center gap-2 rounded-2xl border border-border/80 bg-card/80 px-3.5 py-2 text-xs font-medium text-ink backdrop-blur-md shadow-xs transition-all hover:border-border hover:bg-card active:scale-95"
+              className="flex items-center gap-2 rounded-2xl border border-border/80 bg-card/80 px-3.5 py-2 text-xs font-medium text-ink backdrop-blur-md shadow-xs transition-all hover:border-border hover:bg-card active:scale-95 cursor-pointer"
             >
               <Maximize2 className="h-4 w-4 text-muted" />
               <span>Fullscreen</span>
@@ -271,7 +303,7 @@ export default function FocusPage() {
                   border: `1px solid ${isBreak ? '#10b98130' : `${activeArchetype.accentColor}30`}`,
                 }}
               >
-                {isBreak ? 'Restorative Rest' : `${activeArchetype.name} Protocol`}
+                {isBreak ? 'Rest Break' : `${activeArchetype.name} Mode`}
               </span>
 
               {activeArchetype.id === 'cirillo' && (
@@ -319,8 +351,30 @@ export default function FocusPage() {
               </div>
             </div>
 
+            {/* Growth Stage Badge Positioned Cleanly Below the Circle */}
+            <div className="mt-5 flex items-center gap-1.5 rounded-full border border-border/80 bg-card/90 px-3.5 py-1 text-xs font-medium backdrop-blur-md shadow-xs">
+              <span
+                className="h-2 w-2 rounded-full animate-pulse"
+                style={{
+                  backgroundColor:
+                    growthStage === 'withered'
+                      ? '#78716c'
+                      : growthStage === 'mature'
+                      ? '#fbbf24'
+                      : activeArchetype.accentColor,
+                }}
+              />
+              <span className="text-muted">
+                {growthStage === 'withered'
+                  ? 'Withered · Focus Interrupted'
+                  : growthStage === 'mature'
+                  ? `Mature ${speciesLabel} Planted 🎉`
+                  : `${speciesLabel} · ${Math.round(progress * 100)}% Growth`}
+              </span>
+            </div>
+
             {/* Large Digital Countdown */}
-            <div className="mt-6 text-center select-none">
+            <div className="mt-4 text-center select-none">
               <div className="flex items-center justify-center font-mono text-5xl sm:text-6xl font-bold tracking-tight text-ink drop-shadow-md">
                 <span>{formattedTime.minutes}</span>
                 <span className="text-muted/40 animate-pulse">:</span>
@@ -337,7 +391,61 @@ export default function FocusPage() {
 
             {/* Main Action Controls Bar */}
             <div className="mt-8 flex flex-wrap items-center justify-center gap-3.5">
-              {!isSessionActive ? (
+              {state === 'completed' ? (
+                <>
+                  {!isBreak ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={skipToBreak}
+                        className="flex items-center gap-2 rounded-full bg-emerald-500 px-6 py-3.5 text-xs font-semibold text-white shadow-xl transition-all hover:bg-emerald-600 hover:scale-105 active:scale-95 cursor-pointer"
+                      >
+                        <Coffee className="h-4 w-4" />
+                        <span>Start {settings.breakDuration}m Rest Break</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={startNextCycle}
+                        className="flex items-center gap-2 rounded-full border border-border/80 bg-card/90 px-5 py-3 text-xs font-semibold text-ink shadow-md transition-all hover:bg-card active:scale-95 cursor-pointer"
+                      >
+                        <Play className="h-3.5 w-3.5 fill-current" />
+                        <span>Start Next Focus</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={resetSession}
+                        className="flex items-center gap-1.5 rounded-full border border-border/60 bg-card/60 px-4 py-3 text-xs font-semibold text-muted hover:text-ink transition-all active:scale-95 cursor-pointer"
+                      >
+                        <RotateCcw className="h-3.5 w-3.5" />
+                        <span>Done</span>
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        onClick={startNextCycle}
+                        className="flex items-center gap-2 rounded-full px-6 py-3.5 text-xs font-semibold text-white shadow-xl transition-all hover:scale-105 active:scale-95 cursor-pointer"
+                        style={{ backgroundColor: activeArchetype.accentColor }}
+                      >
+                        <Play className="h-4 w-4 fill-current" />
+                        <span>Start Next Focus Cycle</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={resetSession}
+                        className="flex items-center gap-1.5 rounded-full border border-border/60 bg-card/60 px-4 py-3 text-xs font-semibold text-muted hover:text-ink transition-all active:scale-95 cursor-pointer"
+                      >
+                        <RotateCcw className="h-3.5 w-3.5" />
+                        <span>Done</span>
+                      </button>
+                    </>
+                  )}
+                </>
+              ) : state === 'idle' ? (
                 <button
                   type="button"
                   onClick={() => startSession()}
@@ -348,7 +456,7 @@ export default function FocusPage() {
                   }}
                 >
                   <Play className="h-4 w-4 fill-current" />
-                  <span>Begin Focus</span>
+                  <span>Begin Focus ({settings.focusDuration}m)</span>
                 </button>
               ) : isPaused ? (
                 <>
@@ -358,7 +466,7 @@ export default function FocusPage() {
                     className="flex items-center gap-2 rounded-full bg-emerald-500 px-6 py-3 text-xs font-semibold text-white shadow-lg transition-all hover:bg-emerald-600 active:scale-95 cursor-pointer"
                   >
                     <Play className="h-4 w-4 fill-current" />
-                    <span>Resume</span>
+                    <span>Resume ({formattedTime.minutes}:{formattedTime.seconds})</span>
                   </button>
 
                   <button
@@ -381,14 +489,25 @@ export default function FocusPage() {
                     <span>Pause</span>
                   </button>
 
-                  <button
-                    type="button"
-                    onClick={skipToBreak}
-                    className="flex items-center gap-1.5 rounded-full border border-border/80 bg-card/80 px-4 py-3 text-xs font-semibold text-muted hover:text-ink transition-all active:scale-95 cursor-pointer"
-                  >
-                    <SkipForward className="h-3.5 w-3.5" />
-                    <span>Skip to Rest</span>
-                  </button>
+                  {isBreak ? (
+                    <button
+                      type="button"
+                      onClick={skipBreakToFocus}
+                      className="flex items-center gap-1.5 rounded-full border border-border/80 bg-card/80 px-4 py-3 text-xs font-semibold text-muted hover:text-ink transition-all active:scale-95 cursor-pointer"
+                    >
+                      <Play className="h-3.5 w-3.5 fill-current" />
+                      <span>Skip Rest & Focus</span>
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={skipToBreak}
+                      className="flex items-center gap-1.5 rounded-full border border-border/80 bg-card/80 px-4 py-3 text-xs font-semibold text-muted hover:text-ink transition-all active:scale-95 cursor-pointer"
+                    >
+                      <Coffee className="h-3.5 w-3.5" />
+                      <span>Take Rest Break ({settings.breakDuration}m)</span>
+                    </button>
+                  )}
 
                   <button
                     type="button"
@@ -403,7 +522,7 @@ export default function FocusPage() {
             </div>
           </div>
 
-          {/* Right Column: Philosopher Archetypes, Habit Linking & Species Config (5 cols) */}
+          {/* Right Column: Philosopher Archetypes, Custom Adjusters & Habit Linking (5 cols) */}
           <div className="lg:col-span-5 space-y-6">
             {/* Philosopher Card */}
             <PhilosopherCard
@@ -412,6 +531,10 @@ export default function FocusPage() {
               currentQuote={currentQuote}
               onRefreshQuote={refreshQuote}
               isSessionActive={isSessionActive}
+              isBreak={isBreak}
+              focusDuration={settings.focusDuration}
+              breakDuration={settings.breakDuration}
+              onDurationChange={setDuration}
             />
 
             {/* Habit Linking Block */}
@@ -556,7 +679,7 @@ export default function FocusPage() {
                 <button
                   type="button"
                   onClick={() => setIsFullscreen(false)}
-                  className="flex h-10 w-10 items-center justify-center rounded-full bg-zinc-800/80 text-zinc-300 transition-colors hover:bg-zinc-700 hover:text-white"
+                  className="flex h-10 w-10 items-center justify-center rounded-full bg-zinc-800/80 text-zinc-300 transition-colors hover:bg-zinc-700 hover:text-white cursor-pointer"
                 >
                   <Minimize2 className="h-5 w-5" />
                 </button>
@@ -575,6 +698,28 @@ export default function FocusPage() {
                   />
                 </div>
 
+                {/* Fullscreen Growth Stage Badge */}
+                <div className="mt-4 flex items-center gap-2 rounded-full border border-zinc-800 bg-zinc-900/90 px-4 py-1 text-xs font-medium text-zinc-300 backdrop-blur-md shadow-xs">
+                  <span
+                    className="h-2 w-2 rounded-full animate-pulse"
+                    style={{
+                      backgroundColor:
+                        growthStage === 'withered'
+                          ? '#78716c'
+                          : growthStage === 'mature'
+                          ? '#fbbf24'
+                          : activeArchetype.accentColor,
+                    }}
+                  />
+                  <span>
+                    {growthStage === 'withered'
+                      ? 'Withered · Focus Interrupted'
+                      : growthStage === 'mature'
+                      ? `Mature ${speciesLabel} Planted 🎉`
+                      : `${speciesLabel} · ${Math.round(progress * 100)}% Growth`}
+                  </span>
+                </div>
+
                 <div className="mt-4 text-center">
                   <div className="font-mono text-7xl sm:text-8xl font-bold tracking-tight text-white drop-shadow-2xl">
                     <span>{formattedTime.minutes}</span>
@@ -588,35 +733,76 @@ export default function FocusPage() {
               </div>
 
               {/* Fullscreen Controls Bar */}
-              <div className="flex items-center gap-4">
+              <div className="flex flex-wrap items-center justify-center gap-4">
                 {!isSessionActive ? (
                   <button
                     type="button"
                     onClick={() => startSession()}
-                    className="flex items-center gap-2 rounded-full px-8 py-3.5 text-sm font-semibold text-white shadow-2xl transition-all hover:scale-105"
+                    className="flex items-center gap-2 rounded-full px-8 py-3.5 text-sm font-semibold text-white shadow-2xl transition-all hover:scale-105 cursor-pointer"
                     style={{ backgroundColor: activeArchetype.accentColor }}
                   >
                     <Play className="h-4 w-4 fill-current" />
-                    <span>Begin Session</span>
+                    <span>Begin Focus</span>
                   </button>
                 ) : isPaused ? (
-                  <button
-                    type="button"
-                    onClick={resumeSession}
-                    className="flex items-center gap-2 rounded-full bg-emerald-500 px-8 py-3.5 text-sm font-semibold text-white shadow-2xl transition-all hover:bg-emerald-600"
-                  >
-                    <Play className="h-4 w-4 fill-current" />
-                    <span>Resume</span>
-                  </button>
+                  <>
+                    <button
+                      type="button"
+                      onClick={resumeSession}
+                      className="flex items-center gap-2 rounded-full bg-emerald-500 px-8 py-3.5 text-sm font-semibold text-white shadow-2xl transition-all hover:bg-emerald-600 cursor-pointer"
+                    >
+                      <Play className="h-4 w-4 fill-current" />
+                      <span>Resume</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={cancelSession}
+                      className="flex items-center gap-2 rounded-full bg-zinc-800/80 px-6 py-3.5 text-sm font-semibold text-rose-400 shadow-2xl transition-all hover:bg-zinc-800 cursor-pointer"
+                    >
+                      <RotateCcw className="h-4 w-4" />
+                      <span>Abandon</span>
+                    </button>
+                  </>
                 ) : (
-                  <button
-                    type="button"
-                    onClick={pauseSession}
-                    className="flex items-center gap-2 rounded-full bg-zinc-800 px-8 py-3.5 text-sm font-semibold text-white shadow-2xl transition-all hover:bg-zinc-700"
-                  >
-                    <Pause className="h-4 w-4 fill-current" />
-                    <span>Pause</span>
-                  </button>
+                  <>
+                    <button
+                      type="button"
+                      onClick={pauseSession}
+                      className="flex items-center gap-2 rounded-full bg-zinc-800 px-8 py-3.5 text-sm font-semibold text-white shadow-2xl transition-all hover:bg-zinc-700 cursor-pointer"
+                    >
+                      <Pause className="h-4 w-4 fill-current" />
+                      <span>Pause</span>
+                    </button>
+
+                    {isBreak ? (
+                      <button
+                        type="button"
+                        onClick={skipBreakToFocus}
+                        className="flex items-center gap-2 rounded-full bg-zinc-800/80 px-6 py-3.5 text-sm font-semibold text-zinc-300 shadow-2xl transition-all hover:bg-zinc-800 cursor-pointer"
+                      >
+                        <Play className="h-4 w-4 fill-current" />
+                        <span>Skip Rest</span>
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={skipToBreak}
+                        className="flex items-center gap-2 rounded-full bg-zinc-800/80 px-6 py-3.5 text-sm font-semibold text-zinc-300 shadow-2xl transition-all hover:bg-zinc-800 cursor-pointer"
+                      >
+                        <Coffee className="h-4 w-4" />
+                        <span>Rest ({settings.breakDuration}m)</span>
+                      </button>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={cancelSession}
+                      className="flex items-center gap-2 rounded-full bg-zinc-800/80 px-6 py-3.5 text-sm font-semibold text-rose-400 shadow-2xl transition-all hover:bg-zinc-800 cursor-pointer"
+                    >
+                      <RotateCcw className="h-4 w-4" />
+                      <span>Abandon</span>
+                    </button>
+                  </>
                 )}
               </div>
             </motion.div>
@@ -624,5 +810,13 @@ export default function FocusPage() {
         </AnimatePresence>
       </div>
     </Layout>
+  );
+}
+
+export default function FocusPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-muted font-mono text-xs">Loading Focus Sanctuary...</div>}>
+      <FocusContent />
+    </Suspense>
   );
 }

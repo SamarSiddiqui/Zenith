@@ -20,6 +20,7 @@ import { getMondayOfWeek, calculateSprintDayInfo } from '../lib/utils/sprintDate
 
 const LOCAL_STORAGE_TREES_KEY = 'zenith_planted_trees';
 const LOCAL_STORAGE_SETTINGS_KEY = 'zenith_focus_settings';
+const LOCAL_STORAGE_ACTIVE_SESSION_KEY = 'zenith_active_focus_session';
 
 interface FocusContextType {
   state: FocusSessionState;
@@ -40,6 +41,7 @@ interface FocusContextType {
   resumeSession: () => void;
   cancelSession: () => void;
   skipToBreak: () => void;
+  skipBreakToFocus: () => void;
   startNextCycle: () => void;
   resetSession: () => void;
   selectArchetype: (id: PhilosopherId) => void;
@@ -73,8 +75,19 @@ export function FocusProvider({ children }: { children: React.ReactNode }) {
     if (typeof window !== 'undefined') {
       try {
         const saved = localStorage.getItem(LOCAL_STORAGE_SETTINGS_KEY);
-        if (saved) return { ...DEFAULT_SETTINGS, ...JSON.parse(saved) };
-      } catch {}
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          const archetype = (parsed.archetype as PhilosopherId) || 'marcus';
+          const config = PHILOSOPHER_CONFIGS[archetype] || PHILOSOPHER_CONFIGS.marcus;
+          return {
+            ...DEFAULT_SETTINGS,
+            ...parsed,
+            archetype,
+            focusDuration: Math.max(1, Number(parsed.focusDuration) || config.focusMinutes || 25),
+            breakDuration: Math.max(1, Number(parsed.breakDuration) || config.breakMinutes || 5),
+          };
+        }
+      } catch { }
     }
     return DEFAULT_SETTINGS;
   });
@@ -92,12 +105,13 @@ export function FocusProvider({ children }: { children: React.ReactNode }) {
       try {
         const saved = localStorage.getItem(LOCAL_STORAGE_TREES_KEY);
         if (saved) return JSON.parse(saved);
-      } catch {}
+      } catch { }
     }
     return [];
   });
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const targetEndTimeRef = useRef<number | null>(null);
 
   // Save settings on update
   useEffect(() => {
@@ -193,6 +207,11 @@ export function FocusProvider({ children }: { children: React.ReactNode }) {
   // Handle session complete
   const handleSessionComplete = useCallback(() => {
     setState('completed');
+    targetEndTimeRef.current = null;
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(LOCAL_STORAGE_ACTIVE_SESSION_KEY);
+    }
+
     soundscapeEngine.stopSoundscape();
     soundscapeEngine.playBowlChime('complete');
 
@@ -229,27 +248,111 @@ export function FocusProvider({ children }: { children: React.ReactNode }) {
     }
   }, [isBreak, settings, completeLinkedHabit]);
 
-  // Main Timer Interval
+  // Keep ref to latest handleSessionComplete callback so intervals never re-trigger effects
+  const handleSessionCompleteRef = useRef(handleSessionComplete);
+  useEffect(() => {
+    handleSessionCompleteRef.current = handleSessionComplete;
+  }, [handleSessionComplete]);
+
+  // Timestamp-Based Resilient Timer Interval (Throttling Proof)
   useEffect(() => {
     if (state === 'focusing' || state === 'break') {
-      timerRef.current = setInterval(() => {
-        setTimeLeft((prev) => {
-          if (prev <= 1) {
-            clearInterval(timerRef.current!);
-            handleSessionComplete();
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
+      const syncTimer = () => {
+        if (!targetEndTimeRef.current) return;
+        const now = Date.now();
+        const diffSeconds = Math.max(0, Math.ceil((targetEndTimeRef.current - now) / 1000));
+        setTimeLeft(diffSeconds);
+
+        // Persist active session snapshot to localStorage
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(
+            LOCAL_STORAGE_ACTIVE_SESSION_KEY,
+            JSON.stringify({
+              state,
+              targetEndTime: targetEndTimeRef.current,
+              totalDuration,
+              isBreak,
+              activeCycle,
+              settings,
+            })
+          );
+        }
+
+        if (diffSeconds <= 0) {
+          if (timerRef.current) clearInterval(timerRef.current);
+          handleSessionCompleteRef.current();
+        }
+      };
+
+      // Initial immediate sync
+      syncTimer();
+      timerRef.current = setInterval(syncTimer, 1000);
+
+      // Visibility change / tab focus listener to catch up immediately if throttled
+      const handleVisibilityChange = () => {
+        if (document.visibilityState === 'visible') {
+          syncTimer();
+        }
+      };
+
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+      window.addEventListener('focus', syncTimer);
+
+      return () => {
+        if (timerRef.current) clearInterval(timerRef.current);
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+        window.removeEventListener('focus', syncTimer);
+      };
     } else {
       if (timerRef.current) clearInterval(timerRef.current);
+      if (typeof window !== 'undefined' && state !== 'paused') {
+        localStorage.removeItem(LOCAL_STORAGE_ACTIVE_SESSION_KEY);
+      }
     }
 
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [state, handleSessionComplete]);
+  }, [state, totalDuration, isBreak, activeCycle, settings]);
+
+  // Restore active session ONLY on initial page mount (runs once)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const savedSession = localStorage.getItem(LOCAL_STORAGE_ACTIVE_SESSION_KEY);
+        if (savedSession) {
+          const parsed = JSON.parse(savedSession);
+          if (parsed.state === 'paused') {
+            setState('paused');
+            setTimeLeft(parsed.pausedTimeLeft || parsed.totalDuration);
+            setTotalDuration(parsed.totalDuration);
+            setIsBreak(parsed.isBreak);
+            setActiveCycle(parsed.activeCycle || 1);
+            if (parsed.settings) setSettings(parsed.settings);
+          } else if (parsed.state === 'focusing' || parsed.state === 'break') {
+            const now = Date.now();
+            if (parsed.targetEndTime > now) {
+              // Session is still active!
+              targetEndTimeRef.current = parsed.targetEndTime;
+              setTotalDuration(parsed.totalDuration);
+              setTimeLeft(Math.ceil((parsed.targetEndTime - now) / 1000));
+              setIsBreak(parsed.isBreak);
+              setActiveCycle(parsed.activeCycle || 1);
+              if (parsed.settings) setSettings(parsed.settings);
+              setState(parsed.state);
+            } else {
+              // Session finished while tab was closed -> award completion
+              if (parsed.settings) setSettings(parsed.settings);
+              setIsBreak(parsed.isBreak);
+              handleSessionCompleteRef.current();
+            }
+          }
+        }
+      } catch (e) {
+        console.error('[Focus] Failed to recover active session:', e);
+      }
+    }
+  }, []);
 
   // Audio Soundscape lifecycle
   useEffect(() => {
@@ -260,14 +363,65 @@ export function FocusProvider({ children }: { children: React.ReactNode }) {
     }
   }, [state, settings.soundscape, settings.soundVolume]);
 
+  // Dynamic Browser Tab Title with Live Timer
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+
+    const defaultTitle = 'Zenith — Circadian Habits & Usable Working Window';
+
+    if (state === 'focusing' || state === 'break' || state === 'paused') {
+      const mins = Math.floor(timeLeft / 60);
+      const secs = timeLeft % 60;
+      const formattedTime = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+
+      // Clean mode label (e.g. Pomodoro, Deep Work, Stoic Focus, or Linked Habit)
+      let modeLabel = settings.linkedHabitName;
+      if (!modeLabel) {
+        switch (settings.archetype) {
+          case 'cirillo':
+            modeLabel = 'Pomodoro';
+            break;
+          case 'newport':
+            modeLabel = 'Deep Work';
+            break;
+          case 'marcus':
+            modeLabel = 'Stoic Focus';
+            break;
+          case 'ultradian':
+            modeLabel = 'Ultradian Wave';
+            break;
+          case 'custom':
+          default:
+            modeLabel = 'Focus';
+            break;
+        }
+      }
+
+      if (state === 'paused') {
+        document.title = `[Paused ${formattedTime}] | ${isBreak ? 'Rest Break' : modeLabel} | Zenith`;
+      } else if (isBreak || state === 'break') {
+        document.title = `${formattedTime} | Rest Break | Zenith`;
+      } else {
+        document.title = `${formattedTime} | ${modeLabel} | Zenith`;
+      }
+    } else {
+      document.title = defaultTitle;
+    }
+
+    return () => {
+      document.title = defaultTitle;
+    };
+  }, [state, timeLeft, isBreak, settings.linkedHabitName, settings.archetype]);
+
   // Start Session
   const startSession = useCallback(
     (customSettings?: Partial<FocusSessionSettings>) => {
       const merged = { ...settings, ...customSettings };
       setSettings(merged);
-      const seconds = merged.focusDuration * 60;
+      const seconds = (Number(merged.focusDuration) || 25) * 60;
       setTotalDuration(seconds);
       setTimeLeft(seconds);
+      targetEndTimeRef.current = Date.now() + seconds * 1000;
       setIsBreak(false);
       setState('focusing');
 
@@ -284,17 +438,58 @@ export function FocusProvider({ children }: { children: React.ReactNode }) {
   // Pause
   const pauseSession = useCallback(() => {
     if (state === 'focusing' || state === 'break') {
+      let remaining = timeLeft;
+      if (targetEndTimeRef.current) {
+        remaining = Math.max(0, Math.ceil((targetEndTimeRef.current - Date.now()) / 1000));
+      }
+      setTimeLeft(remaining);
+      targetEndTimeRef.current = null;
       setState('paused');
       soundscapeEngine.stopSoundscape();
+
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(
+          LOCAL_STORAGE_ACTIVE_SESSION_KEY,
+          JSON.stringify({
+            state: 'paused',
+            pausedTimeLeft: remaining,
+            totalDuration,
+            isBreak,
+            activeCycle,
+            settings,
+          })
+        );
+      }
     }
-  }, [state]);
+  }, [state, timeLeft, totalDuration, isBreak, activeCycle, settings]);
 
   // Resume
   const resumeSession = useCallback(() => {
     if (state === 'paused') {
-      setState(isBreak ? 'break' : 'focusing');
+      const remainingSeconds = timeLeft;
+      targetEndTimeRef.current = Date.now() + remainingSeconds * 1000;
+      const nextState = isBreak ? 'break' : 'focusing';
+      setState(nextState);
+
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(
+          LOCAL_STORAGE_ACTIVE_SESSION_KEY,
+          JSON.stringify({
+            state: nextState,
+            targetEndTime: targetEndTimeRef.current,
+            totalDuration,
+            isBreak,
+            activeCycle,
+            settings,
+          })
+        );
+      }
+
+      if (nextState === 'focusing' && settings.soundscape !== 'none') {
+        soundscapeEngine.playSoundscape(settings.soundscape, settings.soundVolume);
+      }
     }
-  }, [state, isBreak]);
+  }, [state, isBreak, timeLeft, totalDuration, activeCycle, settings]);
 
   // Cancel Session (withering mechanic if early exit)
   const cancelSession = useCallback(() => {
@@ -318,6 +513,11 @@ export function FocusProvider({ children }: { children: React.ReactNode }) {
     }
 
     soundscapeEngine.stopSoundscape();
+    targetEndTimeRef.current = null;
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(LOCAL_STORAGE_ACTIVE_SESSION_KEY);
+    }
+
     setState('idle');
     setTimeLeft(settings.focusDuration * 60);
     setTotalDuration(settings.focusDuration * 60);
@@ -327,12 +527,62 @@ export function FocusProvider({ children }: { children: React.ReactNode }) {
   // Skip to Rest / Break
   const skipToBreak = useCallback(() => {
     soundscapeEngine.stopSoundscape();
-    const breakSeconds = settings.breakDuration * 60;
+    const config = PHILOSOPHER_CONFIGS[settings.archetype] || PHILOSOPHER_CONFIGS.marcus;
+    const breakMinutes = Math.max(1, Number(settings.breakDuration) || config.breakMinutes || 5);
+    const breakSeconds = breakMinutes * 60;
+    const targetEndTime = Date.now() + breakSeconds * 1000;
+    targetEndTimeRef.current = targetEndTime;
     setIsBreak(true);
     setTotalDuration(breakSeconds);
     setTimeLeft(breakSeconds);
     setState('break');
-  }, [settings.breakDuration]);
+
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(
+        LOCAL_STORAGE_ACTIVE_SESSION_KEY,
+        JSON.stringify({
+          state: 'break',
+          targetEndTime,
+          totalDuration: breakSeconds,
+          isBreak: true,
+          activeCycle,
+          settings,
+        })
+      );
+    }
+
+    soundscapeEngine.playBowlChime('complete');
+  }, [settings, activeCycle]);
+
+  // Skip Rest Break to Focus
+  const skipBreakToFocus = useCallback(() => {
+    soundscapeEngine.stopSoundscape();
+    const config = PHILOSOPHER_CONFIGS[settings.archetype] || PHILOSOPHER_CONFIGS.marcus;
+    const focusMinutes = Math.max(1, Number(settings.focusDuration) || config.focusMinutes || 25);
+    const focusSeconds = focusMinutes * 60;
+    const targetEndTime = Date.now() + focusSeconds * 1000;
+    targetEndTimeRef.current = targetEndTime;
+    setIsBreak(false);
+    setTotalDuration(focusSeconds);
+    setTimeLeft(focusSeconds);
+    setState('focusing');
+
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(
+        LOCAL_STORAGE_ACTIVE_SESSION_KEY,
+        JSON.stringify({
+          state: 'focusing',
+          targetEndTime,
+          totalDuration: focusSeconds,
+          isBreak: false,
+          activeCycle,
+          settings,
+        })
+      );
+    }
+
+    soundscapeEngine.playBowlChime('start');
+  }, [settings, activeCycle]);
 
   // Start Next Cycle
   const startNextCycle = useCallback(() => {
@@ -343,6 +593,10 @@ export function FocusProvider({ children }: { children: React.ReactNode }) {
   // Reset Session
   const resetSession = useCallback(() => {
     soundscapeEngine.stopSoundscape();
+    targetEndTimeRef.current = null;
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(LOCAL_STORAGE_ACTIVE_SESSION_KEY);
+    }
     setState('idle');
     setIsBreak(false);
     setTimeLeft(settings.focusDuration * 60);
@@ -361,6 +615,7 @@ export function FocusProvider({ children }: { children: React.ReactNode }) {
     }));
     setTimeLeft(config.focusMinutes * 60);
     setTotalDuration(config.focusMinutes * 60);
+    targetEndTimeRef.current = null;
   }, []);
 
   const setSoundscape = useCallback((id: SoundscapeId) => {
@@ -382,9 +637,12 @@ export function FocusProvider({ children }: { children: React.ReactNode }) {
       focusDuration: focusMinutes,
       breakDuration: breakMinutes !== undefined ? breakMinutes : prev.breakDuration,
     }));
-    setTimeLeft(focusMinutes * 60);
-    setTotalDuration(focusMinutes * 60);
-  }, []);
+    if (state === 'idle') {
+      setTimeLeft(focusMinutes * 60);
+      setTotalDuration(focusMinutes * 60);
+      targetEndTimeRef.current = null;
+    }
+  }, [state]);
 
   const linkHabit = useCallback((habitId: string, habitName: string) => {
     setSettings((prev) => ({
@@ -426,6 +684,7 @@ export function FocusProvider({ children }: { children: React.ReactNode }) {
         resumeSession,
         cancelSession,
         skipToBreak,
+        skipBreakToFocus,
         startNextCycle,
         resetSession,
         selectArchetype,
