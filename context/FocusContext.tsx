@@ -348,14 +348,36 @@ export function FocusProvider({ children }: { children: React.ReactNode }) {
       const mins = Math.floor(timeLeft / 60);
       const secs = timeLeft % 60;
       const formattedTime = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-      const label = settings.linkedHabitName || currentArchetypeConfig.name;
+
+      // Clean mode label (e.g. Pomodoro, Deep Work, Stoic Focus, or Linked Habit)
+      let modeLabel = settings.linkedHabitName;
+      if (!modeLabel) {
+        switch (settings.archetype) {
+          case 'cirillo':
+            modeLabel = 'Pomodoro';
+            break;
+          case 'newport':
+            modeLabel = 'Deep Work';
+            break;
+          case 'marcus':
+            modeLabel = 'Stoic Focus';
+            break;
+          case 'ultradian':
+            modeLabel = 'Ultradian Wave';
+            break;
+          case 'custom':
+          default:
+            modeLabel = 'Focus';
+            break;
+        }
+      }
 
       if (state === 'paused') {
-        document.title = `[⏸️ ${formattedTime}] ${label} | Zenith`;
+        document.title = `[Paused ${formattedTime}] | ${modeLabel} | Zenith`;
       } else if (isBreak) {
-        document.title = `(${formattedTime}) ☕ Rest: Break | Zenith`;
+        document.title = `${formattedTime} | Rest Break | Zenith`;
       } else {
-        document.title = `${formattedTime} Focus: ${label} | Zenith`;
+        document.title = `${formattedTime} | ${modeLabel} | Zenith`;
       }
     } else {
       document.title = defaultTitle;
@@ -364,7 +386,7 @@ export function FocusProvider({ children }: { children: React.ReactNode }) {
     return () => {
       document.title = defaultTitle;
     };
-  }, [state, timeLeft, isBreak, settings.linkedHabitName, currentArchetypeConfig.name]);
+  }, [state, timeLeft, isBreak, settings.linkedHabitName, settings.archetype]);
 
   // Start Session
   const startSession = useCallback(
