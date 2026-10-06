@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Play,
@@ -31,7 +32,8 @@ import { ZenGrove } from '../../components/focus/ZenGrove';
 import type { SoundscapeId, TreeSpecies } from '../../types/focus';
 import { PHILOSOPHER_CONFIGS } from '../../types/focus';
 
-export default function FocusPage() {
+function FocusContent() {
+  const searchParams = useSearchParams();
   const {
     state,
     settings,
@@ -67,7 +69,15 @@ export default function FocusPage() {
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const [isHabitDropdownOpen, setIsHabitDropdownOpen] = useState<boolean>(false);
   const [isSoundDropdownOpen, setIsSoundDropdownOpen] = useState<boolean>(false);
-  const [customFocusMinutes, setCustomFocusMinutes] = useState<number>(settings.focusDuration);
+
+  // Auto-link habit from URL search params if present
+  useEffect(() => {
+    const urlHabitId = searchParams.get('habitId');
+    const urlHabitName = searchParams.get('habitName');
+    if (urlHabitId && urlHabitName && !settings.linkedHabitId) {
+      linkHabit(urlHabitId, urlHabitName);
+    }
+  }, [searchParams, settings.linkedHabitId, linkHabit]);
 
   const activeArchetype = PHILOSOPHER_CONFIGS[settings.archetype] || PHILOSOPHER_CONFIGS.marcus;
   const isRunning = state === 'focusing' || state === 'break';
@@ -403,7 +413,7 @@ export default function FocusPage() {
             </div>
           </div>
 
-          {/* Right Column: Philosopher Archetypes, Habit Linking & Species Config (5 cols) */}
+          {/* Right Column: Philosopher Archetypes, Custom Adjusters & Habit Linking (5 cols) */}
           <div className="lg:col-span-5 space-y-6">
             {/* Philosopher Card */}
             <PhilosopherCard
@@ -413,6 +423,64 @@ export default function FocusPage() {
               onRefreshQuote={refreshQuote}
               isSessionActive={isSessionActive}
             />
+
+            {/* Custom Duration Adjuster (Shown when Custom Archetype selected) */}
+            {settings.archetype === 'custom' && !isSessionActive && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                className="rounded-3xl border border-border/80 bg-card/60 p-5 backdrop-blur-xl shadow-lg space-y-4"
+              >
+                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted">
+                  <Sliders className="h-3.5 w-3.5 text-violet-500" />
+                  <span>Custom Duration Sliders</span>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between text-xs font-medium text-ink mb-1.5">
+                    <span>Focus Interval</span>
+                    <span className="font-mono font-bold text-violet-500">{settings.focusDuration} mins</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="5"
+                    max="180"
+                    step="5"
+                    value={settings.focusDuration}
+                    onChange={(e) => setDuration(parseInt(e.target.value, 10))}
+                    className="w-full h-1.5 bg-border rounded-lg appearance-none cursor-pointer accent-violet-500"
+                  />
+                  <div className="flex justify-between text-[10px] text-muted font-mono mt-1">
+                    <span>5m</span>
+                    <span>45m</span>
+                    <span>90m</span>
+                    <span>180m</span>
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between text-xs font-medium text-ink mb-1.5">
+                    <span>Rest Interval</span>
+                    <span className="font-mono font-bold text-emerald-500">{settings.breakDuration} mins</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="1"
+                    max="30"
+                    step="1"
+                    value={settings.breakDuration}
+                    onChange={(e) => setDuration(settings.focusDuration, parseInt(e.target.value, 10))}
+                    className="w-full h-1.5 bg-border rounded-lg appearance-none cursor-pointer accent-emerald-500"
+                  />
+                  <div className="flex justify-between text-[10px] text-muted font-mono mt-1">
+                    <span>1m</span>
+                    <span>5m</span>
+                    <span>15m</span>
+                    <span>30m</span>
+                  </div>
+                </div>
+              </motion.div>
+            )}
 
             {/* Habit Linking Block */}
             <div className="rounded-3xl border border-border/80 bg-card/60 p-5 backdrop-blur-xl shadow-lg">
@@ -556,7 +624,7 @@ export default function FocusPage() {
                 <button
                   type="button"
                   onClick={() => setIsFullscreen(false)}
-                  className="flex h-10 w-10 items-center justify-center rounded-full bg-zinc-800/80 text-zinc-300 transition-colors hover:bg-zinc-700 hover:text-white"
+                  className="flex h-10 w-10 items-center justify-center rounded-full bg-zinc-800/80 text-zinc-300 transition-colors hover:bg-zinc-700 hover:text-white cursor-pointer"
                 >
                   <Minimize2 className="h-5 w-5" />
                 </button>
@@ -593,7 +661,7 @@ export default function FocusPage() {
                   <button
                     type="button"
                     onClick={() => startSession()}
-                    className="flex items-center gap-2 rounded-full px-8 py-3.5 text-sm font-semibold text-white shadow-2xl transition-all hover:scale-105"
+                    className="flex items-center gap-2 rounded-full px-8 py-3.5 text-sm font-semibold text-white shadow-2xl transition-all hover:scale-105 cursor-pointer"
                     style={{ backgroundColor: activeArchetype.accentColor }}
                   >
                     <Play className="h-4 w-4 fill-current" />
@@ -603,7 +671,7 @@ export default function FocusPage() {
                   <button
                     type="button"
                     onClick={resumeSession}
-                    className="flex items-center gap-2 rounded-full bg-emerald-500 px-8 py-3.5 text-sm font-semibold text-white shadow-2xl transition-all hover:bg-emerald-600"
+                    className="flex items-center gap-2 rounded-full bg-emerald-500 px-8 py-3.5 text-sm font-semibold text-white shadow-2xl transition-all hover:bg-emerald-600 cursor-pointer"
                   >
                     <Play className="h-4 w-4 fill-current" />
                     <span>Resume</span>
@@ -612,7 +680,7 @@ export default function FocusPage() {
                   <button
                     type="button"
                     onClick={pauseSession}
-                    className="flex items-center gap-2 rounded-full bg-zinc-800 px-8 py-3.5 text-sm font-semibold text-white shadow-2xl transition-all hover:bg-zinc-700"
+                    className="flex items-center gap-2 rounded-full bg-zinc-800 px-8 py-3.5 text-sm font-semibold text-white shadow-2xl transition-all hover:bg-zinc-700 cursor-pointer"
                   >
                     <Pause className="h-4 w-4 fill-current" />
                     <span>Pause</span>
@@ -624,5 +692,13 @@ export default function FocusPage() {
         </AnimatePresence>
       </div>
     </Layout>
+  );
+}
+
+export default function FocusPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-muted font-mono text-xs">Loading Focus Sanctuary...</div>}>
+      <FocusContent />
+    </Suspense>
   );
 }
