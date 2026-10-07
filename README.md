@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🏛️ Zenith — Circadian Habit & Usable Working Window System
+#  Zenith — Circadian Habit & Usable Working Window System
 
 **A proactive behavioral consistency engine built for real-world schedules — planned around your usable hours, not artificial 24-hour days.**
 
@@ -13,7 +13,7 @@
 [![Google Gemini](https://img.shields.io/badge/Google_Gemini-3.5_Flash--Lite-8e75ff?style=flat-square&logo=google)](https://ai.google.dev/)
 [![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
 
-[Live Demo](https://zenith-habits.vercel.app) · [Report Bug](https://github.com/SamarSiddiqui/Zenith/issues) · [Request Feature](https://github.com/SamarSiddiqui/Zenith/issues) · [Discussions](https://github.com/SamarSiddiqui/Zenith/discussions)
+[Live Demo](https://zenith-habits.vercel.app) · [Report Bug](https://github.com/SamarSiddiqui/Zenith/issues) · [Request Feature](https://github.com/SamarSiddiqui/Zenith/issues) 
 
 </div>
 
@@ -21,7 +21,7 @@
 
 ## 📖 The Problem & The Zenith Philosophy
 
-Most habit trackers on the market (Streaks, Loop, Habitica) are built on a flawed foundation: **the empty 24-hour canvas and fragile binary streaks**.
+Most habit trackers on the market are built on a flawed foundation: **the empty 24-hour canvas and fragile binary streaks**.
 
 ```
 Traditional Flow:  Create Habit ──▶ Track ──▶ Busy Workday ──▶ Slip Day ──▶ Streak = 0 ──▶ Guilt ──▶ Abandon App
@@ -34,11 +34,11 @@ Zenith Flow:       Map Window ──▶ Track ──▶ Work Overrun ──▶ 2
 3. **Willpower Blame**: Traditional apps blame lack of discipline rather than diagnosing contextual schedule friction (e.g. evening energy crashes after 7 PM finishes).
 
 ### How Zenith Solves This:
-- ⏳ **Usable Working Window**: Calculates remaining realistic time gaps after work and commitments.
-- 📈 **Habit Health Index (0–100%)**: Multi-variable weighted curve with decay and gradual recovery instead of destructive binary resets.
-- 🛡️ **Proactive 2-Day Early Warning**: Intervenes on slip #2 while recovery still takes one frictionless step.
-- ⚡ **"Shrink, Don't Skip" Fallbacks**: Automatically scales habits down to 2-minute or 5-minute identity anchors during schedule crunches.
-- 🧠 **AI Schedule Diagnosis (Gemini 3.5 Flash-Lite)**: Cross-references habit history with workday end times to pinpoint schedule collisions with zero shame or blame.
+- **Usable Working Window**: Calculates remaining realistic time gaps after work and commitments.
+- **Habit Health Index (0–100%)**: Multi-variable weighted curve with decay and gradual recovery instead of destructive binary resets.
+- **Proactive 2-Day Early Warning**: Intervenes on slip #2 while recovery still takes one frictionless step.
+- **"Shrink, Don't Skip" Fallbacks**: Automatically scales habits down to 2-minute or 5-minute identity anchors during schedule crunches.
+- **AI Schedule Diagnosis (Gemini 3.5 Flash-Lite)**: Cross-references habit history with workday end times to pinpoint schedule collisions with zero shame or blame.
 
 ---
 
@@ -204,16 +204,11 @@ Contributions are what make the open-source community such an amazing place to l
 5. **Open a Pull Request**
 
 ### 💬 Discussions & Issues
-- Have an idea for a new feature or want to discuss circadian habit science? [Join our GitHub Discussions](https://github.com/SamarSiddiqui/Zenith/discussions).
+- Have an idea for a new feature or want to discuss circadian habit science? Open a discussion first.
 - Found a bug or glitch? [Open an Issue](https://github.com/SamarSiddiqui/Zenith/issues).
 
 ---
 
-## 📜 License
-
-Distributed under the **MIT License**. See [`LICENSE`](LICENSE) for more information.
-
----
 
 <div align="center">
 
