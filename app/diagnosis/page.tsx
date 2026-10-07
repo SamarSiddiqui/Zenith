@@ -12,6 +12,7 @@ import {
   CalendarRange,
   ArrowRight,
   Lightbulb,
+  CheckCircle2,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Layout } from '../../components/Layout';
@@ -37,6 +38,8 @@ export default function DiagnosisPage() {
     diagnosis,
     isLoading: diagnosisLoading,
     isAnalyzing,
+    isRevalidating,
+    isFreshlyUpdated,
     error,
     lastAnalyzedAt,
     appliedActions,
@@ -75,7 +78,21 @@ export default function DiagnosisPage() {
                 <span>Mindful Growth &amp; Check-in</span>
               </div>
 
-              {formattedAnalysisTime && (
+              {isRevalidating && (
+                <div className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-[11px] font-mono text-amber-600 animate-pulse shadow-xs">
+                  <RotateCcw className="h-3 w-3 animate-spin text-amber-600" />
+                  <span>Syncing fresh reflections in background...</span>
+                </div>
+              )}
+
+              {isFreshlyUpdated && !isRevalidating && (
+                <div className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-[11px] font-mono text-emerald-600 shadow-xs">
+                  <CheckCircle2 className="h-3 w-3 text-emerald-500" />
+                  <span>Updated with latest habit data</span>
+                </div>
+              )}
+
+              {formattedAnalysisTime && !isRevalidating && !isFreshlyUpdated && (
                 <div className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface px-3 py-1 text-[11px] font-mono text-muted shadow-xs">
                   <Clock className="h-3 w-3 text-faint" />
                   <span>Reflected at: {formattedAnalysisTime} (AI Mentor)</span>

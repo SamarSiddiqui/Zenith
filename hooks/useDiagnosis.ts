@@ -30,11 +30,13 @@ export function useDiagnosis(
   const [diagnosis, setDiagnosis] = useState<DiagnosisResult | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
+  const [isRevalidating, setIsRevalidating] = useState<boolean>(false);
+  const [isFreshlyUpdated, setIsFreshlyUpdated] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [lastAnalyzedAt, setLastAnalyzedAt] = useState<Date | null>(null);
   const [appliedActions, setAppliedActions] = useState<Record<string, boolean>>({});
 
-  // 1. Initial synchronous cache hydration on mount
+  // 1. Initial synchronous cache hydration from localStorage on mount (Instant 0ms UI)
   useEffect(() => {
     if (typeof window !== 'undefined') {
       try {
@@ -46,8 +48,7 @@ export function useDiagnosis(
         const cached = localStorage.getItem(cacheKey);
         if (cached) {
           const parsed = JSON.parse(cached) as CachePayload;
-          const isFresh = Date.now() - parsed.timestamp < CACHE_TTL_MS;
-          if (isFresh && parsed.data) {
+          if (parsed.data) {
             setDiagnosis(parsed.data);
             setLastAnalyzedAt(new Date(parsed.timestamp));
             setIsLoading(false);
@@ -59,6 +60,30 @@ export function useDiagnosis(
     }
   }, [cacheKey]);
 
+  // 2. Fast Redis Hydration fallback if localStorage was empty
+  useEffect(() => {
+    if (!diagnosis && typeof window !== 'undefined') {
+      let isMounted = true;
+      fetch(`/api/diagnosis?userId=${encodeURIComponent(userId)}`)
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data: DiagnosisResult | null) => {
+          if (isMounted && data && !diagnosis) {
+            setDiagnosis(data);
+            if (data.generatedAt) {
+              setLastAnalyzedAt(new Date(data.generatedAt));
+            }
+            setIsLoading(false);
+          }
+        })
+        .catch(() => {
+          // Non-blocking fallback
+        });
+      return () => {
+        isMounted = false;
+      };
+    }
+  }, [diagnosis, userId]);
+
   const markActionApplied = useCallback((actionKey: string) => {
     setAppliedActions((prev) => {
       const next = { ...prev, [actionKey]: true };
@@ -69,7 +94,7 @@ export function useDiagnosis(
     });
   }, []);
 
-  // Run Gemini Diagnosis
+  // Run Gemini Diagnosis (Background or Foreground)
   const runDiagnosis = useCallback(
     async (forceFresh: boolean = false): Promise<DiagnosisResult | null> => {
       if (!habits || habits.length === 0) {
@@ -79,27 +104,13 @@ export function useDiagnosis(
         return null;
       }
 
-      // Check localStorage cache if not forced fresh
-      if (!forceFresh && typeof window !== 'undefined') {
-        try {
-          const cached = localStorage.getItem(cacheKey);
-          if (cached) {
-            const parsed = JSON.parse(cached) as CachePayload;
-            const isFresh = Date.now() - parsed.timestamp < CACHE_TTL_MS;
-            if (isFresh && parsed.data) {
-              setDiagnosis(parsed.data);
-              setLastAnalyzedAt(new Date(parsed.timestamp));
-              setIsLoading(false);
-              return parsed.data;
-            }
-          }
-        } catch (cacheErr) {
-          console.warn('[useDiagnosis] Cache read error, continuing with fresh fetch:', cacheErr);
-        }
+      // If we already have a diagnosis on screen, background revalidate without blocking full screen
+      if (diagnosis && !forceFresh) {
+        setIsRevalidating(true);
+      } else {
+        setIsAnalyzing(true);
+        if (!diagnosis) setIsLoading(true);
       }
-
-      setIsLoading(true);
-      setIsAnalyzing(true);
       setError(null);
 
       try {
@@ -107,6 +118,7 @@ export function useDiagnosis(
           habits,
           userId: user?.id || 'local-user',
           forceRefresh: forceFresh,
+          allowStale: true,
           workingWindow: {
             startTime: workingWindow?.startTime || user?.workingWindow?.startTime || '09:00',
             endTime: workingWindow?.endTime || user?.workingWindow?.endTime || '19:00',
@@ -134,8 +146,14 @@ export function useDiagnosis(
         setDiagnosis(data);
         const now = new Date();
         setLastAnalyzedAt(now);
+        setIsFreshlyUpdated(true);
 
-        // Store to cache
+        // Flash freshly updated badge for 4 seconds
+        setTimeout(() => {
+          setIsFreshlyUpdated(false);
+        }, 4000);
+
+        // Store to localStorage
         if (typeof window !== 'undefined') {
           const cachePayload: CachePayload = {
             data,
@@ -152,19 +170,23 @@ export function useDiagnosis(
       } finally {
         setIsLoading(false);
         setIsAnalyzing(false);
+        setIsRevalidating(false);
       }
     },
-    [habits, workingWindow, user, sprintSession, cacheKey, isHabitsLoading]
+    [habits, workingWindow, user, sprintSession, cacheKey, isHabitsLoading, diagnosis]
   );
 
-  // Auto-trigger analysis when habits are loaded and no diagnosis is present yet
+  // Auto-trigger background revalidation when habits load
   useEffect(() => {
-    if (!isHabitsLoading && habits.length > 0 && !diagnosis && !isAnalyzing) {
+    if (!isHabitsLoading && habits.length > 0 && !isAnalyzing && !isRevalidating) {
+      // If no diagnosis at all -> run immediately
+      // If stale diagnosis present -> revalidate in background
       runDiagnosis(false);
     } else if (!isHabitsLoading && habits.length === 0) {
       setIsLoading(false);
     }
-  }, [habits, isHabitsLoading, diagnosis, isAnalyzing, runDiagnosis]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isHabitsLoading, habits.length]);
 
   // 1-Click Action 1: Re-anchor Circadian Slot
   const applySlotRecommendation = useCallback(
@@ -236,6 +258,8 @@ export function useDiagnosis(
     diagnosis,
     isLoading,
     isAnalyzing,
+    isRevalidating,
+    isFreshlyUpdated,
     error,
     lastAnalyzedAt,
     appliedActions,

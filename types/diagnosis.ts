@@ -96,12 +96,15 @@ export interface DiagnosisResult {
   generatedAt: string;
   modelUsed: string;
   isCached?: boolean;
+  isStale?: boolean;
 }
 
 export interface DiagnosisRequest {
   habits: Habit[];
   userId?: string;
   forceRefresh?: boolean;
+  allowStale?: boolean;
+  mode?: 'full' | 'stale_check';
   workingWindow?: {
     startTime?: string;
     endTime?: string;
