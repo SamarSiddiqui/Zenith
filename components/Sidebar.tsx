@@ -56,9 +56,9 @@ export function Sidebar({ userName, isOpen = true, onCloseMobile }: SidebarProps
     router.push('/login');
   };
 
-  const displayName = user?.fullName || userName || 'Explorer';
-  const displayEmail = user?.email || 'circadian@zenith.app';
-  const avatarLetter = displayName.charAt(0).toUpperCase() || 'Z';
+  const displayName = user?.fullName || userName || 'Practitioner';
+  const displayEmail = user?.email || '';
+  const avatarLetter = displayName.charAt(0).toUpperCase() || 'P';
 
   return (
     <aside
@@ -127,7 +127,7 @@ export function Sidebar({ userName, isOpen = true, onCloseMobile }: SidebarProps
           </div>
           <div className="overflow-hidden min-w-0 flex-1">
             <p className="text-xs font-semibold text-ink truncate">{displayName}</p>
-            <p className="text-[11px] text-faint truncate font-mono">{displayEmail}</p>
+            {displayEmail && <p className="text-[11px] text-faint truncate font-mono">{displayEmail}</p>}
           </div>
         </div>
         <button

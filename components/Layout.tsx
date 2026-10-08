@@ -1,8 +1,10 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Sidebar } from './Sidebar';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, Loader2 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { useRouter } from 'next/navigation';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -11,6 +13,34 @@ interface LayoutProps {
 
 export function Layout({ children, userName }: LayoutProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { user, isLoading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isLoading && !user) {
+      router.replace('/login');
+    }
+  }, [user, isLoading, router]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-canvas flex flex-col items-center justify-center p-6">
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-12 w-12 rounded-full bg-sage-wash overflow-hidden border border-sage/30 flex items-center justify-center animate-pulse shadow-xs">
+            <img src="/zenithBot.webp" alt="Zenith Logo" className="h-full w-full object-cover" />
+          </div>
+          <div className="flex items-center gap-2 text-xs font-mono tracking-wider text-muted">
+            <Loader2 className="w-3.5 h-3.5 animate-spin text-sage-deep" />
+            <span>Verifying session...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-canvas flex overflow-hidden">
