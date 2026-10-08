@@ -1,125 +1,139 @@
 "use client";
 
 import React, { useState, useRef } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
-import { Clock, ShieldCheck, Zap } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  Sun, 
+  Moon, 
+  Plane, 
+  CheckCircle2, 
+  Sparkles, 
+  Clock, 
+  ShieldCheck, 
+  Dumbbell, 
+  BookOpen, 
+  BrainCircuit,
+  ArrowRight,
+  Flame
+} from 'lucide-react';
 import { useGSAPScrollTrigger } from '../../hooks/useGSAPScrollTrigger';
 
-type Scenario = 'typical' | 'late' | 'crunch';
+type DayMode = 'normal' | 'late' | 'exhausted';
 
-const START = 6;
-const END = 23;
-const SPAN = END - START;
-
-const pos = (from: number, to: number) => ({
-  left: `${((from - START) / SPAN) * 100}%`,
-  width: `${((to - from) / SPAN) * 100}%`
-});
-
-interface Block {
+interface HabitAdaptation {
   id: string;
-  label: string;
-  from: number;
-  to: number;
-  tone: 'work' | 'overrun' | 'habit' | 'risk' | 'shrunk' | 'deferred';
+  name: string;
+  icon: typeof Dumbbell;
+  standard: {
+    duration: string;
+    description: string;
+  };
+  adapted: {
+    duration: string;
+    description: string;
+    badge: string;
+  };
 }
 
-const commitments: Record<Scenario, Block[]> = {
-  typical: [{ id: 'work', label: 'Work · 9:00 – 18:30', from: 9, to: 18.5, tone: 'work' }],
-  late: [
-    { id: 'work', label: 'Work · 9:00 – 18:30', from: 9, to: 18.5, tone: 'work' },
-    { id: 'overrun', label: 'Ran late · until 20:30', from: 18.5, to: 20.5, tone: 'overrun' }
-  ],
-  crunch: [
-    { id: 'work', label: 'Flight & Meetings · 8:00 – 21:30', from: 8, to: 21.5, tone: 'overrun' }
-  ]
-};
+const habitsList: HabitAdaptation[] = [
+  {
+    id: 'workout',
+    name: 'Movement & Fitness',
+    icon: Dumbbell,
+    standard: {
+      duration: '45 mins',
+      description: 'Full workout session & mobility drills'
+    },
+    adapted: {
+      duration: '10 mins',
+      description: 'Gentle posture reset & mobility stretches',
+      badge: 'Micro-version'
+    }
+  },
+  {
+    id: 'reading',
+    name: 'Knowledge & Reading',
+    icon: BookOpen,
+    standard: {
+      duration: '30 mins',
+      description: 'Deep focus chapter reading & notes'
+    },
+    adapted: {
+      duration: '5 mins',
+      description: 'Read 2 pages to keep momentum alive',
+      badge: 'Micro-version'
+    }
+  },
+  {
+    id: 'mindfulness',
+    name: 'Mindfulness & Wind-down',
+    icon: BrainCircuit,
+    standard: {
+      duration: '15 mins',
+      description: 'Guided evening meditation & journaling'
+    },
+    adapted: {
+      duration: '3 mins',
+      description: '3 deep grounding breaths before sleep',
+      badge: 'Micro-version'
+    }
+  }
+];
 
-const habits: Record<Scenario, Block[]> = {
-  typical: [
-    { id: 'workout', label: 'Workout 45m', from: 6.5, to: 7.25, tone: 'habit' },
-    { id: 'walk', label: 'Walk 20m', from: 13, to: 13.35, tone: 'habit' },
-    { id: 'meditation', label: 'Meditate 15m', from: 19.0, to: 19.25, tone: 'habit' },
-    { id: 'reading', label: 'Reading 30m', from: 20.0, to: 20.5, tone: 'habit' },
-    { id: 'journal', label: 'Journal 10m', from: 21.0, to: 21.2, tone: 'habit' }
-  ],
-  late: [
-    { id: 'workout', label: 'Workout 45m', from: 6.5, to: 7.25, tone: 'habit' },
-    { id: 'walk', label: 'Walk 20m', from: 13, to: 13.35, tone: 'habit' },
-    { id: 'meditation', label: 'Squeezed 10m', from: 20.6, to: 20.8, tone: 'risk' },
-    { id: 'reading', label: 'Micro-read 5m', from: 21.0, to: 21.1, tone: 'shrunk' },
-    { id: 'journal', label: 'Journal 10m', from: 21.5, to: 21.7, tone: 'habit' }
-  ],
-  crunch: [
-    { id: 'workout', label: 'Workout Defer', from: 6.5, to: 7.25, tone: 'deferred' },
-    { id: 'walk', label: 'Walk 10m', from: 13, to: 13.2, tone: 'habit' },
-    { id: 'journal', label: 'Zenith 2-Min Reset', from: 21.8, to: 22.0, tone: 'shrunk' }
-  ]
-};
-
-const toneClass: Record<Block['tone'], string> = {
-  work: 'bg-sidebar border-line text-muted',
-  overrun: 'bg-clay/15 border-clay/40 text-clay font-medium',
-  habit: 'bg-sage/85 border-sage text-white',
-  risk: 'bg-clay border-clay text-white',
-  shrunk: 'bg-surface border-sage border-dashed text-sage-deep font-semibold',
-  deferred: 'bg-canvas border-line text-faint line-through'
-};
-
-const ticks = [6, 9, 12, 15, 18, 21, 23];
-const tickLabel = (h: number) =>
-  h === 12 ? '12 PM' : h > 12 ? `${h - 12} PM` : `${h} AM`;
-
-const captions: Record<Scenario, { title: string; body: string; badge: string; iconTone: string }> = {
-  typical: {
-    title: 'On a normal day, everything fits seamlessly.',
-    body: 'Five habits distributed across your 3h 30m evening window. No willpower required — just clear schedule room.',
-    badge: '100% Window Utilization',
-    iconTone: 'text-sage-deep'
+const dayScenarios: Record<DayMode, {
+  label: string;
+  icon: typeof Sun;
+  tagline: string;
+  workHours: string;
+  workStatus: string;
+  availableTime: string;
+  resultBadge: string;
+  badgeColor: string;
+  consistencyScore: string;
+  summary: string;
+}> = {
+  normal: {
+    label: 'Normal Day',
+    icon: Sun,
+    tagline: 'Standard schedule with plenty of free evening energy',
+    workHours: '9:00 AM – 6:00 PM',
+    workStatus: 'On Time',
+    availableTime: '3h 30m free evening',
+    resultBadge: 'Full Habit Plan Active',
+    badgeColor: 'bg-sage-wash text-sage-deep border-sage/30',
+    consistencyScore: '100% Score',
+    summary: 'Everything runs at full standard duration. Smooth execution with zero friction.'
   },
   late: {
-    title: 'On an overrun day, Zenith auto-adapts your evening.',
-    body: 'Work eats 2 hours of your evening. Instead of letting you fail, Zenith shrinks Reading to a 5-minute micro-session and protects your health score.',
-    badge: 'Zenith Auto-Adapted (5m Micro-session)',
-    iconTone: 'text-clay'
+    label: 'Late Workday',
+    icon: Moon,
+    tagline: 'Work ran overtime until 8:30 PM — minimal time & energy left',
+    workHours: '9:00 AM – 8:30 PM',
+    workStatus: '2.5h Overtime',
+    availableTime: '45 mins remaining',
+    resultBadge: 'Auto-scaled to Micro-habits',
+    badgeColor: 'bg-sand-wash text-ink border-sand/40',
+    consistencyScore: '100% Protected',
+    summary: 'Instead of skipping and losing your streak, Zenith scales habits down to 5-minute micro versions so you maintain consistency without burnout.'
   },
-  crunch: {
-    title: 'On a travel or crunch day, Zenith activates Safe Deferral.',
-    body: 'Your usable window shrinks to 45 mins. Zenith automatically defers long workouts to tomorrow without breaking your consistency score.',
-    badge: 'Safe Deferral Active (0 Penalty)',
-    iconTone: 'text-sage-deep'
+  exhausted: {
+    label: 'Travel / Low Energy',
+    icon: Plane,
+    tagline: 'Flights, sick day, or total exhaustion with 0 energy',
+    workHours: 'All-day Travel / Rest',
+    workStatus: 'High Fatigue',
+    availableTime: '15 mins usable',
+    resultBadge: 'Safe Pause (Zero Penalty)',
+    badgeColor: 'bg-clay-wash text-clay border-clay/30',
+    consistencyScore: 'Score Preserved',
+    summary: 'Zenith activates Safe Pause. Your consistency health index is preserved with zero guilt, letting you recharge and resume tomorrow fresh.'
   }
 };
 
-function Lane({ blocks, laneLabel }: { blocks: Block[]; laneLabel: string }) {
-  return (
-    <div>
-      <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-faint">{laneLabel}</p>
-      <div className="relative h-12 rounded-xl bg-canvas overflow-hidden">
-        <AnimatePresence initial={false}>
-          {blocks.map((b) => (
-            <motion.div
-              key={b.id}
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1, ...pos(b.from, b.to) }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ duration: 0.28, ease: [0.23, 1, 0.32, 1] }}
-              className={`absolute inset-y-1 flex items-center justify-center overflow-hidden rounded-lg border px-2 ${toneClass[b.tone]}`}
-              style={pos(b.from, b.to)}
-            >
-              <span className="truncate text-[11px]">{b.label}</span>
-            </motion.div>
-          ))}
-        </AnimatePresence>
-      </div>
-    </div>
-  );
-}
-
 export function DayRibbon() {
-  const [scenario, setScenario] = useState<Scenario>('typical');
+  const [activeMode, setActiveMode] = useState<DayMode>('late');
   const containerRef = useRef<HTMLDivElement>(null);
-  const caption = captions[scenario];
+  const currentScenario = dayScenarios[activeMode];
 
   // GSAP ScrollTrigger entrance stagger for Chapter 02
   const sectionRef = useGSAPScrollTrigger<HTMLElement>((gsap) => {
@@ -139,131 +153,184 @@ export function DayRibbon() {
   return (
     <section ref={sectionRef} id="chapter-02" className="scroll-mt-20 border-y border-line bg-surface">
       <div ref={containerRef} className="mx-auto w-full max-w-6xl px-5 py-20 lg:px-10 lg:py-28">
-        {/* Title & Selector Bar */}
+        {/* Header and Scenario Selector */}
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-2xl">
             <p className="gsap-ribbon-anim text-xs font-semibold uppercase tracking-[0.18em] text-faint">
               Chapter 02 · The Working Window
             </p>
             <h2 className="gsap-ribbon-anim mt-3 font-serif text-3xl text-ink md:text-4xl">
-              You don&apos;t have 24 hours. You have the gaps.
+              Habits that adapt to your day, not the other way around.
             </h2>
             <p className="gsap-ribbon-anim mt-4 text-base leading-relaxed text-muted">
-              Traditional habit trackers assume an artificial, empty 24-hour canvas. Zenith calculates your real usable window around work, travel, and commitments — auto-scaling your habits in real time.
-            </p>
-            <p className="gsap-ribbon-anim mt-2 text-xs italic text-sage-deep">
-              Because missing a habit after an 11-hour workday isn&apos;t a failure of willpower — it&apos;s a schedule design flaw.
+              Most habit apps assume you have an empty 24-hour day. When work runs late or exhaustion hits, Zenith automatically scales your habits down so your consistency never breaks.
             </p>
           </div>
 
+          {/* Interactive Scenario Buttons */}
           <div
-            className="gsap-ribbon-anim inline-flex shrink-0 rounded-full border border-line bg-canvas p-1 shadow-xs"
+            className="gsap-ribbon-anim inline-flex p-1.5 rounded-2xl border border-line bg-canvas shadow-xs shrink-0"
             role="group"
-            aria-label="Choose a day preset"
+            aria-label="Choose a day scenario"
           >
-            {[
-              { id: 'typical', label: 'Typical Day' },
-              { id: 'late', label: 'Late Overrun' },
-              { id: 'crunch', label: 'Travel / Crunch' }
-            ].map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => setScenario(item.id as Scenario)}
-                aria-pressed={scenario === item.id}
-                className="relative rounded-full px-4 py-2 text-xs font-medium transition-colors"
-              >
-                {scenario === item.id && (
-                  <motion.span
-                    layoutId="scenario-pill"
-                    className="absolute inset-0 rounded-full bg-ink"
-                    transition={{ duration: 0.24, ease: [0.23, 1, 0.32, 1] }}
-                  />
-                )}
-                <span className={`relative ${scenario === item.id ? 'text-white' : 'text-muted'}`}>
-                  {item.label}
-                </span>
-              </button>
-            ))}
+            {(Object.keys(dayScenarios) as DayMode[]).map((mode) => {
+              const item = dayScenarios[mode];
+              const Icon = item.icon;
+              const isActive = activeMode === mode;
+
+              return (
+                <button
+                  key={mode}
+                  type="button"
+                  onClick={() => setActiveMode(mode)}
+                  aria-pressed={isActive}
+                  className={`relative flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-medium transition-all ${
+                    isActive ? 'text-white' : 'text-muted hover:text-ink'
+                  }`}
+                >
+                  {isActive && (
+                    <motion.div
+                      layoutId="scenario-pill-bg"
+                      className="absolute inset-0 rounded-xl bg-ink shadow-sm"
+                      transition={{ type: 'spring', bounce: 0.2, duration: 0.4 }}
+                    />
+                  )}
+                  <Icon className={`relative z-10 w-3.5 h-3.5 ${isActive ? 'text-white' : 'text-faint'}`} />
+                  <span className="relative z-10">{item.label}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
 
-        {/* Timeline Visualization Card */}
-        <div className="gsap-ribbon-anim mt-12 rounded-3xl border border-line bg-canvas p-6 sm:p-8 shadow-calm">
-          <div className="relative">
-            {/* Hour Ticks */}
-            <div className="absolute inset-x-0 -top-1 flex justify-between text-[10px] text-faint font-mono" aria-hidden>
-              {ticks.map((t) => (
-                <span key={t}>{tickLabel(t)}</span>
-              ))}
+        {/* Interactive Showcase Card */}
+        <div className="gsap-ribbon-anim mt-12 rounded-3xl border border-line bg-canvas p-6 sm:p-8 md:p-10 shadow-calm">
+          {/* Top Status Bar for Selected Day */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-line/60">
+            <div className="flex items-center gap-3">
+              <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${currentScenario.badgeColor}`}>
+                {currentScenario.resultBadge}
+              </span>
+              <p className="text-xs text-muted hidden sm:inline-block">
+                {currentScenario.tagline}
+              </p>
             </div>
 
-            {/* Ribbon Lanes */}
-            <div className="space-y-5 pt-6">
-              <div className="rounded-2xl bg-surface p-4 border border-line/60">
-                <Lane blocks={commitments[scenario]} laneLabel="Commitments & Work" />
+            <div className="flex items-center gap-6 text-xs">
+              <div className="flex items-center gap-1.5 text-muted">
+                <Clock className="w-3.5 h-3.5 text-faint" />
+                <span>Usable Gap: <strong className="text-ink">{currentScenario.availableTime}</strong></span>
               </div>
-              <div className="rounded-2xl bg-surface p-4 border border-line/60">
-                <Lane blocks={habits[scenario]} laneLabel="Habit Schedule (Zenith Engine)" />
+              <div className="flex items-center gap-1.5 text-sage-deep font-semibold">
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>{currentScenario.consistencyScore}</span>
               </div>
             </div>
           </div>
 
-          {/* Scenario Result Callout */}
-          <div className="mt-8 grid gap-6 border-t border-line pt-6 lg:grid-cols-[1fr_auto] lg:items-center">
+          {/* Habit Adaptation Grid */}
+          <div className="mt-8 grid gap-4 lg:grid-cols-3">
             <AnimatePresence mode="wait">
-              <motion.div
-                key={scenario}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -6 }}
-                transition={{ duration: 0.22, ease: [0.23, 1, 0.32, 1] }}
-              >
-                <div className="flex items-center gap-2 mb-1.5">
-                  <span className="rounded-full bg-surface border border-line px-2.5 py-0.5 text-[11px] font-semibold text-sage-deep flex items-center gap-1.5">
-                    <ShieldCheck className={`h-3.5 w-3.5 ${caption.iconTone}`} />
-                    {caption.badge}
-                  </span>
-                </div>
-                <p className="font-serif text-xl text-ink">{caption.title}</p>
-                <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted">{caption.body}</p>
-              </motion.div>
-            </AnimatePresence>
+              {habitsList.map((habit, index) => {
+                const Icon = habit.icon;
+                const isAdapted = activeMode !== 'normal';
+                const isExhausted = activeMode === 'exhausted';
 
-            <dl className="flex gap-8 lg:justify-end">
-              <div>
-                <dt className="text-[11px] uppercase tracking-[0.14em] text-faint font-semibold">Usable Evening</dt>
-                <dd className="mt-1 font-serif text-2xl text-ink flex items-center gap-1.5">
-                  <Clock className="h-4 w-4 text-sage-deep" />
-                  {scenario === 'typical' ? '3h 30m' : scenario === 'late' ? '1h 50m' : '0h 45m'}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-[11px] uppercase tracking-[0.14em] text-faint font-semibold font-mono">Status</dt>
-                <dd className="mt-1">
-                  <span
-                    className={`inline-flex items-center gap-1 font-serif text-xl ${
-                      scenario === 'typical'
-                        ? 'text-sage-deep'
-                        : scenario === 'late'
-                        ? 'text-clay'
-                        : 'text-ink'
+                return (
+                  <motion.div
+                    key={habit.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.25, delay: index * 0.05 }}
+                    className={`relative rounded-2xl border p-5 transition-all ${
+                      isAdapted 
+                        ? 'border-sage/30 bg-sage-wash/40 shadow-xs' 
+                        : 'border-line/70 bg-surface'
                     }`}
                   >
-                    <Zap className="h-4 w-4" />
-                    {scenario === 'typical'
-                      ? '5 Complete'
-                      : scenario === 'late'
-                      ? '1 Micro-adapted'
-                      : 'Safe Deferral'}
-                  </span>
-                </dd>
+                    {/* Habit Header */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-xl bg-surface border border-line flex items-center justify-center text-ink shadow-xs">
+                          <Icon className="w-4 h-4 stroke-[1.75]" />
+                        </div>
+                        <h4 className="text-sm font-semibold text-ink">{habit.name}</h4>
+                      </div>
+                      <span className={`text-[10px] font-mono px-2 py-0.5 rounded-md uppercase font-semibold ${
+                        isAdapted 
+                          ? 'bg-sage text-white' 
+                          : 'bg-canvas text-muted border border-line'
+                      }`}>
+                        {activeMode === 'normal' 
+                          ? habit.standard.duration 
+                          : isExhausted 
+                          ? 'Safe Pause' 
+                          : habit.adapted.duration}
+                      </span>
+                    </div>
+
+                    {/* Adaptation Flow */}
+                    <div className="mt-4 pt-3 border-t border-line/50 text-xs">
+                      {activeMode === 'normal' ? (
+                        <div>
+                          <p className="text-muted leading-relaxed">{habit.standard.description}</p>
+                          <div className="mt-3 flex items-center gap-1 text-sage-deep font-medium text-[11px]">
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            <span>Standard focus window ready</span>
+                          </div>
+                        </div>
+                      ) : isExhausted ? (
+                        <div>
+                          <p className="text-muted leading-relaxed line-through opacity-60">{habit.standard.description}</p>
+                          <div className="mt-2.5 flex items-center gap-1.5 text-clay font-medium text-[11px]">
+                            <ShieldCheck className="w-3.5 h-3.5" />
+                            <span>Protected · Zero guilt pause</span>
+                          </div>
+                        </div>
+                      ) : (
+                        <div>
+                          <div className="flex items-center justify-between text-[11px] text-faint mb-1">
+                            <span className="line-through">{habit.standard.duration}</span>
+                            <div className="flex items-center gap-1 text-sage-deep font-medium">
+                              <Sparkles className="w-3 h-3" />
+                              <span>Zenith Micro-scale</span>
+                            </div>
+                          </div>
+                          <p className="text-ink font-medium leading-relaxed bg-surface/80 p-2.5 rounded-xl border border-sage/20">
+                            {habit.adapted.description}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
+          </div>
+
+          {/* Bottom Philosophy Callout */}
+          <div className="mt-8 rounded-2xl bg-surface border border-line/60 p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 rounded-xl bg-canvas border border-line flex items-center justify-center text-sage-deep shrink-0 mt-0.5">
+                <Flame className="w-4 h-4" />
               </div>
-            </dl>
+              <div>
+                <p className="text-xs font-semibold text-ink">
+                  {currentScenario.summary}
+                </p>
+                <p className="text-[11px] text-muted mt-0.5">
+                  Missing a habit after an overtime day isn&apos;t lack of willpower — it&apos;s a design problem Zenith solves.
+                </p>
+              </div>
+            </div>
+
+            <div className="shrink-0 flex items-center gap-2 text-xs font-medium text-sage-deep">
+              <span>Try with your habits</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </div>
           </div>
         </div>
       </div>
     </section>
   );
 }
-
