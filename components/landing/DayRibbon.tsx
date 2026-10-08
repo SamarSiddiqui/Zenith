@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef } from 'react';
+import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Sun, 
@@ -17,6 +18,7 @@ import {
   Flame
 } from 'lucide-react';
 import { useGSAPScrollTrigger } from '../../hooks/useGSAPScrollTrigger';
+import { useAuth } from '../../context/AuthContext';
 
 type DayMode = 'normal' | 'late' | 'exhausted';
 
@@ -131,9 +133,11 @@ const dayScenarios: Record<DayMode, {
 };
 
 export function DayRibbon() {
+  const { user } = useAuth();
   const [activeMode, setActiveMode] = useState<DayMode>('late');
   const containerRef = useRef<HTMLDivElement>(null);
   const currentScenario = dayScenarios[activeMode];
+  const ctaHref = user ? '/dashboard' : '/register';
 
   // GSAP ScrollTrigger entrance stagger for Chapter 02
   const sectionRef = useGSAPScrollTrigger<HTMLElement>((gsap) => {
@@ -324,10 +328,13 @@ export function DayRibbon() {
               </div>
             </div>
 
-            <div className="shrink-0 flex items-center gap-2 text-xs font-medium text-sage-deep">
-              <span>Try with your habits</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </div>
+            <Link
+              href={ctaHref}
+              className="shrink-0 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-ink text-white hover:bg-ink/90 transition-all text-xs font-semibold shadow-xs group"
+            >
+              <span>{user ? 'Open Dashboard' : 'Try with your habits'}</span>
+              <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
+            </Link>
           </div>
         </div>
       </div>
