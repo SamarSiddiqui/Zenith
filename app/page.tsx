@@ -14,6 +14,7 @@ import { TrustFAQ } from '../components/landing/TrustFAQ';
 import { EnsoBackdrop } from '../components/landing/EnsoBackdrop';
 import { CountUp } from '../components/visuals/CountUp';
 import { useGSAPTimeline } from '../hooks/useGSAPTimeline';
+import { useAuth } from '../context/AuthContext';
 
 const heroStats: Array<{ value: React.ReactNode; label: string }> = [
   { value: <><CountUp value={2} /> days</>, label: 'Early warning' },
@@ -23,6 +24,7 @@ const heroStats: Array<{ value: React.ReactNode; label: string }> = [
 
 export default function LandingPage() {
   const heroRef = useRef<HTMLElement>(null);
+  const { isAuthenticated } = useAuth();
 
   useGSAPTimeline((gsap) => {
     if (!heroRef.current) return gsap.timeline();
@@ -64,16 +66,22 @@ export default function LandingPage() {
                 <span className="absolute -bottom-1 left-0 h-px w-0 bg-sage transition-[width] duration-200 ease-out group-hover:w-full" />
               </a>
             ))}
-            <Link href="/login" className="text-sm text-muted transition-colors duration-150 ease-out hover:text-ink">
-              Sign in
-            </Link>
+            {isAuthenticated ? (
+              <Link href="/dashboard" className="text-sm text-sage-deep font-semibold transition-colors duration-150 ease-out hover:text-sage">
+                Dashboard
+              </Link>
+            ) : (
+              <Link href="/login" className="text-sm text-muted transition-colors duration-150 ease-out hover:text-ink">
+                Sign in
+              </Link>
+            )}
           </nav>
           <motion.div whileHover={{ y: -1 }} whileTap={{ scale: 0.98 }} transition={{ duration: 0.14, ease: 'easeOut' }}>
             <Link
-              href="/dashboard"
-              className="inline-block rounded-full bg-sage-deep px-5 py-2.5 text-sm font-medium text-white transition-colors duration-150 ease-out hover:bg-sage-deep"
+              href={isAuthenticated ? "/dashboard" : "/register"}
+              className="inline-block rounded-full bg-sage-deep px-5 py-2.5 text-sm font-medium text-white transition-colors duration-150 ease-out hover:bg-sage"
             >
-              Begin journey
+              {isAuthenticated ? "Go to Dashboard" : "Begin journey"}
             </Link>
           </motion.div>
         </div>
@@ -106,10 +114,10 @@ export default function LandingPage() {
           <div className="gsap-hero-anim mt-10 flex flex-wrap items-center justify-center gap-4">
             <motion.div whileHover={{ y: -2 }} whileTap={{ scale: 0.98 }} transition={{ duration: 0.14, ease: 'easeOut' }}>
               <Link
-                href="/dashboard"
+                href={isAuthenticated ? "/dashboard" : "/register"}
                 className="inline-flex items-center gap-2 rounded-full bg-sage px-8 py-4 text-base font-medium text-white shadow-sm transition-colors duration-150 ease-out hover:bg-sage-deep"
               >
-                Start building free
+                {isAuthenticated ? "Go to Dashboard" : "Start building free"}
               </Link>
             </motion.div>
             <a

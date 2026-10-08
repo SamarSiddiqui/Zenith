@@ -162,7 +162,7 @@ export function IdentityClose() {
               transition={{ duration: 0.14, ease: 'easeOut' }}
             >
               <Link
-                href="/dashboard"
+                href="/register"
                 className="inline-flex items-center gap-2 rounded-full bg-sage px-8 py-4 text-sm font-medium text-white transition-colors duration-150 ease-out hover:bg-sage-deep shadow-sm"
               >
                 <Sparkles className="h-4 w-4" />

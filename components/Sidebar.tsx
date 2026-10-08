@@ -56,9 +56,9 @@ export function Sidebar({ userName, isOpen = true, onCloseMobile }: SidebarProps
     router.push('/login');
   };
 
-  const displayName = user?.fullName || userName || 'Explorer';
-  const displayEmail = user?.email || 'circadian@zenith.app';
-  const avatarLetter = displayName.charAt(0).toUpperCase() || 'Z';
+  const displayName = user?.fullName || (userName && userName !== 'Explorer' ? userName : 'Guest Practitioner');
+  const displayEmail = user?.email || 'Local Sandbox (Offline)';
+  const avatarLetter = user ? (displayName.charAt(0).toUpperCase() || 'P') : 'G';
 
   return (
     <aside
@@ -119,7 +119,7 @@ export function Sidebar({ userName, isOpen = true, onCloseMobile }: SidebarProps
         })}
       </nav>
 
-      {/* User Profile & Sign Out */}
+      {/* User Profile & Sign Out / Sign In */}
       <div className="p-4 border-t border-line/70 bg-sidebar/50">
         <div className="flex items-center gap-3 mb-3 p-2 rounded-2xl bg-surface/80 border border-line/50">
           <div className="w-9 h-9 rounded-xl bg-sage-wash border border-sage/30 flex items-center justify-center text-sage-deep font-serif font-bold text-sm shrink-0">
@@ -130,13 +130,22 @@ export function Sidebar({ userName, isOpen = true, onCloseMobile }: SidebarProps
             <p className="text-[11px] text-faint truncate font-mono">{displayEmail}</p>
           </div>
         </div>
-        <button
-          onClick={handleSignOut}
-          className="w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-medium text-muted hover:text-clay hover:bg-clay-wash transition-colors rounded-xl border border-transparent hover:border-clay/20"
-        >
-          <LogOut className="w-3.5 h-3.5 stroke-[1.75]" />
-          <span>Sign Out</span>
-        </button>
+        {user ? (
+          <button
+            onClick={handleSignOut}
+            className="w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-medium text-muted hover:text-clay hover:bg-clay-wash transition-colors rounded-xl border border-transparent hover:border-clay/20"
+          >
+            <LogOut className="w-3.5 h-3.5 stroke-[1.75]" />
+            <span>Sign Out</span>
+          </button>
+        ) : (
+          <Link
+            href="/login"
+            className="w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-medium text-sage-deep hover:bg-sage-wash transition-colors rounded-xl border border-sage/30 bg-surface"
+          >
+            <span>Sign In to Sync</span>
+          </Link>
+        )}
       </div>
     </aside>
   );

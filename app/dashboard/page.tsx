@@ -56,7 +56,7 @@ export default function DashboardPage() {
     }
   }, [user]);
 
-  const displayName = user?.fullName?.split(' ')[0] || 'Samar';
+  const displayName = user?.fullName?.split(' ')[0] || (user ? 'Practitioner' : 'Guest');
 
   // Active sprint day index (0 to durationDays - 1)
   const currentDayIndex = session.currentDayIndex ?? 0;
