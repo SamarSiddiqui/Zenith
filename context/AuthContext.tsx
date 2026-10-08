@@ -49,7 +49,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return {
           id: profile.id,
           email: profile.email || email,
-          fullName: profile.full_name || fallbackName || 'Zenith User',
+          fullName: profile.full_name || fallbackName || '',
           avatarUrl: profile.avatar_url,
           workingWindow: profile.working_window || DEFAULT_WORKING_WINDOW,
           onboarded: profile.onboarded ?? false,
@@ -68,7 +68,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return {
         id: userId,
         email: email,
-        fullName: fallbackName || 'Zenith User',
+        fullName: fallbackName || '',
         workingWindow: DEFAULT_WORKING_WINDOW,
         onboarded: false,
         createdAt: new Date().toISOString(),

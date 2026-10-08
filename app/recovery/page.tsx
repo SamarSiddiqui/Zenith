@@ -19,7 +19,7 @@ export default function RecoveryPage() {
   const reduced = useReducedMotion();
 
   return (
-    <Layout userName="Samar">
+    <Layout>
       <div className="flex flex-col gap-10">
         <motion.section
           initial={{ opacity: 0, y: 10 }}

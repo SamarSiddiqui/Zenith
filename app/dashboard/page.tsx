@@ -56,7 +56,7 @@ export default function DashboardPage() {
     }
   }, [user]);
 
-  const displayName = user?.fullName?.split(' ')[0] || (user ? 'Practitioner' : 'Guest');
+  const firstName = user?.fullName?.trim() ? user.fullName.trim().split(' ')[0] : '';
 
   // Active sprint day index (0 to durationDays - 1)
   const currentDayIndex = session.currentDayIndex ?? 0;
@@ -84,7 +84,7 @@ export default function DashboardPage() {
       : 'text-clay';
 
   return (
-    <Layout userName={user?.fullName || displayName}>
+    <Layout>
       {/* Onboarding Modal for New Users */}
       <OnboardingModal
         isOpen={showOnboarding}
@@ -128,7 +128,7 @@ export default function DashboardPage() {
               {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
             </p>
             <h1 className="mt-1.5 font-serif text-4xl text-ink md:text-5xl">
-              Good day, {displayName}
+              Good day{firstName ? `, ${firstName}` : ''}
             </h1>
           </motion.div>
           <motion.div
