@@ -163,10 +163,58 @@ Produce a JSON response matching the following structure:
 }`;
 }
 
+const LATEST_CACHE_TTL_SECONDS = 7 * 24 * 60 * 60; // 7 Days for last known user reflection
+
+export async function GET(req: NextRequest) {
+  const startTime = Date.now();
+  const searchParams = req.nextUrl.searchParams;
+  const userId = searchParams.get('userId') || req.headers.get('x-forwarded-for') || 'anonymous_user';
+  const latestCacheKey = `zenith:diag:latest:${userId}`;
+
+  try {
+    const cached = await getCached<DiagnosisResult>(latestCacheKey);
+    if (cached) {
+      cached.isCached = true;
+      cached.isStale = true;
+      return NextResponse.json(cached, {
+        status: 200,
+        headers: {
+          'x-cache': 'STALE',
+          'x-cache-key': latestCacheKey,
+          'x-response-time-ms': String(Date.now() - startTime),
+        },
+      });
+    }
+    return NextResponse.json({ error: 'No cached reflection found' }, { status: 404 });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message || 'Cache read failed' }, { status: 500 });
+  }
+}
+
 export async function POST(req: NextRequest) {
   const startTime = Date.now();
   try {
     const body = (await req.json()) as DiagnosisRequest;
+    const userId = body.userId || req.headers.get('x-forwarded-for') || 'anonymous_user';
+    const latestCacheKey = `zenith:diag:latest:${userId}`;
+
+    // Fast Path: Stale-Check only (Returns previous reflection from Redis in ~10ms)
+    if (body.mode === 'stale_check') {
+      const cachedLatest = await getCached<DiagnosisResult>(latestCacheKey);
+      if (cachedLatest) {
+        cachedLatest.isCached = true;
+        cachedLatest.isStale = true;
+        return NextResponse.json(cachedLatest, {
+          status: 200,
+          headers: {
+            'x-cache': 'STALE',
+            'x-cache-key': latestCacheKey,
+            'x-response-time-ms': String(Date.now() - startTime),
+          },
+        });
+      }
+      return NextResponse.json({ error: 'No cached reflection available.' }, { status: 404 });
+    }
 
     if (!body.habits || body.habits.length === 0) {
       return NextResponse.json(
@@ -175,11 +223,24 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const userId = body.userId || req.headers.get('x-forwarded-for') || 'anonymous_user';
-
     // 1. Sliding-Window Rate Limiting Check (10 reqs / 10 mins)
     const rateLimit = await checkDiagnosisRateLimit(userId);
     if (!rateLimit.success) {
+      // If rate limited but user allows stale fallback, serve stale rather than erroring out!
+      const fallbackLatest = await getCached<DiagnosisResult>(latestCacheKey);
+      if (fallbackLatest) {
+        fallbackLatest.isCached = true;
+        fallbackLatest.isStale = true;
+        return NextResponse.json(fallbackLatest, {
+          status: 200,
+          headers: {
+            'x-cache': 'RATE_LIMITED_STALE_FALLBACK',
+            'x-cache-key': latestCacheKey,
+            'x-response-time-ms': String(Date.now() - startTime),
+          },
+        });
+      }
+
       return NextResponse.json(
         {
           error: 'Rate limit reached. Please pause a moment before requesting fresh reflections.',
@@ -196,21 +257,22 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 2. Cache Key Construction
+    // 2. Exact Habit State Cache Key Construction
     const stateHash = hashHabitsState(body.habits, body.currentDayIndex, body.workingWindow);
-    const cacheKey = `zenith:diag:${userId}:${stateHash}`;
+    const exactCacheKey = `zenith:diag:${userId}:${stateHash}`;
 
-    // 3. Cache-Aside Check (if not force-refreshed)
+    // 3. Exact Cache-Aside Check (if not force-refreshed)
     if (!body.forceRefresh) {
-      const cachedDiagnosis = await getCached<DiagnosisResult>(cacheKey);
+      const cachedDiagnosis = await getCached<DiagnosisResult>(exactCacheKey);
       if (cachedDiagnosis) {
         cachedDiagnosis.isCached = true;
+        cachedDiagnosis.isStale = false;
         const duration = Date.now() - startTime;
         return NextResponse.json(cachedDiagnosis, {
           status: 200,
           headers: {
             'x-cache': 'HIT',
-            'x-cache-key': cacheKey,
+            'x-cache-key': exactCacheKey,
             'x-response-time-ms': String(duration),
           },
         });
@@ -225,16 +287,20 @@ export async function POST(req: NextRequest) {
     diagnosis.generatedAt = new Date().toISOString();
     diagnosis.modelUsed = 'Gemini 3.5 Flash-Lite';
     diagnosis.isCached = false;
+    diagnosis.isStale = false;
 
-    // 5. Store in Redis with 4-hour TTL
-    await setCached(cacheKey, diagnosis, DIAGNOSIS_CACHE_TTL_SECONDS);
+    // 5. Dual-Layer Redis Storage:
+    // A) Exact state match (4-hour TTL)
+    await setCached(exactCacheKey, diagnosis, DIAGNOSIS_CACHE_TTL_SECONDS);
+    // B) User's latest reflection snapshot for SWR instant rendering (7-day TTL)
+    await setCached(latestCacheKey, diagnosis, LATEST_CACHE_TTL_SECONDS);
 
     const duration = Date.now() - startTime;
     return NextResponse.json(diagnosis, {
       status: 200,
       headers: {
         'x-cache': 'MISS',
-        'x-cache-key': cacheKey,
+        'x-cache-key': exactCacheKey,
         'x-response-time-ms': String(duration),
       },
     });
