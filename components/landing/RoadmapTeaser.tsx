@@ -29,9 +29,9 @@ const upcomingItems = [
   },
   {
     icon: Smartphone,
-    title: 'Native iOS & Android Widgets',
-    description: 'Lock-screen circadian health dials and 1-tap micro-habit completion widgets.',
-    timeline: 'Q2 2027',
+    title: 'iOS & Android Mobile Apps',
+    description: 'Full-featured native mobile applications for iPhone and Android with offline-first habit tracking.',
+    timeline: 'Q3 2027',
     highlight: false
   }
 ];
@@ -61,24 +61,21 @@ export function RoadmapTeaser() {
             <motion.div
               whileHover={{ y: -2 }}
               transition={{ duration: 0.16, ease: 'easeOut' }}
-              className={`group flex h-full flex-col justify-between rounded-2xl border p-4 transition-all ${
-                highlight
+              className={`group flex h-full flex-col justify-between rounded-2xl border p-4 transition-all ${highlight
                   ? 'border-sage/40 bg-surface shadow-xs hover:border-sage'
                   : 'border-line bg-surface/80 hover:border-line/80 hover:bg-surface'
-              }`}
+                }`}
             >
               <div>
                 <div className="flex items-center justify-between">
-                  <div className={`flex h-8 w-8 items-center justify-center rounded-xl border ${
-                    highlight ? 'border-sage/30 bg-sage-wash text-sage-deep' : 'border-line bg-canvas text-muted'
-                  }`}>
+                  <div className={`flex h-8 w-8 items-center justify-center rounded-xl border ${highlight ? 'border-sage/30 bg-sage-wash text-sage-deep' : 'border-line bg-canvas text-muted'
+                    }`}>
                     <Icon className="h-4 w-4" strokeWidth={1.8} />
                   </div>
-                  <span className={`rounded-md px-2 py-0.5 text-[10px] font-mono font-medium ${
-                    highlight 
-                      ? 'bg-sage text-white' 
+                  <span className={`rounded-md px-2 py-0.5 text-[10px] font-mono font-medium ${highlight
+                      ? 'bg-sage text-white'
                       : 'border border-line bg-canvas text-faint group-hover:text-muted'
-                  }`}>
+                    }`}>
                     {timeline}
                   </span>
                 </div>
