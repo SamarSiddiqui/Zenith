@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useState, useRef } from 'react';
+import React, { useRef } from 'react';
 import Link from 'next/link';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useGSAPScrollTrigger } from '../../hooks/useGSAPScrollTrigger';
-import { Compass, Sparkles, ShieldCheck } from 'lucide-react';
+import { Sparkles, ShieldCheck } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 
 interface QuoteItem {
   id: string;
@@ -21,7 +22,7 @@ const quotes: QuoteItem[] = [
     quote: '“Every action you take is a vote for the person you wish to become.”',
     author: 'James Clear',
     work: 'Author of Atomic Habits',
-    zenithTranslation: 'Votes are cumulative, not continuous. Missing one Tuesday vote doesn’t cancel 18 prior votes.',
+    zenithTranslation: 'Votes are cumulative, not continuous. Missing one Tuesday vote does not cancel 18 prior votes.',
     pillar: 'Cumulative Evidence Model'
   },
   {
@@ -43,8 +44,9 @@ const quotes: QuoteItem[] = [
 ];
 
 export function IdentityClose() {
-  const [activeQuote, setActiveQuote] = useState<QuoteItem>(quotes[0]);
+  const { user } = useAuth();
   const containerRef = useRef<HTMLDivElement>(null);
+  const ctaHref = user ? '/dashboard' : '/register';
 
   // GSAP ScrollTrigger entrance animation
   const sectionRef = useGSAPScrollTrigger<HTMLElement>((gsap) => {
@@ -53,8 +55,8 @@ export function IdentityClose() {
     if (containerRef.current) {
       tl.fromTo(
         containerRef.current.querySelectorAll('.gsap-identity-anim'),
-        { opacity: 0, y: 18 },
-        { opacity: 1, y: 0, duration: 0.55, stagger: 0.08 }
+        { opacity: 0, y: 16 },
+        { opacity: 1, y: 0, duration: 0.5, stagger: 0.08 }
       );
     }
 
@@ -63,113 +65,79 @@ export function IdentityClose() {
 
   return (
     <section ref={sectionRef} id="philosophy" className="scroll-mt-20 border-y border-line bg-sidebar">
-      <div ref={containerRef} className="relative mx-auto w-full max-w-5xl px-5 py-24 text-center lg:px-10 lg:py-32">
+      <div ref={containerRef} className="relative mx-auto w-full max-w-5xl px-5 py-16 text-center lg:px-10 lg:py-20">
         {/* Background Decorative Enso Ring */}
         <svg
           viewBox="0 0 400 400"
-          className="pointer-events-none absolute left-1/2 top-1/2 h-[420px] w-[420px] -translate-x-1/2 -translate-y-1/2 opacity-50 sm:h-[560px] sm:w-[560px]"
+          className="pointer-events-none absolute left-1/2 top-1/2 h-[420px] w-[420px] -translate-x-1/2 -translate-y-1/2 opacity-40 sm:h-[520px] sm:w-[520px]"
           aria-hidden
         >
-          <circle cx="200" cy="200" r="160" fill="none" stroke="var(--color-sage)" strokeOpacity="0.25" strokeWidth="6" strokeDasharray="4 12" />
+          <circle cx="200" cy="200" r="160" fill="none" stroke="var(--color-sage)" strokeOpacity="0.2" strokeWidth="5" strokeDasharray="4 12" />
         </svg>
 
         <div className="relative">
           <p className="gsap-identity-anim text-xs font-semibold uppercase tracking-[0.18em] text-faint">
             Chapter 04 · Philosophy & Principles
           </p>
+          <h2 className="gsap-identity-anim mt-2 font-serif text-3xl text-ink md:text-4xl">
+            Who you become when streaks no longer dictate your worth.
+          </h2>
 
-          {/* Interactive Author Selector Tabs */}
-          <div className="gsap-identity-anim mt-6 inline-flex flex-wrap justify-center gap-2 rounded-full border border-line bg-canvas p-1.5 shadow-xs">
+          {/* Integrated 3 Philosophy Cards */}
+          <div className="gsap-identity-anim mt-8 grid gap-5 md:grid-cols-3 text-left">
             {quotes.map((q) => (
-              <button
-                key={q.id}
-                onClick={() => setActiveQuote(q)}
-                className={`rounded-full px-4 py-2 text-xs font-medium transition-all ${
-                  activeQuote.id === q.id
-                    ? 'bg-sage-deep text-white shadow-xs'
-                    : 'text-muted hover:text-ink'
-                }`}
+              <div
+                key={q.author}
+                className="flex flex-col justify-between rounded-2xl border border-line bg-surface p-5 shadow-xs transition-all hover:border-sage/40 hover:shadow-sm"
               >
-                {q.author}
-              </button>
+                <div>
+                  <div className="flex items-center justify-between text-[10px] font-mono font-semibold uppercase tracking-wider text-sage-deep mb-2.5">
+                    <span>{q.pillar}</span>
+                  </div>
+                  <p className="font-serif text-sm italic leading-relaxed text-ink">{q.quote}</p>
+                  
+                  <div className="mt-3 border-t border-line/60 pt-2.5">
+                    <p className="text-xs font-semibold text-ink">{q.author}</p>
+                    <p className="text-[11px] text-faint">{q.work}</p>
+                  </div>
+                </div>
+
+                {/* Direct Architectural Translation */}
+                <div className="mt-4 rounded-xl border border-sage/20 bg-sage-wash/50 p-3 text-[11px] leading-relaxed text-muted">
+                  <div className="flex items-center gap-1.5 font-semibold text-sage-deep mb-1 text-[10px] uppercase font-mono">
+                    <ShieldCheck className="w-3 h-3" />
+                    <span>Zenith Translation:</span>
+                  </div>
+                  <p>{q.zenithTranslation}</p>
+                </div>
+              </div>
             ))}
           </div>
 
-          {/* Triptych Quote Cards */}
-          <div className="gsap-identity-anim mt-10 grid gap-6 md:grid-cols-3">
-            {quotes.map((q) => {
-              const isSelected = activeQuote.id === q.id;
-              return (
-                <div
-                  key={q.author}
-                  onClick={() => setActiveQuote(q)}
-                  className={`cursor-pointer flex flex-col justify-between rounded-2xl border p-6 text-left transition-all ${
-                    isSelected
-                      ? 'border-sage bg-surface shadow-md ring-2 ring-sage/20 scale-[1.02]'
-                      : 'border-line bg-surface/70 hover:bg-surface hover:border-line/80'
-                  }`}
-                >
-                  <div>
-                    <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-sage-deep mb-3">
-                      <span className="flex items-center gap-1">
-                        <Compass className="h-3.5 w-3.5" />
-                        {q.pillar}
-                      </span>
-                    </div>
-                    <p className="font-serif text-base italic leading-relaxed text-ink">{q.quote}</p>
-                  </div>
-
-                  <div className="mt-6 border-t border-line/60 pt-4">
-                    <p className="text-sm font-semibold text-ink">{q.author}</p>
-                    <p className="mt-0.5 text-xs text-muted">{q.work}</p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Zenith Architectural Translation Box */}
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={activeQuote.id}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -6 }}
-              transition={{ duration: 0.2 }}
-              className="gsap-identity-anim mt-8 mx-auto max-w-2xl rounded-2xl border border-sage/30 bg-surface p-5 text-left shadow-xs"
-            >
-              <div className="flex items-center gap-2 text-xs font-bold text-sage-deep uppercase tracking-wider mb-1">
-                <ShieldCheck className="h-4 w-4" />
-                <span>How Zenith Translates {activeQuote.author}&apos;s Insight:</span>
-              </div>
-              <p className="text-xs leading-relaxed text-muted">{activeQuote.zenithTranslation}</p>
-            </motion.div>
-          </AnimatePresence>
-
           {/* Zenith Synthesis Grand Statement */}
-          <div className="gsap-identity-anim mt-16 rounded-3xl border border-sage/40 bg-canvas p-8 shadow-calm md:p-12">
-            <blockquote className="mx-auto max-w-3xl font-serif text-3xl leading-snug text-ink md:text-4xl md:leading-[1.25]">
+          <div className="gsap-identity-anim mt-10 rounded-3xl border border-sage/40 bg-canvas p-8 shadow-calm md:p-10">
+            <blockquote className="mx-auto max-w-2xl font-serif text-2xl leading-snug text-ink md:text-3xl">
               “Streaks measure obedience. Identity measures direction.”
             </blockquote>
-            <p className="mx-auto mt-6 max-w-2xl text-base leading-relaxed text-muted">
-              Zenith is built to protect your behavioral identity — especially during the weeks your streak breaks.
+            <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-muted">
+              Zenith is built to protect your behavioral identity — especially during the weeks your schedule collapses.
             </p>
 
             <motion.div
-              className="mt-9 inline-block"
+              className="mt-7 inline-block"
               whileHover={{ y: -2 }}
               whileTap={{ scale: 0.98 }}
               transition={{ duration: 0.14, ease: 'easeOut' }}
             >
               <Link
-                href="/register"
-                className="inline-flex items-center gap-2 rounded-full bg-sage px-8 py-4 text-sm font-medium text-white transition-colors duration-150 ease-out hover:bg-sage-deep shadow-sm"
+                href={ctaHref}
+                className="inline-flex items-center gap-2 rounded-full bg-sage px-8 py-3.5 text-xs font-medium text-white transition-colors duration-150 ease-out hover:bg-sage-deep shadow-sm"
               >
                 <Sparkles className="h-4 w-4" />
-                Begin your first window
+                <span>{user ? 'Go to Dashboard' : 'Begin your first window'}</span>
               </Link>
             </motion.div>
-            <p className="mt-3.5 text-xs text-faint">Free while you build your first three habits.</p>
+            <p className="mt-2.5 text-[11px] text-faint">Free while you build your first three habits.</p>
           </div>
         </div>
       </div>

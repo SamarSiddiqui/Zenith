@@ -11,6 +11,7 @@ import { DayRibbon } from '../components/landing/DayRibbon';
 import { IdentityClose } from '../components/landing/IdentityClose';
 import { SocialProof } from '../components/landing/SocialProof';
 import { TrustFAQ } from '../components/landing/TrustFAQ';
+import { Footer } from '../components/landing/Footer';
 import { EnsoBackdrop } from '../components/landing/EnsoBackdrop';
 import { CountUp } from '../components/visuals/CountUp';
 import { useGSAPTimeline } from '../hooks/useGSAPTimeline';
@@ -188,10 +189,7 @@ export default function LandingPage() {
 
       <TrustFAQ />
 
-      <footer className="mx-auto flex w-full max-w-6xl flex-col gap-3 px-5 py-10 text-xs text-faint sm:flex-row sm:items-center sm:justify-between lg:px-10">
-        <span className="font-serif text-base text-ink">Zenith</span>
-        <span>Your personal behavioral consistency system.</span>
-      </footer>
+      <Footer />
     </div>
   );
 }
