@@ -1,4 +1,4 @@
-import type { Habit } from '../../types/zenith';
+import type { Habit, HabitStatus } from '../../types/zenith';
 import type {
   SprintConfig,
   SprintAnalytics,
@@ -19,10 +19,12 @@ export function createSprintHabitSnapshots(
   durationDays: number
 ): SprintHabitSnapshot[] {
   return habits.map((habit) => {
-    // Slice or pad habit week array to match durationDays
-    const statuses = Array.from({ length: durationDays }).map(
-      (_, i) => habit.week[i] || 'unlogged'
-    );
+    // Slice or pad habit week array to match durationDays.
+    // For archived past sprint records, unlogged days that have passed are officially marked as 'missed'.
+    const statuses = Array.from({ length: durationDays }).map((_, i) => {
+      const s = habit.week[i];
+      return s === 'completed' ? 'completed' : 'missed';
+    });
 
     const completedCount = statuses.filter((s) => s === 'completed').length;
     const missedCount = statuses.filter((s) => s === 'missed').length;
@@ -306,6 +308,11 @@ export function mapSnapshotsToHabits(
       (h) => h.id === snap.habitId || h.name.toLowerCase() === snap.habitName.toLowerCase()
     );
 
+    // In a past archived sprint, any unlogged day is officially missed
+    const pastWeekStatuses: HabitStatus[] = (snap.dailyStatuses || []).map((s) =>
+      s === 'completed' ? 'completed' : 'missed'
+    );
+
     return {
       id: snap.habitId,
       name: snap.habitName,
@@ -314,8 +321,8 @@ export function mapSnapshotsToHabits(
       minutes: existing?.minutes || 20,
       category: existing?.category || 'focus',
       health: snap.showUpRate,
-      status: snap.dailyStatuses[snap.dailyStatuses.length - 1] || 'unlogged',
-      week: snap.dailyStatuses,
+      status: pastWeekStatuses[pastWeekStatuses.length - 1] || 'missed',
+      week: pastWeekStatuses,
       microVersion: existing?.microVersion || '5 min micro-step',
       createdAt: existing?.createdAt || new Date().toISOString(),
       updatedAt: existing?.updatedAt || new Date().toISOString(),

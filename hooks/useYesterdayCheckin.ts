@@ -20,8 +20,11 @@ export function useYesterdayCheckin(
     [currentMonday]
   );
   const currentDayIndex = dayInfo.dayIndex;
-  // If today is Monday (0), yesterday was Sunday (6); otherwise day - 1
-  const yesterdayIndex = currentDayIndex > 0 ? currentDayIndex - 1 : 6;
+  // In the active sprint, day 0 is Monday (today).
+  // Yesterday only exists within the current sprint if currentDayIndex > 0 (Tuesday through Sunday).
+  // On Monday (currentDayIndex === 0), yesterday belonged to the previous week's sprint, which was archived on rollover.
+  // Day 6 of the active sprint is upcoming Sunday (e.g. Oct 18), NEVER yesterday!
+  const yesterdayIndex = currentDayIndex > 0 ? currentDayIndex - 1 : -1;
 
   // Format yesterday's label (e.g. "Wednesday, Sep 23")
   const yesterdayLabel = useMemo(() => {
@@ -36,7 +39,7 @@ export function useYesterdayCheckin(
 
   // Filter habits that were unlogged on yesterday's day index
   const unloggedYesterdayHabits = useMemo(() => {
-    if (habits.length === 0) return [];
+    if (habits.length === 0 || yesterdayIndex < 0) return [];
 
     return habits.filter((h) => {
       const status = h.week?.[yesterdayIndex];
@@ -46,7 +49,7 @@ export function useYesterdayCheckin(
 
   // Check on mount if we should prompt the user
   useEffect(() => {
-    if (unloggedYesterdayHabits.length === 0) {
+    if (unloggedYesterdayHabits.length === 0 || yesterdayIndex < 0) {
       setIsOpen(false);
       return;
     }
@@ -61,7 +64,7 @@ export function useYesterdayCheckin(
       }, 600);
       return () => clearTimeout(timer);
     }
-  }, [unloggedYesterdayHabits.length]);
+  }, [unloggedYesterdayHabits.length, yesterdayIndex]);
 
   const closeCheckin = useCallback(() => {
     const todayStr = new Date().toISOString().split('T')[0];
@@ -73,6 +76,11 @@ export function useYesterdayCheckin(
 
   const resolveYesterdayCheckin = useCallback(
     async (decisions: Record<string, 'completed' | 'missed'>) => {
+      if (yesterdayIndex < 0 || yesterdayIndex >= currentDayIndex) {
+        setIsOpen(false);
+        return;
+      }
+
       const promises = Object.entries(decisions).map(async ([habitId, decisionStatus]) => {
         const habit = habits.find((h) => h.id === habitId);
         if (!habit) return;
