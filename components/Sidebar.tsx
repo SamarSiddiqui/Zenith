@@ -1,11 +1,12 @@
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import { LayoutDashboard, CalendarRange, TreePine, Sparkles, HeartPulse, Settings, LogOut } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
+import { SignOutModal } from './auth/SignOutModal';
 
 interface SidebarProps {
   userName?: string;
@@ -51,9 +52,20 @@ export function Sidebar({ userName, isOpen = true, onCloseMobile }: SidebarProps
     },
   ] as const;
 
-  const handleSignOut = async () => {
-    await signOut();
-    router.push('/login');
+  const [isSignOutModalOpen, setIsSignOutModalOpen] = useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false);
+
+  const handleConfirmSignOut = async () => {
+    setIsSigningOut(true);
+    try {
+      await signOut();
+      router.push('/login');
+    } catch (err) {
+      console.error('Failed to sign out:', err);
+    } finally {
+      setIsSigningOut(false);
+      setIsSignOutModalOpen(false);
+    }
   };
 
   const displayName = user?.fullName || userName || 'Practitioner';
@@ -131,13 +143,24 @@ export function Sidebar({ userName, isOpen = true, onCloseMobile }: SidebarProps
           </div>
         </div>
         <button
-          onClick={handleSignOut}
-          className="w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-medium text-muted hover:text-clay hover:bg-clay-wash transition-colors rounded-xl border border-transparent hover:border-clay/20"
+          type="button"
+          onClick={() => setIsSignOutModalOpen(true)}
+          className="w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-medium text-muted hover:text-clay hover:bg-clay-wash transition-colors rounded-xl border border-transparent hover:border-clay/20 cursor-pointer"
         >
           <LogOut className="w-3.5 h-3.5 stroke-[1.75]" />
           <span>Sign Out</span>
         </button>
       </div>
+
+      {/* Sign Out Confirmation Modal */}
+      <SignOutModal
+        isOpen={isSignOutModalOpen}
+        isSigningOut={isSigningOut}
+        onConfirm={handleConfirmSignOut}
+        onClose={() => {
+          if (!isSigningOut) setIsSignOutModalOpen(false);
+        }}
+      />
     </aside>
   );
 }

@@ -32,7 +32,38 @@ export function useHabits() {
     }
     try {
       const data = await getHabits(user?.id);
-      setHabits(data);
+
+      // Sanitization & Self-Healing:
+      // Ensure no future days in the active sprint (dayIndex > currentDayIndex)
+      // are marked as 'missed'. A future day can never be missed before that day has occurred.
+      const currentMonday = getMondayOfWeek(new Date());
+      const currentDayIndex = calculateSprintDayInfo(currentMonday.toISOString(), 7).dayIndex;
+
+      const sanitized = data.map((habit) => {
+        if (!Array.isArray(habit.week)) return habit;
+        let weekChanged = false;
+        const newWeek = [...habit.week];
+        for (let i = currentDayIndex + 1; i < newWeek.length; i++) {
+          if (newWeek[i] === 'missed') {
+            newWeek[i] = 'unlogged';
+            weekChanged = true;
+          }
+        }
+        if (weekChanged) {
+          const newHealth = calculateHabitHealth(newWeek, currentDayIndex);
+          if (habit.id && !habit.id.startsWith('local-habit-')) {
+            updateHabit(habit.id, { week: newWeek, health: newHealth }).catch(console.error);
+          }
+          return {
+            ...habit,
+            week: newWeek,
+            health: newHealth,
+          };
+        }
+        return habit;
+      });
+
+      setHabits(sanitized);
       setError(null);
     } catch (err) {
       console.error('Failed to load habits:', err);

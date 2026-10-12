@@ -345,10 +345,12 @@ export function DynamicSprintMatrix({
                         <div className="relative flex items-center justify-center">
                           <motion.button
                             type="button"
-                            whileHover={{ scale: 1.12 }}
-                            whileTap={{ scale: 0.9 }}
+                            disabled={day.isFuture || isHistoricalView}
+                            whileHover={day.isFuture || isHistoricalView ? undefined : { scale: 1.12 }}
+                            whileTap={day.isFuture || isHistoricalView ? undefined : { scale: 0.9 }}
                             transition={{ duration: 0.1 }}
                             onClick={() => {
+                              if (day.isFuture || isHistoricalView) return;
                               if (status === 'completed') {
                                 onOpenSkipModal(habit, i);
                               } else {
@@ -361,6 +363,8 @@ export function DynamicSprintMatrix({
                                 ? 'border-sage bg-sage text-white shadow-xs'
                                 : isMissed
                                 ? 'border-clay bg-clay text-white shadow-xs'
+                                : day.isFuture
+                                ? 'border-dashed border-line/60 bg-surface/40 text-transparent cursor-not-allowed'
                                 : 'border-dashed border-line bg-surface text-transparent hover:border-sage'
                             }`}
                           >
