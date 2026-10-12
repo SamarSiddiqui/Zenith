@@ -40,14 +40,17 @@ export function SignOutModal({
   return createPortal(
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-          {/* Backdrop */}
-          <motion.div
-            key="signout-backdrop"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-ink/40 backdrop-blur-xs transition-opacity"
+        <motion.div
+          key="signout-modal-overlay"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2, ease: "easeOut" }}
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+        >
+          {/* Backdrop without conflicting CSS transitions */}
+          <div
+            className="fixed inset-0 bg-ink/25 backdrop-blur-xs"
             onClick={!isSigningOut ? onClose : undefined}
             aria-hidden="true"
           />
@@ -55,9 +58,9 @@ export function SignOutModal({
           {/* Modal Card */}
           <motion.div
             key="signout-card"
-            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+            initial={{ opacity: 0, scale: 0.96, y: 8 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+            exit={{ opacity: 0, scale: 0.96, y: 8 }}
             transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
             className="relative w-full max-w-md rounded-3xl border border-line bg-surface p-6 sm:p-7 shadow-2xl overflow-hidden z-10"
             role="dialog"
@@ -125,7 +128,7 @@ export function SignOutModal({
               </button>
             </div>
           </motion.div>
-        </div>
+        </motion.div>
       )}
     </AnimatePresence>,
     document.body
