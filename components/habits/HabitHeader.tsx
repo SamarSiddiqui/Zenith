@@ -15,6 +15,7 @@ import {
   ChevronRight,
   RotateCcw,
   TreePine,
+  Trash2,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import type { SprintSession } from '../../types/sprint';
@@ -28,6 +29,7 @@ interface HabitHeaderProps {
   searchQuery: string;
   onSearchChange: (query: string) => void;
   onOpenCreateModal: () => void;
+  onOpenDeleteAllModal?: () => void;
   totalHabits: number;
   completedToday: number;
   averageHealth: number;
@@ -48,6 +50,7 @@ export function HabitHeader({
   searchQuery,
   onSearchChange,
   onOpenCreateModal,
+  onOpenDeleteAllModal,
   totalHabits,
   completedToday,
   averageHealth,
@@ -270,6 +273,19 @@ export function HabitHeader({
 
         {/* Actions CTA */}
         <div className="flex items-center gap-2 shrink-0">
+          {totalHabits > 0 && onOpenDeleteAllModal && (
+            <button
+              type="button"
+              onClick={onOpenDeleteAllModal}
+              className="flex items-center gap-1.5 rounded-2xl border border-line/80 hover:border-clay/40 bg-surface px-3.5 py-2.5 text-xs font-medium text-muted hover:text-clay hover:bg-clay-wash/60 transition-all shrink-0 cursor-pointer shadow-xs"
+              title="Delete all rituals in active workspace"
+              aria-label="Delete all habits"
+            >
+              <Trash2 className="h-3.5 w-3.5 stroke-[1.8]" />
+              <span className="hidden sm:inline">Clear All</span>
+            </button>
+          )}
+
           <Link
             href="/focus"
             className="flex items-center gap-1.5 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-2.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 transition-all shrink-0 shadow-xs"
@@ -281,7 +297,7 @@ export function HabitHeader({
           <button
             type="button"
             onClick={onOpenCreateModal}
-            className="flex items-center gap-1.5 rounded-2xl bg-sage px-5 py-2.5 text-xs font-semibold text-white shadow-xs hover:bg-sage-deep transition-colors shrink-0"
+            className="flex items-center gap-1.5 rounded-2xl bg-sage px-5 py-2.5 text-xs font-semibold text-white shadow-xs hover:bg-sage-deep transition-colors shrink-0 cursor-pointer"
           >
             <Plus className="h-3.5 w-3.5 stroke-[2.5]" />
             <span>Anchor Ritual</span>

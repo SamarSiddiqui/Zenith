@@ -37,6 +37,7 @@ export async function GET(req: NextRequest) {
             'x-cache': 'HIT',
             'x-cache-key': cacheKey,
             'x-response-time-ms': String(duration),
+            'Cache-Control': 'no-store, no-cache, must-revalidate',
           },
         }
       );
@@ -70,6 +71,7 @@ export async function GET(req: NextRequest) {
           'x-cache': 'MISS',
           'x-cache-key': cacheKey,
           'x-response-time-ms': String(duration),
+          'Cache-Control': 'no-store, no-cache, must-revalidate',
         },
       }
     );
