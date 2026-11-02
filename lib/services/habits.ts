@@ -121,19 +121,21 @@ export function rolloverPastUnloggedDays(
 }
 
 /**
-/**
- * Helper: Fire-and-forget server cache invalidation for Redis
+ * Helper: Server cache invalidation for Redis
  */
 export async function invalidateHabitsCache(userId?: string): Promise<void> {
   if (!userId || userId === 'local-user' || typeof window === 'undefined') return;
   try {
-    fetch('/api/habits/invalidate', {
+    const res = await fetch('/api/habits/invalidate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId }),
-    }).catch(() => {});
-  } catch {
-    // Ignore network failures for background invalidation
+    });
+    if (!res.ok) {
+      console.warn('[invalidateHabitsCache] Server returned non-ok status:', res.status);
+    }
+  } catch (err) {
+    console.warn('[invalidateHabitsCache] Network error during invalidation:', err);
   }
 }
 
@@ -147,7 +149,9 @@ export async function getHabits(userId?: string): Promise<Habit[]> {
   // 1. Try Cached API route if running on browser client
   if (typeof window !== 'undefined' && userId && userId !== 'local-user') {
     try {
-      const res = await fetch(`/api/habits?userId=${encodeURIComponent(userId)}`);
+      const res = await fetch(`/api/habits?userId=${encodeURIComponent(userId)}`, {
+        cache: 'no-store',
+      });
       if (res.ok) {
         const data = await res.json();
         if (Array.isArray(data.habits)) {
@@ -225,7 +229,7 @@ export async function createHabit(userId: string, input: CreateHabitInput): Prom
 
       if (error) throw error;
       if (data) {
-        invalidateHabitsCache(userId);
+        await invalidateHabitsCache(userId);
         return mapDbRowToHabit(data as HabitDbRow);
       }
     } catch (err) {
@@ -307,7 +311,7 @@ export async function updateHabit(habitId: string, updates: UpdateHabitInput, us
       // Bust Redis cache for this user
       const targetUserId = userId || data?.user_id;
       if (targetUserId) {
-        invalidateHabitsCache(targetUserId);
+        await invalidateHabitsCache(targetUserId);
       }
 
       return true;
@@ -341,15 +345,28 @@ export async function deleteHabit(habitId: string, userId?: string): Promise<boo
 
   if (supabase && configured) {
     try {
-      const { error } = await supabase
+      let targetUserId = userId;
+      if (!targetUserId) {
+        const { data: authData } = await supabase.auth.getUser();
+        if (authData?.user?.id) {
+          targetUserId = authData.user.id;
+        }
+      }
+
+      const { data, error } = await supabase
         .from('habits')
         .delete()
-        .eq('id', habitId);
+        .eq('id', habitId)
+        .select('id, user_id');
 
       if (error) throw error;
 
-      if (userId) {
-        invalidateHabitsCache(userId);
+      if (data && data[0]?.user_id) {
+        targetUserId = targetUserId || data[0].user_id;
+      }
+
+      if (targetUserId) {
+        await invalidateHabitsCache(targetUserId);
       }
 
       return true;
