@@ -18,6 +18,7 @@ import { SprintSettingsModal } from '../../components/habits/SprintSettingsModal
 import { SprintCompletedModal } from '../../components/habits/SprintCompletedModal';
 import { PastSprintsDrawer } from '../../components/habits/PastSprintsDrawer';
 import { YesterdayCheckinModal } from '../../components/habits/YesterdayCheckinModal';
+import { DeleteAllHabitsModal } from '../../components/habits/DeleteAllHabitsModal';
 import { useYesterdayCheckin } from '../../hooks/useYesterdayCheckin';
 import type { Habit } from '../../types/zenith';
 import type { SprintConfig } from '../../types/sprint';
@@ -37,6 +38,7 @@ export default function HabitsPage() {
     addHabit,
     editHabit,
     removeHabit,
+    clearAllHabits,
     refreshHabits,
   } = useHabits();
 
@@ -74,8 +76,22 @@ export default function HabitsPage() {
   const [sortMode, setSortMode] = useState<HabitSortMode>('circadian');
   const [slotFilter, setSlotFilter] = useState<HabitSlotFilter>('all');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isDeleteAllModalOpen, setIsDeleteAllModalOpen] = useState(false);
+  const [isDeletingAll, setIsDeletingAll] = useState(false);
   const [skipHabit, setSkipHabit] = useState<{ habit: Habit; dayIndex: number } | null>(null);
   const [selectedHabitId, setSelectedHabitId] = useState<string | null>(null);
+
+  const handleConfirmDeleteAll = async () => {
+    setIsDeletingAll(true);
+    try {
+      await clearAllHabits();
+      setIsDeleteAllModalOpen(false);
+    } catch (err) {
+      console.error('Failed to clear all habits:', err);
+    } finally {
+      setIsDeletingAll(false);
+    }
+  };
 
   // Week Navigation State: 0 = current active week, -1 = previous week, -2 = 2 weeks ago, etc.
   const [weekOffset, setWeekOffset] = useState<number>(0);
@@ -288,6 +304,7 @@ export default function HabitsPage() {
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
           onOpenCreateModal={handleOpenCreate}
+          onOpenDeleteAllModal={() => setIsDeleteAllModalOpen(true)}
           totalHabits={headerMetrics.total}
           completedToday={headerMetrics.completedToday}
           averageHealth={headerMetrics.averageHealth}
@@ -407,6 +424,17 @@ export default function HabitsPage() {
           unloggedHabits={unloggedYesterdayHabits}
           onResolve={resolveYesterdayCheckin}
           onClose={closeYesterdayCheckin}
+        />
+
+        {/* Delete All Habits Confirmation Modal */}
+        <DeleteAllHabitsModal
+          isOpen={isDeleteAllModalOpen}
+          habitCount={habits.length}
+          isDeleting={isDeletingAll}
+          onConfirm={handleConfirmDeleteAll}
+          onClose={() => {
+            if (!isDeletingAll) setIsDeleteAllModalOpen(false);
+          }}
         />
       </div>
     </Layout>

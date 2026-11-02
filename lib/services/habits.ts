@@ -378,3 +378,49 @@ export async function deleteHabit(habitId: string, userId?: string): Promise<boo
 
   return true;
 }
+
+/** Delete all habits for the authenticated user */
+export async function deleteAllHabits(userId?: string): Promise<boolean> {
+  const supabase = createClient();
+  const configured = isSupabaseConfigured();
+
+  // 1. Delete from local storage
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.removeItem(LOCAL_STORAGE_HABITS_KEY);
+    } catch (e) {
+      console.error('Error clearing habits from localStorage:', e);
+    }
+  }
+
+  // 2. Delete from Supabase
+  if (supabase && configured) {
+    try {
+      let targetUserId = userId;
+      if (!targetUserId) {
+        const { data: authData } = await supabase.auth.getUser();
+        if (authData?.user?.id) {
+          targetUserId = authData.user.id;
+        }
+      }
+
+      if (targetUserId && targetUserId !== 'local-user') {
+        const { error } = await supabase
+          .from('habits')
+          .delete()
+          .eq('user_id', targetUserId);
+
+        if (error) throw error;
+
+        await invalidateHabitsCache(targetUserId);
+      }
+
+      return true;
+    } catch (err) {
+      console.error('Failed to delete all habits in Supabase:', err);
+      return false;
+    }
+  }
+
+  return true;
+}

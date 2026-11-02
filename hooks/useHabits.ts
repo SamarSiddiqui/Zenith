@@ -7,6 +7,7 @@ import {
   createHabit,
   updateHabit,
   deleteHabit,
+  deleteAllHabits,
   calculateHabitHealth,
   rolloverPastUnloggedDays,
 } from '../lib/services/habits';
@@ -306,6 +307,19 @@ export function useHabits() {
     [user?.id]
   );
 
+  // Clear All Habits at once
+  const clearAllHabits = useCallback(
+    async (): Promise<boolean> => {
+      setHabits([]);
+      const ok = await deleteAllHabits(user?.id);
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('zenith_habits_sync'));
+      }
+      return ok;
+    },
+    [user?.id]
+  );
+
   return {
     habits,
     isLoading,
@@ -318,6 +332,7 @@ export function useHabits() {
     addHabit,
     editHabit,
     removeHabit,
+    clearAllHabits,
     refreshHabits: loadHabits,
   };
 }
