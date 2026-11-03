@@ -1,12 +1,13 @@
 "use client";
 
 import React, { useState } from 'react';
-import { LayoutDashboard, CalendarRange, TreePine, Sparkles, HeartPulse, Settings, LogOut } from 'lucide-react';
+import { LayoutDashboard, CalendarRange, TreePine, Sparkles, HeartPulse, Settings, LogOut, MessageSquarePlus } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
 import { SignOutModal } from './auth/SignOutModal';
+import { FeedbackModal } from './feedback/FeedbackModal';
 
 interface SidebarProps {
   userName?: string;
@@ -53,6 +54,7 @@ export function Sidebar({ userName, isOpen = true, onCloseMobile }: SidebarProps
   ] as const;
 
   const [isSignOutModalOpen, setIsSignOutModalOpen] = useState(false);
+  const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
 
   const handleConfirmSignOut = async () => {
@@ -144,13 +146,28 @@ export function Sidebar({ userName, isOpen = true, onCloseMobile }: SidebarProps
         </div>
         <button
           type="button"
+          onClick={() => setIsFeedbackModalOpen(true)}
+          className="w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-medium text-sage-deep bg-sage-wash/60 hover:bg-sage-wash transition-colors rounded-xl border border-sage/30 cursor-pointer group mb-1.5"
+        >
+          <MessageSquarePlus className="w-3.5 h-3.5 stroke-[1.75] group-hover:scale-110 transition-transform" />
+          <span>Feedback & Ideas</span>
+        </button>
+
+        <button
+          type="button"
           onClick={() => setIsSignOutModalOpen(true)}
-          className="w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-medium text-muted hover:text-clay hover:bg-clay-wash transition-colors rounded-xl border border-transparent hover:border-clay/20 cursor-pointer"
+          className="w-full flex items-center justify-center gap-2 px-3 py-1.5 text-xs font-medium text-muted hover:text-clay hover:bg-clay-wash transition-colors rounded-xl border border-transparent hover:border-clay/20 cursor-pointer"
         >
           <LogOut className="w-3.5 h-3.5 stroke-[1.75]" />
           <span>Sign Out</span>
         </button>
       </div>
+
+      {/* Feedback Modal */}
+      <FeedbackModal
+        isOpen={isFeedbackModalOpen}
+        onClose={() => setIsFeedbackModalOpen(false)}
+      />
 
       {/* Sign Out Confirmation Modal */}
       <SignOutModal
