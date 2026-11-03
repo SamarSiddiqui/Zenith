@@ -13,6 +13,7 @@ import {
   ArrowRight,
   Lightbulb,
   CheckCircle2,
+  Cpu,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Layout } from '../../components/Layout';
@@ -66,6 +67,10 @@ export default function DiagnosisPage() {
     })
     : null;
 
+  const isHeuristicFallback = Boolean(
+    diagnosis?.modelUsed?.includes('Heuristic') || diagnosis?.modelUsed?.includes('Resilience')
+  );
+
   return (
     <Layout>
       <div className="flex flex-col gap-8 pb-16">
@@ -92,7 +97,14 @@ export default function DiagnosisPage() {
                 </div>
               )}
 
-              {formattedAnalysisTime && !isRevalidating && !isFreshlyUpdated && (
+              {isHeuristicFallback && !isRevalidating && (
+                <div className="inline-flex items-center gap-1.5 rounded-full border border-sage/40 bg-sage-wash px-3 py-1 text-[11px] font-mono text-sage-deep shadow-xs" title="Computed by Zenith Heuristic Engine">
+                  <Cpu className="h-3 w-3 text-sage-deep" />
+                  <span>Offline Heuristic Engine</span>
+                </div>
+              )}
+
+              {formattedAnalysisTime && !isRevalidating && !isFreshlyUpdated && !isHeuristicFallback && (
                 <div className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface px-3 py-1 text-[11px] font-mono text-muted shadow-xs">
                   <Clock className="h-3 w-3 text-faint" />
                   <span>Reflected at: {formattedAnalysisTime} (AI Mentor)</span>

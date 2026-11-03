@@ -155,6 +155,10 @@ export async function getHabits(userId?: string): Promise<Habit[]> {
       if (res.ok) {
         const data = await res.json();
         if (Array.isArray(data.habits)) {
+          // Sync to local storage for instant offline resilience
+          try {
+            localStorage.setItem(LOCAL_STORAGE_HABITS_KEY, JSON.stringify(data.habits));
+          } catch {}
           return data.habits;
         }
       }
@@ -178,14 +182,21 @@ export async function getHabits(userId?: string): Promise<Habit[]> {
       if (error) throw error;
 
       if (data) {
-        return (data as any[]).map((row: any) => mapDbRowToHabit(row as HabitDbRow));
+        const mapped = (data as any[]).map((row: any) => mapDbRowToHabit(row as HabitDbRow));
+        // Sync to local storage for offline resilience
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem(LOCAL_STORAGE_HABITS_KEY, JSON.stringify(mapped));
+          } catch {}
+        }
+        return mapped;
       }
     } catch (err) {
       console.error('Failed to fetch habits from Supabase:', err);
     }
   }
 
-  // 3. Local storage fallback for unconfigured / offline state
+  // 3. Local storage fallback for unconfigured / offline / database error state
   if (typeof window !== 'undefined') {
     const cached = localStorage.getItem(LOCAL_STORAGE_HABITS_KEY);
     if (cached) {
@@ -230,7 +241,17 @@ export async function createHabit(userId: string, input: CreateHabitInput): Prom
       if (error) throw error;
       if (data) {
         await invalidateHabitsCache(userId);
-        return mapDbRowToHabit(data as HabitDbRow);
+        const mapped = mapDbRowToHabit(data as HabitDbRow);
+        // Persist locally
+        if (typeof window !== 'undefined') {
+          try {
+            const existing = localStorage.getItem(LOCAL_STORAGE_HABITS_KEY);
+            const list: Habit[] = existing ? JSON.parse(existing) : [];
+            list.push(mapped);
+            localStorage.setItem(LOCAL_STORAGE_HABITS_KEY, JSON.stringify(list));
+          } catch {}
+        }
+        return mapped;
       }
     } catch (err) {
       console.error('Failed to create habit in Supabase:', err);

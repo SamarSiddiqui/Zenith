@@ -19,12 +19,13 @@ import { useSprint } from '../../hooks/useSprint';
 import { useYesterdayCheckin } from '../../hooks/useYesterdayCheckin';
 import { OnboardingModal } from '../../components/auth/OnboardingModal';
 import { YesterdayCheckinModal } from '../../components/habits/YesterdayCheckinModal';
+import { AlertCircle } from 'lucide-react';
 
 const card = 'flex flex-col h-full rounded-2xl border border-line bg-surface p-5 shadow-calm justify-between';
 
 export default function DashboardPage() {
   const { user } = useAuth();
-  const { habits, metrics, isLoading: habitsLoading, refreshHabits } = useHabits();
+  const { habits, metrics, isLoading: habitsLoading, error: habitsError, refreshHabits } = useHabits();
   const {
     session,
     analytics,
@@ -140,6 +141,22 @@ export default function DashboardPage() {
             <WorkingWindow />
           </motion.div>
         </header>
+
+        {habitsError && (
+          <div className="flex items-center justify-between gap-3 px-4 py-3 rounded-2xl border border-clay/30 bg-clay-wash/60 text-xs text-clay shadow-xs">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0 text-clay" />
+              <span>{habitsError} — Viewing locally preserved rituals.</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => refreshHabits(true)}
+              className="underline font-bold hover:text-ink transition-colors cursor-pointer shrink-0"
+            >
+              Retry
+            </button>
+          </div>
+        )}
 
         {/* Live Sprint Horizon Widget */}
         <SprintHorizonWidget
