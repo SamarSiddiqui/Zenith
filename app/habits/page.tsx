@@ -3,6 +3,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Layout } from '../../components/Layout';
+import { AlertCircle } from 'lucide-react';
 import { useHabits } from '../../hooks/useHabits';
 import { useSprint } from '../../hooks/useSprint';
 import { HabitHeader } from '../../components/habits/HabitHeader';
@@ -31,6 +32,7 @@ export default function HabitsPage() {
   const {
     habits,
     isLoading: habitsLoading,
+    error: habitsError,
     metrics,
     toggleStatus,
     setHabitStatus,
@@ -300,6 +302,22 @@ export default function HabitsPage() {
     <Layout>
       <div className="flex flex-col gap-8 pb-12">
         {/* Habit Planner Header & Dynamic Sprint Horizon Controls */}
+        {habitsError && (
+          <div className="flex items-center justify-between gap-3 px-4 py-3 rounded-2xl border border-clay/30 bg-clay-wash/60 text-xs text-clay shadow-xs">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0 text-clay" />
+              <span>{habitsError} — Displaying locally saved rituals.</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => refreshHabits(true)}
+              className="underline font-bold hover:text-ink transition-colors cursor-pointer shrink-0"
+            >
+              Retry Connection
+            </button>
+          </div>
+        )}
+
         <HabitHeader
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
@@ -348,6 +366,11 @@ export default function HabitsPage() {
               onOpenSkipModal={(habit, idx) => setSkipHabit({ habit, dayIndex: idx })}
               onSelectHabit={(habit) => setSelectedHabitId(habit.id)}
               onQuickMicroStep={(id, idx) => logMicroStep(id, idx)}
+              totalHabitsCount={activeHabitsPool.length}
+              onResetFilters={() => {
+                setSearchQuery('');
+                setSlotFilter('all');
+              }}
             />
           </motion.div>
         )}

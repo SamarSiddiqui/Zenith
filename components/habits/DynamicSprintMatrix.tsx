@@ -12,6 +12,7 @@ import {
   History,
   ArrowRight,
   ArrowUpDown,
+  SearchX,
 } from 'lucide-react';
 import type { Habit, HabitStatus, CircadianSlot } from '../../types/zenith';
 import type { SprintConfig } from '../../types/sprint';
@@ -34,6 +35,8 @@ interface DynamicSprintMatrixProps {
   onOpenSkipModal: (habit: Habit, dayIndex: number) => void;
   onSelectHabit?: (habit: Habit) => void;
   onQuickMicroStep?: (habitId: string, dayIndex: number) => void;
+  totalHabitsCount?: number;
+  onResetFilters?: () => void;
 }
 
 export function DynamicSprintMatrix({
@@ -50,6 +53,8 @@ export function DynamicSprintMatrix({
   onOpenSkipModal,
   onSelectHabit,
   onQuickMicroStep,
+  totalHabitsCount = 0,
+  onResetFilters,
 }: DynamicSprintMatrixProps) {
   // Generate dynamic day metadata based on 1-15 day configuration
   const sprintDays = useMemo(() => {
@@ -270,11 +275,28 @@ export function DynamicSprintMatrix({
                   colSpan={sprintDays.length + 2}
                   className="px-6 py-12 text-center text-muted font-light"
                 >
-                  <div className="flex flex-col items-center justify-center space-y-2">
-                    <ShieldCheck className="h-8 w-8 text-faint stroke-[1.5]" />
-                    <p className="text-sm text-ink font-serif">No rituals anchored in this sprint horizon yet.</p>
-                    <p className="text-xs text-muted font-mono">Use the &quot;+ Anchor Ritual&quot; button above to craft your first habit.</p>
-                  </div>
+                  {totalHabitsCount > 0 ? (
+                    <div className="flex flex-col items-center justify-center space-y-2 py-4">
+                      <SearchX className="h-8 w-8 text-faint stroke-[1.5]" />
+                      <p className="text-sm text-ink font-serif">No rituals match your current search or slot filter.</p>
+                      <p className="text-xs text-muted font-mono">Try clearing your search query or switching circadian slots.</p>
+                      {onResetFilters && (
+                        <button
+                          type="button"
+                          onClick={onResetFilters}
+                          className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-line bg-canvas hover:bg-surface px-4 py-1.5 text-xs font-mono text-sage-deep hover:text-ink transition-colors cursor-pointer shadow-xs"
+                        >
+                          <span>Reset Search &amp; Filters</span>
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center space-y-2 py-4">
+                      <ShieldCheck className="h-8 w-8 text-faint stroke-[1.5]" />
+                      <p className="text-sm text-ink font-serif">No rituals anchored in this sprint horizon yet.</p>
+                      <p className="text-xs text-muted font-mono">Use the &quot;+ Anchor Ritual&quot; button above to craft your first habit.</p>
+                    </div>
+                  )}
                 </td>
               </tr>
             ) : (

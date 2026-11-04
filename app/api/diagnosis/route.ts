@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { callGeminiStructured } from '../../../lib/gemini/client';
+import { generateHeuristicDiagnosis } from '../../../lib/gemini/fallback';
 import { getCached, setCached, hashHabitsState } from '../../../lib/redis/client';
 import { checkDiagnosisRateLimit } from '../../../lib/redis/ratelimit';
 import type { DiagnosisRequest, DiagnosisResult } from '../../../types/diagnosis';
@@ -193,8 +194,10 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const startTime = Date.now();
+  let body: DiagnosisRequest = { habits: [] };
+
   try {
-    const body = (await req.json()) as DiagnosisRequest;
+    body = (await req.json()) as DiagnosisRequest;
     const userId = body.userId || req.headers.get('x-forwarded-for') || 'anonymous_user';
     const latestCacheKey = `zenith:diag:latest:${userId}`;
 
@@ -241,20 +244,15 @@ export async function POST(req: NextRequest) {
         });
       }
 
-      return NextResponse.json(
-        {
-          error: 'Rate limit reached. Please pause a moment before requesting fresh reflections.',
-          retryAfterSeconds: Math.ceil((rateLimit.reset - Date.now()) / 1000),
+      // If no stale cache exists, serve deterministic heuristic reflection with 200 rather than blocking user
+      const heuristic = generateHeuristicDiagnosis(body);
+      return NextResponse.json(heuristic, {
+        status: 200,
+        headers: {
+          'x-cache': 'RATE_LIMIT_HEURISTIC_FALLBACK',
+          'x-response-time-ms': String(Date.now() - startTime),
         },
-        {
-          status: 429,
-          headers: {
-            'x-ratelimit-limit': String(rateLimit.limit),
-            'x-ratelimit-remaining': String(rateLimit.remaining),
-            'x-ratelimit-reset': String(rateLimit.reset),
-          },
-        }
-      );
+      });
     }
 
     // 2. Exact Habit State Cache Key Construction
@@ -279,13 +277,19 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 4. Cache Miss / Force Fresh -> Call Gemini 3.5 Flash-Lite
-    const prompt = buildPrompt(body);
-    const diagnosis = await callGeminiStructured<DiagnosisResult>(prompt, SYSTEM_INSTRUCTION);
+    // 4. Cache Miss / Force Fresh -> Call Gemini AI with Automatic Offline Resilience Fallback
+    let diagnosis: DiagnosisResult;
+    try {
+      const prompt = buildPrompt(body);
+      diagnosis = await callGeminiStructured<DiagnosisResult>(prompt, SYSTEM_INSTRUCTION);
+      diagnosis.modelUsed = 'Gemini 3.5 Flash-Lite';
+    } catch (aiErr: any) {
+      console.warn('[Diagnosis API] Gemini generation unavailable, activating Zenith Heuristic Engine:', aiErr?.message || aiErr);
+      diagnosis = generateHeuristicDiagnosis(body);
+    }
 
     // Attach metadata
     diagnosis.generatedAt = new Date().toISOString();
-    diagnosis.modelUsed = 'Gemini 3.5 Flash-Lite';
     diagnosis.isCached = false;
     diagnosis.isStale = false;
 
@@ -306,6 +310,16 @@ export async function POST(req: NextRequest) {
     });
   } catch (err: any) {
     console.error('Diagnosis API Error:', err);
+    // Never fail with 500 when habits exist; generate deterministic heuristic analysis
+    try {
+      if (body.habits && body.habits.length > 0) {
+        const resilientFallback = generateHeuristicDiagnosis(body);
+        return NextResponse.json(resilientFallback, { status: 200 });
+      }
+    } catch {
+      // Fall through to error
+    }
+
     return NextResponse.json(
       {
         error: err.message || 'Failed to generate AI diagnosis',
@@ -314,4 +328,3 @@ export async function POST(req: NextRequest) {
     );
   }
 }
-

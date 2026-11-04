@@ -16,8 +16,12 @@ import {
   X,
   Pencil,
   RotateCw,
+  Lightbulb,
+  Bug,
+  MessageSquarePlus,
 } from 'lucide-react';
 import { Layout } from '../../components/Layout';
+import { FeedbackModal, FeedbackType } from '../../components/feedback/FeedbackModal';
 import { useAuth } from '../../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -53,6 +57,15 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Feedback Modal State
+  const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
+  const [feedbackDefaultType, setFeedbackDefaultType] = useState<FeedbackType>('feature_idea');
+
+  const openFeedback = (type: FeedbackType = 'feature_idea') => {
+    setFeedbackDefaultType(type);
+    setIsFeedbackModalOpen(true);
+  };
 
   // Initialize form with authenticated user state
   useEffect(() => {
@@ -573,6 +586,75 @@ export default function SettingsPage() {
               </div>
             </section>
 
+            {/* Feedback & Feature Suggestions */}
+            <section className="bg-surface p-6 rounded-3xl border border-line shadow-calm">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-line pb-5 mb-5">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                    <Lightbulb className="w-4 h-4 stroke-[1.75]" />
+                  </div>
+                  <div>
+                    <h2 className="font-serif text-lg text-ink">Feedback & Suggestions</h2>
+                    <p className="text-xs text-muted">Help us shape Zenith into a calmer, more mindful sanctuary.</p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => openFeedback('feature_idea')}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-medium text-sage-deep bg-sage-wash/70 hover:bg-sage-wash border border-sage/30 transition-colors self-start sm:self-auto cursor-pointer"
+                >
+                  <MessageSquarePlus className="w-3.5 h-3.5" />
+                  <span>Share Feedback</span>
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <p className="text-xs text-muted leading-relaxed">
+                  Have an idea for a new feature, a subtle improvement to your habit routines, or found an issue while practicing?
+                  Your reflections directly guide our roadmap.
+                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => openFeedback('feature_idea')}
+                    className="flex flex-col items-start p-3.5 rounded-2xl border border-amber-500/30 bg-amber-500/5 hover:bg-amber-500/10 hover:border-amber-500/50 transition-all text-left group cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2 text-xs font-semibold text-amber-600 mb-1">
+                      <Lightbulb className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
+                      <span>Feature Idea</span>
+                    </div>
+                    <p className="text-[11px] text-muted leading-tight">Propose a brand new capability or tool for Zenith.</p>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => openFeedback('improvement')}
+                    className="flex flex-col items-start p-3.5 rounded-2xl border border-sage/30 bg-sage-wash/40 hover:bg-sage-wash hover:border-sage/50 transition-all text-left group cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2 text-xs font-semibold text-sage-deep mb-1">
+                      <Sparkles className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
+                      <span>Improvement</span>
+                    </div>
+                    <p className="text-[11px] text-muted leading-tight">Refine existing workflows and daily habits.</p>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => openFeedback('bug_report')}
+                    className="flex flex-col items-start p-3.5 rounded-2xl border border-clay/30 bg-clay-wash/40 hover:bg-clay-wash hover:border-clay/50 transition-all text-left group cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2 text-xs font-semibold text-clay mb-1">
+                      <Bug className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
+                      <span>Report an Issue</span>
+                    </div>
+                    <p className="text-[11px] text-muted leading-tight">Flag something that didn't behave as expected.</p>
+                  </button>
+                </div>
+              </div>
+            </section>
+
             {/* Save Action */}
             <div className="flex justify-end pt-2">
               <button
@@ -596,6 +678,13 @@ export default function SettingsPage() {
           </form>
         </div>
       </PageTransition>
+
+      {/* User Feedback Modal */}
+      <FeedbackModal
+        isOpen={isFeedbackModalOpen}
+        onClose={() => setIsFeedbackModalOpen(false)}
+        defaultType={feedbackDefaultType}
+      />
     </Layout>
   );
 }

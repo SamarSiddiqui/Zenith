@@ -3,6 +3,7 @@ import "./globals.css";
 import { AuthProvider } from "../context/AuthContext";
 import { FocusProvider } from "../context/FocusContext";
 import { FloatingFocusWidget } from "../components/focus/FloatingFocusWidget";
+import { OfflineBanner } from "../components/visuals/OfflineBanner";
 
 export const metadata: Metadata = {
   title: "Zenith — Circadian Habits & Usable Working Window",
@@ -24,6 +25,7 @@ export default function RootLayout({
       <body className="antialiased bg-canvas text-ink selection:bg-sage/20 selection:text-ink">
         <AuthProvider>
           <FocusProvider>
+            <OfflineBanner />
             {children}
             <FloatingFocusWidget />
           </FocusProvider>
