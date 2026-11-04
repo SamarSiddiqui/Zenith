@@ -115,7 +115,11 @@ export function useHabits() {
   // Aggregate Metrics
   const metrics = useMemo(() => {
     const total = habits.length;
-    const completedToday = habits.filter((h) => h.status === 'completed').length;
+    const currentMonday = getMondayOfWeek(new Date());
+    const currentDayIndex = calculateSprintDayInfo(currentMonday.toISOString(), 7).dayIndex;
+    const completedToday = habits.filter(
+      (h) => (h.week?.[currentDayIndex] || 'unlogged') === 'completed'
+    ).length;
     const totalHealth = habits.reduce((acc, h) => acc + (h.health || 80), 0);
     const averageHealth = total > 0 ? Math.round(totalHealth / total) : 80;
 
