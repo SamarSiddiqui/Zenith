@@ -185,15 +185,6 @@ function FocusContent() {
 
           {/* Controls & Fullscreen */}
           <div className="flex items-center gap-3 self-start md:self-auto">
-            {/* Mindful Bell Chime Indicator Badge */}
-            <div
-              className="flex items-center gap-2 rounded-2xl border border-line bg-surface/80 px-3.5 py-2 text-xs text-muted shadow-xs"
-              title="Zenith chimes a mindful singing bowl bell at session start and completion"
-            >
-              <Bell className="h-3.5 w-3.5 text-sage-deep" />
-              <span className="text-[11px] font-medium text-ink">Mindful Bell on Start & End</span>
-            </div>
-
             {/* Fullscreen Zen Mode Button */}
             <button
               type="button"
@@ -283,16 +274,16 @@ function FocusContent() {
                     growthStage === 'withered'
                       ? '#78716c'
                       : growthStage === 'mature'
-                      ? '#fbbf24'
-                      : activeArchetype.accentColor,
+                        ? '#fbbf24'
+                        : activeArchetype.accentColor,
                 }}
               />
               <span className="text-muted">
                 {growthStage === 'withered'
                   ? 'Withered · Focus Interrupted'
                   : growthStage === 'mature'
-                  ? `Mature ${speciesLabel} Planted 🎉`
-                  : `${speciesLabel} · ${Math.round(progress * 100)}% Growth`}
+                    ? `Mature ${speciesLabel} Planted 🎉`
+                    : `${speciesLabel} · ${Math.round(progress * 100)}% Growth`}
               </span>
             </div>
 
@@ -307,8 +298,8 @@ function FocusContent() {
                 {isBreak
                   ? 'Breathe deeply and restore cognitive baseline'
                   : settings.linkedHabitName
-                  ? `Focusing on "${settings.linkedHabitName}"`
-                  : settings.intention || 'Undivided attention is sovereign'}
+                    ? `Focusing on "${settings.linkedHabitName}"`
+                    : settings.intention || 'Undivided attention is sovereign'}
               </p>
             </div>
 
@@ -484,21 +475,19 @@ function FocusContent() {
                   type="button"
                   disabled={isSessionActive}
                   onClick={() => setIsHabitDropdownOpen((prev) => !prev)}
-                  className={`flex w-full items-center justify-between rounded-2xl border border-border/80 bg-card/90 px-4 py-3 text-xs font-medium text-ink transition-all hover:border-border ${
-                    isSessionActive ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'
-                  }`}
+                  className={`flex w-full items-center justify-between rounded-2xl border border-line bg-surface px-4 py-3 text-xs font-medium text-ink transition-all hover:border-line/80 shadow-xs ${isSessionActive ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}`}
                 >
                   <span className="truncate">
                     {settings.linkedHabitName ? (
-                      <span className="flex items-center gap-2 text-emerald-500 font-semibold">
-                        <CheckCircle2 className="h-4 w-4 shrink-0" />
+                      <span className="flex items-center gap-2 text-emerald-600 font-semibold">
+                        <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500" />
                         {settings.linkedHabitName}
                       </span>
                     ) : (
                       <span className="text-muted">Select active habit to auto-complete...</span>
                     )}
                   </span>
-                  <ChevronDown className="h-4 w-4 text-muted shrink-0" />
+                  <ChevronDown className={`h-4 w-4 text-muted shrink-0 transition-transform duration-200 ${isHabitDropdownOpen ? 'rotate-180' : ''}`} />
                 </button>
 
                 <AnimatePresence>
@@ -507,7 +496,7 @@ function FocusContent() {
                       initial={{ opacity: 0, y: 5 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 5 }}
-                      className="absolute left-0 top-full mt-2 z-30 max-h-56 w-full overflow-y-auto rounded-2xl border border-border bg-card/95 p-2 shadow-2xl backdrop-blur-xl"
+                      className="absolute left-0 top-full mt-2 z-50 max-h-56 w-full overflow-y-auto rounded-2xl border border-line bg-surface p-2 shadow-2xl backdrop-blur-xl"
                     >
                       {habits.length === 0 ? (
                         <p className="p-3 text-center text-xs text-muted">No habits available</p>
@@ -515,14 +504,19 @@ function FocusContent() {
                         habits.map((h) => (
                           <button
                             key={h.id}
+                            type="button"
                             onClick={() => {
                               linkHabit(h.id, h.name);
                               setIsHabitDropdownOpen(false);
                             }}
-                            className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-xs text-left text-ink transition-colors hover:bg-canvas hover:text-emerald-500"
+                            className={`flex w-full items-center justify-between rounded-xl px-3.5 py-2.5 text-xs text-left transition-colors cursor-pointer ${
+                              settings.linkedHabitId === h.id
+                                ? 'bg-sage-wash text-sage-deep font-semibold'
+                                : 'text-ink hover:bg-canvas/80 hover:text-emerald-600'
+                            }`}
                           >
-                            <span className="truncate">{h.name}</span>
-                            <span className="text-[10px] text-muted font-mono">{h.minutes}m</span>
+                            <span className="truncate font-medium">{h.name}</span>
+                            <span className="text-[10px] text-muted font-mono shrink-0 ml-2">{h.minutes}m</span>
                           </button>
                         ))
                       )}
@@ -560,11 +554,10 @@ function FocusContent() {
                         type="button"
                         disabled={isSessionActive}
                         onClick={() => setSpecies(sp.id)}
-                        className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs transition-all ${
-                          isSelected
+                        className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs transition-all ${isSelected
                             ? 'border-border bg-card text-ink font-semibold shadow-xs'
                             : 'border-border/50 bg-card/40 text-muted hover:border-border'
-                        } ${isSessionActive ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}`}
+                          } ${isSessionActive ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'}`}
                       >
                         <span
                           className="h-2 w-2 rounded-full"
@@ -630,16 +623,16 @@ function FocusContent() {
                         growthStage === 'withered'
                           ? '#78716c'
                           : growthStage === 'mature'
-                          ? '#fbbf24'
-                          : activeArchetype.accentColor,
+                            ? '#fbbf24'
+                            : activeArchetype.accentColor,
                     }}
                   />
                   <span>
                     {growthStage === 'withered'
                       ? 'Withered · Focus Interrupted'
                       : growthStage === 'mature'
-                      ? `Mature ${speciesLabel} Planted 🎉`
-                      : `${speciesLabel} · ${Math.round(progress * 100)}% Growth`}
+                        ? `Mature ${speciesLabel} Planted 🎉`
+                        : `${speciesLabel} · ${Math.round(progress * 100)}% Growth`}
                   </span>
                 </div>
 
