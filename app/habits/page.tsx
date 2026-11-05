@@ -257,9 +257,13 @@ export default function HabitsPage() {
   // Dynamic header metrics (live vs historical)
   const headerMetrics = useMemo(() => {
     if (weekOffset === 0) {
+      const todayIndex = sprintSession?.currentDayIndex ?? 0;
+      const completedToday = habits.filter(
+        (h) => (h.week?.[todayIndex] || 'unlogged') === 'completed'
+      ).length;
       return {
-        total: metrics.total,
-        completedToday: metrics.completedToday,
+        total: habits.length,
+        completedToday,
         averageHealth: metrics.averageHealth,
       };
     }
@@ -282,7 +286,7 @@ export default function HabitsPage() {
       completedToday: completedEvents,
       averageHealth,
     };
-  }, [weekOffset, metrics, activeHabitsPool]);
+  }, [weekOffset, metrics.averageHealth, sprintSession?.currentDayIndex, habits, activeHabitsPool]);
 
   const handleOpenCreate = () => {
     setIsCreateModalOpen(true);

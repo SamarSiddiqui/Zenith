@@ -133,10 +133,13 @@ export function HabitHeader({
 
           <div className="rounded-2xl border border-line bg-surface px-4 py-2.5 shadow-calm text-center">
             <span className="block text-[10px] uppercase font-mono tracking-wider text-faint">
-              Today&apos;s Rituals
+              {isHistorical ? 'Archived Rituals' : "Today's Rituals"}
             </span>
             <span className="block font-serif text-lg font-bold text-ink mt-0.5">
-              {completedToday} <span className="text-xs font-sans font-light text-muted">/ {totalHabits}</span>
+              {completedToday}{' '}
+              <span className="text-xs font-sans font-light text-muted">
+                / {isHistorical ? totalHabits * 7 : totalHabits}
+              </span>
             </span>
           </div>
 

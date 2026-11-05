@@ -20,6 +20,8 @@
   /* Magic Pattern Design System Tokens */
   --color-canvas: #F7F6F3;
   --color-surface: #FFFFFF;
+  --color-card: #FFFFFF;
+  --color-border: #E2DFD9;
   --color-sidebar: #EDEAE5;
   --color-line: #E2DFD9;
   --color-sage: #8BA888;
