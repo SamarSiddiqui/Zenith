@@ -10,8 +10,7 @@ import {
   SkipForward,
   Maximize2,
   Minimize2,
-  Volume2,
-  VolumeX,
+  Bell,
   Sparkles,
   TreePine,
   Link as LinkIcon,
@@ -29,7 +28,7 @@ import { useHabits } from '../../hooks/useHabits';
 import { ForestTreeCanvas } from '../../components/focus/ForestTreeCanvas';
 import { PhilosopherCard } from '../../components/focus/PhilosopherCard';
 import { ZenGrove } from '../../components/focus/ZenGrove';
-import type { SoundscapeId, TreeSpecies } from '../../types/focus';
+import type { TreeSpecies } from '../../types/focus';
 import { PHILOSOPHER_CONFIGS } from '../../types/focus';
 
 function FocusContent() {
@@ -56,8 +55,6 @@ function FocusContent() {
     startNextCycle,
     resetSession,
     selectArchetype,
-    setSoundscape,
-    setSoundVolume,
     setSpecies,
     setDuration,
     linkHabit,
@@ -69,7 +66,6 @@ function FocusContent() {
   const { habits } = useHabits();
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const [isHabitDropdownOpen, setIsHabitDropdownOpen] = useState<boolean>(false);
-  const [isSoundDropdownOpen, setIsSoundDropdownOpen] = useState<boolean>(false);
 
   // Auto-link habit from URL search params if present
   useEffect(() => {
@@ -130,15 +126,6 @@ function FocusContent() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [state, startSession, pauseSession, resumeSession, isFullscreen]);
 
-  // Soundscape Options
-  const soundscapeOptions: { id: SoundscapeId; label: string; icon: string }[] = [
-    { id: 'none', label: 'Silence', icon: '🔇' },
-    { id: 'rain', label: 'Gentle Rain', icon: '🌧️' },
-    { id: 'forest', label: 'Forest Breeze', icon: '🌲' },
-    { id: 'brown_noise', label: 'Deep Brown Noise', icon: '🌊' },
-    { id: 'alpha_waves', label: '432Hz Alpha Waves', icon: '🧠' },
-  ];
-
   // Tree Species Options
   const speciesOptions: { id: TreeSpecies; label: string; color: string }[] = [
     { id: 'oak', label: 'Stoic Oak', color: '#4ade80' },
@@ -196,79 +183,15 @@ function FocusContent() {
             </div>
           </div>
 
-          {/* Quick Audio Controls & Fullscreen */}
+          {/* Controls & Fullscreen */}
           <div className="flex items-center gap-3 self-start md:self-auto">
-            {/* Soundscape Dropdown */}
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setIsSoundDropdownOpen((prev) => !prev)}
-                className="flex items-center gap-2 rounded-2xl border border-border/80 bg-card/80 px-3.5 py-2 text-xs font-medium text-ink backdrop-blur-md shadow-xs transition-all hover:border-border hover:bg-card"
-              >
-                {settings.soundscape === 'none' ? (
-                  <VolumeX className="h-4 w-4 text-muted" />
-                ) : (
-                  <Volume2 className="h-4 w-4 text-emerald-500 animate-pulse" />
-                )}
-                <span>
-                  {soundscapeOptions.find((s) => s.id === settings.soundscape)?.label || 'Sound'}
-                </span>
-                <ChevronDown className="h-3 w-3 text-muted" />
-              </button>
-
-              <AnimatePresence>
-                {isSoundDropdownOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 5 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 5 }}
-                    className="absolute right-0 top-full mt-2 z-30 w-56 rounded-2xl border border-border bg-card/95 p-2 shadow-2xl backdrop-blur-xl"
-                  >
-                    <div className="px-2 py-1 text-[10px] font-semibold text-muted uppercase tracking-wider">
-                      Ambient Soundscapes
-                    </div>
-                    {soundscapeOptions.map((opt) => (
-                      <button
-                        key={opt.id}
-                        onClick={() => {
-                          setSoundscape(opt.id);
-                          setIsSoundDropdownOpen(false);
-                        }}
-                        className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-xs transition-colors ${
-                          settings.soundscape === opt.id
-                            ? 'bg-emerald-500/10 text-emerald-500 font-semibold'
-                            : 'text-muted hover:bg-canvas hover:text-ink'
-                        }`}
-                      >
-                        <span className="flex items-center gap-2">
-                          <span>{opt.icon}</span>
-                          <span>{opt.label}</span>
-                        </span>
-                        {settings.soundscape === opt.id && <CheckCircle2 className="h-3.5 w-3.5" />}
-                      </button>
-                    ))}
-
-                    {/* Volume Slider */}
-                    {settings.soundscape !== 'none' && (
-                      <div className="mt-2 border-t border-border/60 pt-2 px-2">
-                        <div className="flex items-center justify-between text-[10px] text-muted mb-1">
-                          <span>Volume</span>
-                          <span>{Math.round(settings.soundVolume * 100)}%</span>
-                        </div>
-                        <input
-                          type="range"
-                          min="0"
-                          max="1"
-                          step="0.05"
-                          value={settings.soundVolume}
-                          onChange={(e) => setSoundVolume(parseFloat(e.target.value))}
-                          className="w-full h-1.5 bg-border rounded-lg appearance-none cursor-pointer accent-emerald-500"
-                        />
-                      </div>
-                    )}
-                  </motion.div>
-                )}
-              </AnimatePresence>
+            {/* Mindful Bell Chime Indicator Badge */}
+            <div
+              className="flex items-center gap-2 rounded-2xl border border-line bg-surface/80 px-3.5 py-2 text-xs text-muted shadow-xs"
+              title="Zenith chimes a mindful singing bowl bell at session start and completion"
+            >
+              <Bell className="h-3.5 w-3.5 text-sage-deep" />
+              <span className="text-[11px] font-medium text-ink">Mindful Bell on Start & End</span>
             </div>
 
             {/* Fullscreen Zen Mode Button */}

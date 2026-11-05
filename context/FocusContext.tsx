@@ -354,14 +354,10 @@ export function FocusProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  // Audio Soundscape lifecycle
+  // Audio lifecycle: ensure ambient loops remain off
   useEffect(() => {
-    if (state === 'focusing' && settings.soundscape !== 'none') {
-      soundscapeEngine.playSoundscape(settings.soundscape, settings.soundVolume);
-    } else {
-      soundscapeEngine.stopSoundscape();
-    }
-  }, [state, settings.soundscape, settings.soundVolume]);
+    soundscapeEngine.stopSoundscape();
+  }, [state]);
 
   // Dynamic Browser Tab Title with Live Timer
   useEffect(() => {
@@ -485,9 +481,7 @@ export function FocusProvider({ children }: { children: React.ReactNode }) {
         );
       }
 
-      if (nextState === 'focusing' && settings.soundscape !== 'none') {
-        soundscapeEngine.playSoundscape(settings.soundscape, settings.soundVolume);
-      }
+
     }
   }, [state, isBreak, timeLeft, totalDuration, activeCycle, settings]);
 
