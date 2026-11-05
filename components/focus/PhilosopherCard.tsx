@@ -12,6 +12,8 @@ import {
   Timer,
   Activity,
   Sliders,
+  Plus,
+  Minus,
 } from 'lucide-react';
 import type { PhilosopherId, PhilosopherConfig } from '../../types/focus';
 import { PHILOSOPHER_CONFIGS } from '../../types/focus';
@@ -59,6 +61,31 @@ export function PhilosopherCard({
 
   const focusPresetChips = [15, 25, 30, 45, 60, 90, 120];
   const breakPresetChips = [3, 5, 10, 15];
+
+  // Dynamic progress percentage for slider track fill
+  const focusPct = Math.min(100, Math.max(0, ((focusDuration - 5) / (180 - 5)) * 100));
+  const breakPct = Math.min(100, Math.max(0, ((breakDuration - 1) / (30 - 1)) * 100));
+
+  // Mouse wheel scroll to increase / decrease timer on the ball / slider
+  const handleFocusWheel = (e: React.WheelEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    if (!onDurationChange) return;
+    const delta = e.deltaY < 0 ? 5 : -5;
+    const nextVal = Math.min(180, Math.max(5, focusDuration + delta));
+    if (nextVal !== focusDuration) {
+      onDurationChange(nextVal, breakDuration);
+    }
+  };
+
+  const handleBreakWheel = (e: React.WheelEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    if (!onDurationChange) return;
+    const delta = e.deltaY < 0 ? 1 : -1;
+    const nextVal = Math.min(30, Math.max(1, breakDuration + delta));
+    if (nextVal !== breakDuration) {
+      onDurationChange(focusDuration, nextVal);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -202,38 +229,103 @@ export function PhilosopherCard({
           <motion.div
             initial={{ opacity: 0, y: 4 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mt-5 rounded-2xl bg-canvas/80 border border-violet-500/30 p-4 space-y-4"
+            className="mt-5 rounded-2xl bg-canvas/80 border border-violet-500/30 p-4 sm:p-5 space-y-5 shadow-xs"
           >
             {/* Focus Interval Slider */}
-            <div>
-              <div className="flex items-center justify-between text-xs font-medium text-ink mb-1.5">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-xs font-medium text-ink">
                 <span className="flex items-center gap-1.5">
                   <Clock className="h-3.5 w-3.5 text-violet-500" />
-                  <span>Set Focus Time</span>
+                  <span className="font-semibold">Set Focus Time</span>
                 </span>
-                <span className="font-mono font-bold text-sm text-violet-500">{focusDuration} mins</span>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => onDurationChange(Math.max(5, focusDuration - 5), breakDuration)}
+                    disabled={focusDuration <= 5}
+                    className="h-6 w-6 rounded-lg flex items-center justify-center text-muted hover:text-ink hover:bg-surface border border-line disabled:opacity-40 transition-colors cursor-pointer"
+                    title="Decrease 5 mins"
+                    aria-label="Decrease focus time by 5 minutes"
+                  >
+                    <Minus className="h-3 w-3" />
+                  </button>
+                  <span className="font-mono font-bold text-sm text-violet-600 dark:text-violet-400 min-w-[58px] text-center px-1">
+                    {focusDuration} mins
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => onDurationChange(Math.min(180, focusDuration + 5), breakDuration)}
+                    disabled={focusDuration >= 180}
+                    className="h-6 w-6 rounded-lg flex items-center justify-center text-muted hover:text-ink hover:bg-surface border border-line disabled:opacity-40 transition-colors cursor-pointer"
+                    title="Increase 5 mins"
+                    aria-label="Increase focus time by 5 minutes"
+                  >
+                    <Plus className="h-3 w-3" />
+                  </button>
+                </div>
               </div>
 
-              <input
-                type="range"
-                min="5"
-                max="180"
-                step="5"
-                value={focusDuration}
-                onChange={(e) => onDurationChange(parseInt(e.target.value, 10), breakDuration)}
-                className="w-full h-2 bg-border rounded-lg appearance-none cursor-pointer accent-violet-500"
-              />
+              {/* Highlighted Slider Track & Interactive Ball */}
+              <div className="relative pt-1 pb-1">
+                <input
+                  type="range"
+                  min="5"
+                  max="180"
+                  step="5"
+                  value={focusDuration}
+                  onWheel={handleFocusWheel}
+                  onChange={(e) => onDurationChange(parseInt(e.target.value, 10), breakDuration)}
+                  style={{
+                    background: `linear-gradient(to right, #8b5cf6 0%, #8b5cf6 ${focusPct}%, var(--color-line, #E2DFD9) ${focusPct}%, var(--color-line, #E2DFD9) 100%)`,
+                  }}
+                  className="w-full h-2.5 rounded-full appearance-none cursor-grab active:cursor-grabbing outline-none transition-all
+                    [&::-webkit-slider-thumb]:appearance-none
+                    [&::-webkit-slider-thumb]:w-5
+                    [&::-webkit-slider-thumb]:h-5
+                    [&::-webkit-slider-thumb]:rounded-full
+                    [&::-webkit-slider-thumb]:bg-violet-600
+                    [&::-webkit-slider-thumb]:border-2
+                    [&::-webkit-slider-thumb]:border-white
+                    [&::-webkit-slider-thumb]:shadow-md
+                    [&::-webkit-slider-thumb]:transition-all
+                    [&::-webkit-slider-thumb]:hover:scale-125
+                    [&::-webkit-slider-thumb]:hover:ring-4
+                    [&::-webkit-slider-thumb]:hover:ring-violet-500/30
+                    [&::-webkit-slider-thumb]:active:scale-125
+                    [&::-webkit-slider-thumb]:active:ring-6
+                    [&::-webkit-slider-thumb]:active:ring-violet-500/40
+                    [&::-moz-range-thumb]:w-5
+                    [&::-moz-range-thumb]:h-5
+                    [&::-moz-range-thumb]:rounded-full
+                    [&::-moz-range-thumb]:bg-violet-600
+                    [&::-moz-range-thumb]:border-2
+                    [&::-moz-range-thumb]:border-white
+                    [&::-moz-range-thumb]:shadow-md
+                    [&::-moz-range-thumb]:transition-all
+                    [&::-moz-range-thumb]:hover:scale-125
+                    [&::-moz-range-thumb]:hover:ring-4
+                    [&::-moz-range-thumb]:hover:ring-violet-500/30
+                    [&::-moz-range-thumb]:active:scale-125
+                    [&::-moz-range-thumb]:active:ring-6
+                    [&::-moz-range-thumb]:active:ring-violet-500/40"
+                />
+                <div className="flex justify-between items-center text-[10px] font-mono text-muted/70 mt-1 px-0.5">
+                  <span>5m</span>
+                  <span className="text-[9px] uppercase tracking-wider text-muted/50">Slide or scroll ball to adjust</span>
+                  <span>180m</span>
+                </div>
+              </div>
 
               {/* Quick Focus Preset Chips */}
-              <div className="flex flex-wrap gap-1.5 mt-2">
+              <div className="flex flex-wrap gap-1.5 pt-1">
                 {focusPresetChips.map((mins) => (
                   <button
                     key={mins}
                     type="button"
                     onClick={() => onDurationChange(mins, breakDuration)}
-                    className={`rounded-lg px-2.5 py-1 text-[11px] font-mono transition-all ${
+                    className={`rounded-lg px-2.5 py-1 text-[11px] font-mono transition-all cursor-pointer ${
                       focusDuration === mins
-                        ? 'bg-violet-500 text-white font-bold shadow-xs'
+                        ? 'bg-violet-600 text-white font-bold shadow-xs scale-105'
                         : 'bg-card text-muted border border-border/60 hover:text-ink hover:border-violet-500/40'
                     }`}
                   >
@@ -244,35 +336,100 @@ export function PhilosopherCard({
             </div>
 
             {/* Break Interval Slider */}
-            <div className="border-t border-border/50 pt-3">
-              <div className="flex items-center justify-between text-xs font-medium text-ink mb-1.5">
+            <div className="border-t border-border/50 pt-4 space-y-2">
+              <div className="flex items-center justify-between text-xs font-medium text-ink">
                 <span className="flex items-center gap-1.5">
                   <Clock className="h-3.5 w-3.5 text-emerald-500" />
-                  <span>Set Rest Break</span>
+                  <span className="font-semibold">Set Rest Break</span>
                 </span>
-                <span className="font-mono font-bold text-sm text-emerald-500">{breakDuration} mins</span>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => onDurationChange(focusDuration, Math.max(1, breakDuration - 1))}
+                    disabled={breakDuration <= 1}
+                    className="h-6 w-6 rounded-lg flex items-center justify-center text-muted hover:text-ink hover:bg-surface border border-line disabled:opacity-40 transition-colors cursor-pointer"
+                    title="Decrease 1 min"
+                    aria-label="Decrease rest break by 1 minute"
+                  >
+                    <Minus className="h-3 w-3" />
+                  </button>
+                  <span className="font-mono font-bold text-sm text-emerald-600 dark:text-emerald-400 min-w-[58px] text-center px-1">
+                    {breakDuration} mins
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => onDurationChange(focusDuration, Math.min(30, breakDuration + 1))}
+                    disabled={breakDuration >= 30}
+                    className="h-6 w-6 rounded-lg flex items-center justify-center text-muted hover:text-ink hover:bg-surface border border-line disabled:opacity-40 transition-colors cursor-pointer"
+                    title="Increase 1 min"
+                    aria-label="Increase rest break by 1 minute"
+                  >
+                    <Plus className="h-3 w-3" />
+                  </button>
+                </div>
               </div>
 
-              <input
-                type="range"
-                min="1"
-                max="30"
-                step="1"
-                value={breakDuration}
-                onChange={(e) => onDurationChange(focusDuration, parseInt(e.target.value, 10))}
-                className="w-full h-2 bg-border rounded-lg appearance-none cursor-pointer accent-emerald-500"
-              />
+              {/* Highlighted Slider Track & Interactive Ball */}
+              <div className="relative pt-1 pb-1">
+                <input
+                  type="range"
+                  min="1"
+                  max="30"
+                  step="1"
+                  value={breakDuration}
+                  onWheel={handleBreakWheel}
+                  onChange={(e) => onDurationChange(focusDuration, parseInt(e.target.value, 10))}
+                  style={{
+                    background: `linear-gradient(to right, #10b981 0%, #10b981 ${breakPct}%, var(--color-line, #E2DFD9) ${breakPct}%, var(--color-line, #E2DFD9) 100%)`,
+                  }}
+                  className="w-full h-2.5 rounded-full appearance-none cursor-grab active:cursor-grabbing outline-none transition-all
+                    [&::-webkit-slider-thumb]:appearance-none
+                    [&::-webkit-slider-thumb]:w-5
+                    [&::-webkit-slider-thumb]:h-5
+                    [&::-webkit-slider-thumb]:rounded-full
+                    [&::-webkit-slider-thumb]:bg-emerald-600
+                    [&::-webkit-slider-thumb]:border-2
+                    [&::-webkit-slider-thumb]:border-white
+                    [&::-webkit-slider-thumb]:shadow-md
+                    [&::-webkit-slider-thumb]:transition-all
+                    [&::-webkit-slider-thumb]:hover:scale-125
+                    [&::-webkit-slider-thumb]:hover:ring-4
+                    [&::-webkit-slider-thumb]:hover:ring-emerald-500/30
+                    [&::-webkit-slider-thumb]:active:scale-125
+                    [&::-webkit-slider-thumb]:active:ring-6
+                    [&::-webkit-slider-thumb]:active:ring-emerald-500/40
+                    [&::-moz-range-thumb]:w-5
+                    [&::-moz-range-thumb]:h-5
+                    [&::-moz-range-thumb]:rounded-full
+                    [&::-moz-range-thumb]:bg-emerald-600
+                    [&::-moz-range-thumb]:border-2
+                    [&::-moz-range-thumb]:border-white
+                    [&::-moz-range-thumb]:shadow-md
+                    [&::-moz-range-thumb]:transition-all
+                    [&::-moz-range-thumb]:hover:scale-125
+                    [&::-moz-range-thumb]:hover:ring-4
+                    [&::-moz-range-thumb]:hover:ring-emerald-500/30
+                    [&::-moz-range-thumb]:active:scale-125
+                    [&::-moz-range-thumb]:active:ring-6
+                    [&::-moz-range-thumb]:active:ring-emerald-500/40"
+                />
+                <div className="flex justify-between items-center text-[10px] font-mono text-muted/70 mt-1 px-0.5">
+                  <span>1m</span>
+                  <span className="text-[9px] uppercase tracking-wider text-muted/50">Slide or scroll ball to adjust</span>
+                  <span>30m</span>
+                </div>
+              </div>
 
               {/* Quick Rest Preset Chips */}
-              <div className="flex flex-wrap gap-1.5 mt-2">
+              <div className="flex flex-wrap gap-1.5 pt-1">
                 {breakPresetChips.map((mins) => (
                   <button
                     key={mins}
                     type="button"
                     onClick={() => onDurationChange(focusDuration, mins)}
-                    className={`rounded-lg px-2.5 py-1 text-[11px] font-mono transition-all ${
+                    className={`rounded-lg px-2.5 py-1 text-[11px] font-mono transition-all cursor-pointer ${
                       breakDuration === mins
-                        ? 'bg-emerald-500 text-white font-bold shadow-xs'
+                        ? 'bg-emerald-600 text-white font-bold shadow-xs scale-105'
                         : 'bg-card text-muted border border-border/60 hover:text-ink hover:border-emerald-500/40'
                     }`}
                   >
