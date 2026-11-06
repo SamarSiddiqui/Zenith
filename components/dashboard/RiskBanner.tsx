@@ -93,34 +93,34 @@ export function RiskBanner({ currentDayIndex }: RiskBannerProps) {
       <motion.section
         layout
         aria-label="Zenith friction radar"
-        className="rounded-3xl border border-clay/35 bg-clay-wash p-6 sm:p-7 shadow-calm"
+        className="rounded-2xl sm:rounded-3xl border border-clay/35 bg-clay-wash p-4 sm:p-6 lg:p-7 shadow-calm"
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.25, ease: [0.23, 1, 0.32, 1] }}
       >
-        <div className="flex flex-col md:flex-row md:items-start gap-4">
-          <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-clay/15 text-clay shadow-xs">
-            <AlertTriangle className="h-5 w-5" strokeWidth={2.2} aria-hidden />
+        <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4">
+          <span className="flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-xl sm:rounded-2xl bg-clay/15 text-clay shadow-xs self-start">
+            <AlertTriangle className="h-4 w-4 sm:h-5 sm:w-5" strokeWidth={2.2} aria-hidden />
           </span>
 
           <div className="min-w-0 flex-1">
             {/* Header Row */}
-            <div className="flex items-center justify-between gap-3 flex-wrap">
-              <div className="flex items-center gap-2">
-                <p className="text-xs font-mono font-bold uppercase tracking-widest text-clay">
-                  Friction Radar · Priority Recovery
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3">
+              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                <p className="text-[11px] sm:text-xs font-mono font-bold uppercase tracking-wider sm:tracking-widest text-clay">
+                  Friction Radar · Recovery
                 </p>
-                <span className="rounded-full bg-clay/15 px-2.5 py-0.5 text-[10px] font-mono font-semibold text-clay">
-                  {atRiskList.length} {atRiskList.length === 1 ? 'habit missed 2x in a row' : 'habits missed 2x in a row'}
+                <span className="rounded-full bg-clay/15 px-2 py-0.5 text-[9px] sm:text-[10px] font-mono font-semibold text-clay">
+                  {atRiskList.length} {atRiskList.length === 1 ? 'habit missed 2x' : 'habits missed 2x'}
                 </span>
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 self-end sm:self-auto">
                 {atRiskList.length > 2 && (
                   <button
                     type="button"
                     onClick={() => setIsModalOpen(true)}
-                    className="text-xs font-mono font-semibold text-clay hover:underline inline-flex items-center gap-1"
+                    className="text-xs font-mono font-semibold text-clay hover:underline inline-flex items-center gap-1 cursor-pointer"
                   >
                     <span>View All ({atRiskList.length})</span>
                     <ArrowRight className="h-3 w-3" />
@@ -129,26 +129,26 @@ export function RiskBanner({ currentDayIndex }: RiskBannerProps) {
                 <button
                   type="button"
                   onClick={() => setDismissed(true)}
-                  className="text-xs font-mono text-muted hover:text-ink transition-colors"
+                  className="text-xs font-mono text-muted hover:text-ink transition-colors cursor-pointer"
                 >
                   Dismiss
                 </button>
               </div>
             </div>
 
-            <p className="mt-1.5 text-sm sm:text-base text-ink leading-relaxed">
+            <p className="mt-1.5 text-xs sm:text-sm lg:text-base text-ink leading-relaxed">
               <strong>High Priority:</strong> You missed these rituals 2 days in a row. Never miss twice — shrink to a 5-minute micro-action or mark completed today to protect your momentum.
             </p>
 
             {/* At-Risk Habits List (Top 2 items) */}
-            <ul className="mt-4 grid gap-2.5">
+            <ul className="mt-3.5 sm:mt-4 grid gap-2.5">
               {displayedList.map(({ habit }) => {
                 const resolutionMsg = resolvedHabitIds[habit.id];
 
                 return (
                   <li
                     key={habit.id}
-                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-clay/25 bg-surface/90 px-4 py-3.5 shadow-xs"
+                    className="flex flex-col md:flex-row md:items-center justify-between gap-3 rounded-2xl border border-clay/25 bg-surface/90 p-3.5 sm:px-4 sm:py-3.5 shadow-xs"
                   >
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
@@ -163,7 +163,7 @@ export function RiskBanner({ currentDayIndex }: RiskBannerProps) {
                     </div>
 
                     {/* Actions: Strictly 2 Options (Shrink to 5 min / Mark Complete) */}
-                    <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
+                    <div className="w-full md:w-auto shrink-0 pt-1 md:pt-0 border-t border-line/40 md:border-0">
                       <AnimatePresence mode="wait">
                         {resolutionMsg ? (
                           <motion.span
@@ -176,24 +176,24 @@ export function RiskBanner({ currentDayIndex }: RiskBannerProps) {
                             <span>Protected for Today</span>
                           </motion.span>
                         ) : (
-                          <div className="flex items-center gap-2">
+                          <div className="grid grid-cols-2 md:flex items-center gap-2 w-full md:w-auto">
                             <button
                               type="button"
                               onClick={() => handleShrink(habit)}
                               title="Execute 5-min micro recovery step"
-                              className="inline-flex items-center gap-1.5 rounded-xl bg-ink px-3 py-1.5 text-xs font-mono font-medium text-white shadow-xs hover:bg-ink/85 transition-colors cursor-pointer"
+                              className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-ink px-2.5 sm:px-3 py-2 sm:py-1.5 text-xs font-mono font-medium text-white shadow-xs hover:bg-ink/85 transition-colors cursor-pointer whitespace-nowrap"
                             >
-                              <Zap className="h-3.5 w-3.5 fill-current text-amber-400" />
-                              <span>Shrink to 5 min</span>
+                              <Zap className="h-3.5 w-3.5 fill-current text-amber-400 shrink-0" />
+                              <span>Shrink 5m</span>
                             </button>
                             <button
                               type="button"
                               onClick={() => handleMarkDone(habit)}
                               title="Mark full routine completed today"
-                              className="inline-flex items-center gap-1.5 rounded-xl border border-line bg-canvas px-3 py-1.5 text-xs font-mono font-medium text-ink hover:border-sage hover:text-sage-deep transition-colors cursor-pointer"
+                              className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-line bg-canvas px-2.5 sm:px-3 py-2 sm:py-1.5 text-xs font-mono font-medium text-ink hover:border-sage hover:text-sage-deep transition-colors cursor-pointer whitespace-nowrap"
                             >
-                              <CheckCircle2 className="h-3.5 w-3.5 text-sage-deep" />
-                              <span>Mark as Completed</span>
+                              <CheckCircle2 className="h-3.5 w-3.5 text-sage-deep shrink-0" />
+                              <span>Completed</span>
                             </button>
                           </div>
                         )}
@@ -209,10 +209,10 @@ export function RiskBanner({ currentDayIndex }: RiskBannerProps) {
               <button
                 type="button"
                 onClick={() => setIsModalOpen(true)}
-                className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-clay/40 bg-surface/60 py-2.5 text-xs font-mono text-clay hover:bg-surface hover:border-clay transition-all"
+                className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-clay/40 bg-surface/60 py-2.5 px-3 text-xs font-mono text-clay hover:bg-surface hover:border-clay transition-all cursor-pointer text-center"
               >
-                <span>+{remainingCount} more habits with 2 consecutive skips · Open Full Radar</span>
-                <ArrowRight className="h-3.5 w-3.5" />
+                <span>+{remainingCount} more at-risk habits · Open Radar</span>
+                <ArrowRight className="h-3.5 w-3.5 shrink-0" />
               </button>
             )}
           </div>
@@ -238,24 +238,24 @@ export function RiskBanner({ currentDayIndex }: RiskBannerProps) {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 16 }}
               transition={{ duration: 0.24, ease: [0.23, 1, 0.32, 1] }}
-              className="relative w-full max-w-2xl overflow-hidden rounded-3xl border border-line bg-surface p-6 sm:p-7 shadow-2xl z-10 max-h-[85vh] flex flex-col"
+              className="relative w-full max-w-2xl overflow-hidden rounded-2xl sm:rounded-3xl border border-line bg-surface p-4 sm:p-6 lg:p-7 shadow-2xl z-10 max-h-[88vh] flex flex-col"
             >
               {/* Modal Header */}
-              <div className="flex items-center justify-between border-b border-line pb-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-clay/15 text-clay border border-clay/20 shadow-xs">
-                    <ShieldAlert className="h-5 w-5" />
+              <div className="flex items-center justify-between border-b border-line pb-3.5 sm:pb-4">
+                <div className="flex items-center gap-2.5 sm:gap-3">
+                  <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl sm:rounded-2xl bg-clay/15 text-clay border border-clay/20 shadow-xs shrink-0">
+                    <ShieldAlert className="h-4 w-4 sm:h-5 sm:w-5" />
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <h3 className="font-serif text-lg font-bold text-ink">
+                      <h3 className="font-serif text-base sm:text-lg font-bold text-ink">
                         Priority Friction Radar
                       </h3>
-                      <span className="rounded-full bg-clay/15 px-2.5 py-0.5 text-[10px] font-mono text-clay font-medium">
+                      <span className="rounded-full bg-clay/15 px-2 py-0.5 text-[9px] sm:text-[10px] font-mono text-clay font-medium">
                         {atRiskList.length} At-Risk
                       </span>
                     </div>
-                    <p className="text-xs text-muted font-mono">
+                    <p className="text-[11px] sm:text-xs text-muted font-mono truncate max-w-[200px] sm:max-w-none">
                       Habits missed 2 days in a row — protect your streak today
                     </p>
                   </div>
@@ -264,21 +264,21 @@ export function RiskBanner({ currentDayIndex }: RiskBannerProps) {
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="rounded-xl border border-line p-2 text-muted hover:border-ink hover:text-ink transition-colors"
+                  className="rounded-xl border border-line p-1.5 sm:p-2 text-muted hover:border-ink hover:text-ink transition-colors cursor-pointer shrink-0"
                 >
                   <X className="h-4 w-4" />
                 </button>
               </div>
 
               {/* Scrollable Habits List */}
-              <div className="flex-1 overflow-y-auto py-4 space-y-3 pr-1">
+              <div className="flex-1 overflow-y-auto py-3.5 sm:py-4 space-y-2.5 sm:space-y-3 pr-1">
                 {atRiskList.map(({ habit }) => {
                   const resolutionMsg = resolvedHabitIds[habit.id];
 
                   return (
                     <div
                       key={habit.id}
-                      className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 rounded-2xl border border-line bg-canvas p-4 transition-all hover:border-clay/40"
+                      className="flex flex-col md:flex-row md:items-center justify-between gap-3 rounded-2xl border border-line bg-canvas p-3 sm:p-4 transition-all hover:border-clay/40"
                     >
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
@@ -287,37 +287,37 @@ export function RiskBanner({ currentDayIndex }: RiskBannerProps) {
                             2 consecutive skips
                           </span>
                         </div>
-                        <div className="mt-1.5 flex items-center gap-2 text-xs text-muted font-mono flex-wrap">
+                        <div className="mt-1 flex items-center gap-2 text-xs text-muted font-mono flex-wrap">
                           <span className="text-sage-deep">⚡ 5m Fallback: {habit.microVersion || '5m micro session'}</span>
                         </div>
                       </div>
 
                       {/* Modal Actions */}
-                      <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
+                      <div className="w-full md:w-auto shrink-0 pt-1 md:pt-0 border-t border-line/40 md:border-0">
                         {resolutionMsg ? (
                           <span className="inline-flex items-center gap-1 text-xs font-mono text-sage-deep font-semibold">
                             <CheckCircle2 className="h-4 w-4" />
                             <span>Protected Today</span>
                           </span>
                         ) : (
-                          <>
+                          <div className="grid grid-cols-2 md:flex items-center gap-2 w-full md:w-auto">
                             <button
                               type="button"
                               onClick={() => handleShrink(habit)}
-                              className="inline-flex items-center gap-1.5 rounded-xl bg-ink px-3.5 py-1.5 text-xs font-mono font-medium text-white shadow-xs hover:bg-ink/85 transition-colors cursor-pointer"
+                              className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-ink px-2.5 sm:px-3.5 py-2 sm:py-1.5 text-xs font-mono font-medium text-white shadow-xs hover:bg-ink/85 transition-colors cursor-pointer whitespace-nowrap"
                             >
-                              <Zap className="h-3 w-3 fill-current text-amber-400" />
-                              <span>Shrink to 5 min</span>
+                              <Zap className="h-3 w-3 fill-current text-amber-400 shrink-0" />
+                              <span>Shrink 5m</span>
                             </button>
                             <button
                               type="button"
                               onClick={() => handleMarkDone(habit)}
-                              className="inline-flex items-center gap-1.5 rounded-xl border border-line bg-surface px-3 py-1.5 text-xs font-mono font-medium text-ink hover:border-sage hover:text-sage-deep transition-colors cursor-pointer"
+                              className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-line bg-surface px-2.5 sm:px-3.5 py-2 sm:py-1.5 text-xs font-mono font-medium text-ink hover:border-sage hover:text-sage-deep transition-colors cursor-pointer whitespace-nowrap"
                             >
-                              <CheckCircle2 className="h-3 w-3 text-sage-deep" />
-                              <span>Mark as Completed</span>
+                              <CheckCircle2 className="h-3 w-3 text-sage-deep shrink-0" />
+                              <span>Completed</span>
                             </button>
-                          </>
+                          </div>
                         )}
                       </div>
                     </div>
@@ -326,14 +326,14 @@ export function RiskBanner({ currentDayIndex }: RiskBannerProps) {
               </div>
 
               {/* Modal Footer */}
-              <div className="border-t border-line pt-4 flex items-center justify-between">
-                <p className="text-xs text-muted font-mono">
+              <div className="border-t border-line pt-3.5 sm:pt-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <p className="text-[11px] sm:text-xs text-muted font-mono">
                   Reinforcing these rituals today stops consecutive drop-offs.
                 </p>
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="rounded-xl bg-sage px-4 py-2 text-xs font-mono font-medium text-white hover:bg-sage-deep transition-colors shadow-xs"
+                  className="w-full sm:w-auto rounded-xl bg-sage px-4 py-2 text-xs font-mono font-medium text-white hover:bg-sage-deep text-center transition-colors shadow-xs cursor-pointer"
                 >
                   Done Reviewing
                 </button>
