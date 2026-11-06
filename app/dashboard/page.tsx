@@ -119,16 +119,16 @@ export default function DashboardPage() {
       />
 
       <div className="flex flex-col gap-8">
-        <header className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+        <header className="flex flex-col gap-4 sm:gap-6 lg:flex-row lg:items-end lg:justify-between">
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.28, ease: [0.23, 1, 0.32, 1] }}
           >
-            <p className="text-sm text-muted">
+            <p className="text-xs sm:text-sm text-muted font-medium">
               {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
             </p>
-            <h1 className="mt-1.5 font-serif text-4xl text-ink md:text-5xl">
+            <h1 className="mt-1 font-serif text-2xl sm:text-3xl md:text-4xl lg:text-5xl text-ink tracking-tight">
               Good day{firstName ? `, ${firstName}` : ''}
             </h1>
           </motion.div>

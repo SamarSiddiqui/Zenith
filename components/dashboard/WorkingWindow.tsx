@@ -87,22 +87,22 @@ export function WorkingWindow() {
   }, [user?.workingWindow, now]);
 
   return (
-    <div className="rounded-2xl border border-line bg-surface px-6 py-5 shadow-calm">
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <div className="flex items-center gap-1.5">
+    <div className="rounded-2xl border border-line bg-surface p-4 sm:p-5 shadow-calm">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-1.5 min-w-0">
           {windowConfig.isWindowPast ? (
-            <Moon className="h-3.5 w-3.5 text-sage" />
+            <Moon className="h-3.5 w-3.5 text-sage shrink-0" />
           ) : (
-            <Clock className="h-3.5 w-3.5 text-sage-deep" />
+            <Clock className="h-3.5 w-3.5 text-sage-deep shrink-0" />
           )}
-          <p className="text-xs uppercase tracking-[0.16em] text-faint font-mono">
+          <p className="text-[11px] sm:text-xs uppercase tracking-[0.12em] sm:tracking-[0.16em] text-faint font-mono truncate">
             Working Window
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 shrink-0">
           <span
-            className={`text-xs font-mono font-medium ${
+            className={`text-[11px] sm:text-xs font-mono font-medium truncate max-w-[150px] sm:max-w-none ${
               windowConfig.isWindowOpen
                 ? 'text-ink font-semibold'
                 : windowConfig.isWindowPast
@@ -115,7 +115,7 @@ export function WorkingWindow() {
           <Link
             href="/settings"
             title="Configure working window in Settings"
-            className="text-faint hover:text-sage-deep transition-colors"
+            className="text-faint hover:text-sage-deep transition-colors p-0.5"
           >
             <ExternalLink className="h-3 w-3" />
           </Link>
@@ -123,7 +123,7 @@ export function WorkingWindow() {
       </div>
 
       {/* Dynamic Real-Time Progress Bar */}
-      <div className="mt-3 h-2 overflow-hidden rounded-full bg-canvas">
+      <div className="mt-2.5 sm:mt-3 h-2 overflow-hidden rounded-full bg-canvas">
         <motion.div
           className={`h-full rounded-full ${
             windowConfig.isWindowPast
@@ -139,10 +139,12 @@ export function WorkingWindow() {
       </div>
 
       {/* Start / Now / End Labels */}
-      <div className="mt-2 flex justify-between text-xs text-muted font-mono">
-        <span>{windowConfig.startTimeFormatted}</span>
-        <span className="font-semibold text-ink">Now · {windowConfig.currentFormatted}</span>
-        <span>{windowConfig.endTimeFormatted}</span>
+      <div className="mt-2 flex justify-between items-center text-[10px] sm:text-xs text-muted font-mono">
+        <span className="shrink-0">{windowConfig.startTimeFormatted}</span>
+        <span className="font-semibold text-ink px-1 text-center truncate">
+          <span className="hidden sm:inline">Now · </span>{windowConfig.currentFormatted}
+        </span>
+        <span className="shrink-0">{windowConfig.endTimeFormatted}</span>
       </div>
     </div>
   );
