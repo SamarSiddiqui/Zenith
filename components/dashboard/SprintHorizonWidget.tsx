@@ -119,39 +119,39 @@ export function SprintHorizonWidget({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.28, ease: [0.23, 1, 0.32, 1] }}
-      className="relative overflow-hidden rounded-3xl border border-line bg-surface p-6 sm:p-7 shadow-calm"
+      className="relative overflow-hidden rounded-2xl sm:rounded-3xl border border-line bg-surface p-4 sm:p-6 lg:p-7 shadow-calm"
     >
       {/* Top Banner Row */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-line/60 pb-4 mb-5">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-sage-wash text-sage-deep border border-sage/30 shadow-xs">
-            <Compass className="h-5 w-5" />
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-line/60 pb-3.5 sm:pb-4 mb-4 sm:mb-5">
+        <div className="flex items-start sm:items-center gap-2.5 sm:gap-3">
+          <div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl sm:rounded-2xl bg-sage-wash text-sage-deep border border-sage/30 shadow-xs shrink-0 mt-0.5 sm:mt-0">
+            <Compass className="h-4 w-4 sm:h-5 sm:w-5" />
           </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="font-mono text-xs font-semibold uppercase tracking-widest text-sage-deep">
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+              <span className="font-mono text-[11px] sm:text-xs font-semibold uppercase tracking-wider sm:tracking-widest text-sage-deep">
                 Sprint {sprintNumber} Active Horizon
               </span>
-              <span className="rounded-full border border-line bg-canvas px-2.5 py-0.5 text-[10px] font-mono text-muted">
+              <span className="rounded-full border border-line bg-canvas px-2 py-0.5 text-[9px] sm:text-[10px] font-mono text-muted truncate max-w-[180px] sm:max-w-none">
                 {dateRangeLabel}
               </span>
             </div>
-            <h3 className="mt-0.5 text-base sm:text-lg font-serif font-bold text-ink">
+            <h3 className="mt-0.5 text-sm sm:text-base lg:text-lg font-serif font-bold text-ink truncate">
               {sprintSession.config.sprintGoal || 'Sustain daily rhythm & momentum'}
             </h3>
           </div>
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
+        <div className="flex items-center gap-1.5 sm:gap-2 w-full sm:w-auto flex-wrap sm:flex-nowrap">
           {isPastMidnightEnd && onCompleteSprint && (
             <button
               type="button"
               onClick={onCompleteSprint}
-              className="flex items-center gap-1.5 rounded-xl bg-sage px-3.5 py-1.5 text-xs font-mono font-medium text-white shadow-xs hover:bg-sage-deep transition-all cursor-pointer"
+              className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 rounded-xl bg-sage px-3 py-1.5 text-xs font-mono font-medium text-white shadow-xs hover:bg-sage-deep transition-all cursor-pointer"
             >
               <Award className="h-3.5 w-3.5" />
-              <span>Wrap Up Sprint</span>
+              <span>Wrap Up</span>
             </button>
           )}
 
@@ -159,7 +159,7 @@ export function SprintHorizonWidget({
             <button
               type="button"
               onClick={onOpenSettings}
-              className="rounded-xl border border-line bg-canvas px-3 py-1.5 text-xs font-mono text-muted hover:border-sage hover:text-sage-deep transition-all cursor-pointer"
+              className="flex-1 sm:flex-initial rounded-xl border border-line bg-canvas px-3 py-1.5 text-xs font-mono text-muted hover:border-sage hover:text-sage-deep text-center transition-all cursor-pointer whitespace-nowrap"
             >
               Configure ({durationDays}d)
             </button>
@@ -167,7 +167,7 @@ export function SprintHorizonWidget({
 
           <Link
             href="/habits"
-            className="flex items-center gap-1 rounded-xl bg-sage-wash border border-sage/30 px-3.5 py-1.5 text-xs font-mono font-medium text-sage-deep hover:bg-sage hover:text-white transition-all shadow-xs"
+            className="flex-1 sm:flex-initial flex items-center justify-center gap-1 rounded-xl bg-sage-wash border border-sage/30 px-3 py-1.5 text-xs font-mono font-medium text-sage-deep hover:bg-sage hover:text-white transition-all shadow-xs whitespace-nowrap"
           >
             <span>Horizon Matrix</span>
             <ArrowUpRight className="h-3.5 w-3.5" />
@@ -177,13 +177,13 @@ export function SprintHorizonWidget({
 
       {/* Horizon Day Progress Bar & Timeline Indicator */}
       <div className="space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-mono">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="font-bold text-ink text-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs font-mono">
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+            <span className="font-bold text-ink text-xs sm:text-sm">
               Day {currentDayNumber} of {durationDays}
             </span>
             <span className="text-faint">·</span>
-            <span className="text-muted flex items-center gap-1.5">
+            <span className="text-muted flex items-center gap-1.5 text-[11px] sm:text-xs">
               <Clock className="h-3.5 w-3.5 text-sage-deep inline-block shrink-0" />
               {isPastMidnightEnd ? (
                 <span className="text-sage-deep font-semibold">
@@ -204,10 +204,10 @@ export function SprintHorizonWidget({
             </span>
           </div>
 
-          <div className="flex items-center gap-3 font-mono">
+          <div className="flex items-center justify-between sm:justify-end gap-2.5 font-mono w-full sm:w-auto pt-1 sm:pt-0 border-t border-line/40 sm:border-0">
             {/* Today % Badge with Info Tooltip */}
             {!isPastMidnightEnd && (
-              <div className="group/tip relative inline-flex items-center gap-1.5 rounded-full border border-sage/30 bg-sage-wash/80 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-sage-deep shadow-xs">
+              <div className="group/tip relative inline-flex items-center gap-1 rounded-full border border-sage/30 bg-sage-wash/80 px-2 py-0.5 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-sage-deep shadow-xs">
                 <span className="h-1.5 w-1.5 rounded-full bg-sage-deep animate-pulse" />
                 <span>Today {todayPercent}%</span>
                 <span
@@ -220,16 +220,16 @@ export function SprintHorizonWidget({
                 </span>
 
                 {/* Tooltip Card */}
-                <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/tip:flex group-focus-within/tip:flex w-52 flex-col rounded-xl border border-line bg-ink/95 text-white p-2.5 text-[11px] font-sans font-normal normal-case leading-snug shadow-xl backdrop-blur-xs z-30 transition-all">
+                <div className="pointer-events-none absolute bottom-full left-0 sm:left-1/2 sm:-translate-x-1/2 mb-2 hidden group-hover/tip:flex group-focus-within/tip:flex w-52 flex-col rounded-xl border border-line bg-ink/95 text-white p-2.5 text-[11px] font-sans font-normal normal-case leading-snug shadow-xl backdrop-blur-xs z-30 transition-all">
                   <p>Progress through today&apos;s focus window ({startTimeFormatted} – {endTimeFormatted}).</p>
-                  <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-ink/95" />
+                  <div className="absolute top-full left-4 sm:left-1/2 sm:-translate-x-1/2 border-4 border-transparent border-t-ink/95" />
                 </div>
               </div>
             )}
 
             {/* Sprint Elapsed Badge with Info Tooltip */}
             <div className="group/tip relative inline-flex items-center gap-1">
-              <span className="font-bold text-sage-deep text-xs">{progressPercent}% elapsed</span>
+              <span className="font-bold text-sage-deep text-[11px] sm:text-xs">{progressPercent}% elapsed</span>
               <span
                 tabIndex={0}
                 role="button"
@@ -240,7 +240,7 @@ export function SprintHorizonWidget({
               </span>
 
               {/* Tooltip Card */}
-              <div className="pointer-events-none absolute bottom-full right-0 mb-2 hidden group-hover/tip:flex group-focus-within/tip:flex w-56 flex-col rounded-xl border border-line bg-ink/95 text-white p-2.5 text-[11px] font-sans font-normal normal-case leading-snug shadow-xl backdrop-blur-xs z-30 transition-all">
+              <div className="pointer-events-none absolute bottom-full right-0 mb-2 hidden group-hover/tip:flex group-focus-within/tip:flex w-52 sm:w-56 flex-col rounded-xl border border-line bg-ink/95 text-white p-2.5 text-[11px] font-sans font-normal normal-case leading-snug shadow-xl backdrop-blur-xs z-30 transition-all">
                 <p>Continuous time elapsed across your full {durationDays}-day sprint horizon.</p>
                 <div className="absolute top-full right-2.5 border-4 border-transparent border-t-ink/95" />
               </div>
@@ -257,11 +257,11 @@ export function SprintHorizonWidget({
             return (
               <div
                 key={i}
-                className="relative flex-1 group"
+                className="relative flex-1 group min-w-[8px]"
                 title={`Day ${i + 1} of ${durationDays}${isToday ? ` (Today: ${todayPercent}%)` : isCompletedDay ? ' (Completed)' : ''}`}
               >
                 {/* Segment Bar Container */}
-                <div className="h-2.5 w-full rounded-full bg-canvas border border-line overflow-hidden">
+                <div className="h-2 sm:h-2.5 w-full rounded-full bg-canvas border border-line overflow-hidden">
                   {isCompletedDay || isPastMidnightEnd ? (
                     <motion.div
                       className="h-full w-full bg-sage"
@@ -287,14 +287,14 @@ export function SprintHorizonWidget({
         </div>
 
         {/* Sub-track horizon label indicators */}
-        <div className="flex items-center justify-between text-[10px] font-mono text-faint px-0.5">
-          <span>Day 1</span>
-          <span className="text-center text-muted font-medium">
+        <div className="flex items-center justify-between text-[9px] sm:text-[10px] font-mono text-faint px-0.5">
+          <span className="shrink-0">Day 1</span>
+          <span className="text-center text-muted font-medium truncate px-2">
             {isPastMidnightEnd
-              ? 'Sprint Horizon Completed'
+              ? 'Sprint Concluded'
               : `Day ${currentDayNumber} in progress (${todayPercent}% today)`}
           </span>
-          <span>Day {durationDays}</span>
+          <span className="shrink-0">Day {durationDays}</span>
         </div>
       </div>
     </motion.div>
