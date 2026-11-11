@@ -19,9 +19,12 @@ import {
   Lightbulb,
   Bug,
   MessageSquarePlus,
+  BookOpen,
 } from 'lucide-react';
 import { Layout } from '../../components/Layout';
 import { FeedbackModal, FeedbackType } from '../../components/feedback/FeedbackModal';
+import { useFirstTimeStory } from '../../hooks/useFirstTimeStory';
+import { StoryOnboardingOverlay } from '../../components/onboarding/StoryOnboardingOverlay';
 import { useAuth } from '../../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -37,6 +40,16 @@ const DAYS_OF_WEEK = [
 
 export default function SettingsPage() {
   const { user, updateProfile } = useAuth();
+  const {
+    isReplaying,
+    isSaving: isSavingStory,
+    currentChapter,
+    setCurrentChapter,
+    completeStory,
+    skipStory,
+    replayStory,
+    closeReplay,
+  } = useFirstTimeStory();
 
   const [name, setName] = useState('');
   const [startTime, setStartTime] = useState('09:00');
@@ -655,6 +668,32 @@ export default function SettingsPage() {
               </div>
             </section>
 
+            {/* Zenith Welcome Story Replay */}
+            <section className="bg-surface p-6 rounded-3xl border border-line shadow-calm">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-sage-wash text-sage-deep shrink-0">
+                    <BookOpen className="w-4 h-4 stroke-[1.75]" />
+                  </div>
+                  <div>
+                    <h2 className="font-serif text-lg text-ink">Zenith Philosophy &amp; Story</h2>
+                    <p className="text-xs text-muted">
+                      Re-watch the interactive 5-chapter story on Zero-Guilt Momentum, Working Windows, and Micro-Fallbacks.
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={replayStory}
+                  className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-medium text-sage-deep bg-sage-wash/75 hover:bg-sage-wash border border-sage/30 transition-colors self-start sm:self-auto shrink-0 cursor-pointer"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Replay Story Tour</span>
+                </button>
+              </div>
+            </section>
+
             {/* Save Action */}
             <div className="flex justify-end pt-2">
               <button
@@ -684,6 +723,20 @@ export default function SettingsPage() {
         isOpen={isFeedbackModalOpen}
         onClose={() => setIsFeedbackModalOpen(false)}
         defaultType={feedbackDefaultType}
+      />
+
+      {/* On-Demand Story Tour Replay */}
+      <StoryOnboardingOverlay
+        isOpen={isReplaying}
+        currentChapter={currentChapter}
+        onChapterChange={setCurrentChapter}
+        onComplete={completeStory}
+        onSkip={skipStory}
+        isReplaying={isReplaying}
+        onCloseReplay={closeReplay}
+        isSaving={isSavingStory}
+        userName={user?.fullName}
+        initialWorkingWindow={user?.workingWindow}
       />
     </Layout>
   );
