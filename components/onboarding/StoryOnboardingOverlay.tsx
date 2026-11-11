@@ -8,14 +8,14 @@ import {
   ArrowRight,
   Sparkles,
   X,
-  Compass,
   Loader2,
 } from 'lucide-react';
-import type { ZenithUserProfile } from '../../types/auth';
+import type { ZenithUserProfile, WorkingWindow } from '../../types/auth';
 import { ChapterPhilosophy } from './chapters/ChapterPhilosophy';
 import { ChapterWorkingWindow } from './chapters/ChapterWorkingWindow';
 import { ChapterMicroFallback } from './chapters/ChapterMicroFallback';
 import { ChapterEcosystem } from './chapters/ChapterEcosystem';
+import { ChapterLaunchpad } from './chapters/ChapterLaunchpad';
 
 export interface StoryChapterMeta {
   id: string;
@@ -78,7 +78,15 @@ export interface StoryOnboardingOverlayProps {
   onCloseReplay?: () => void;
   isSaving?: boolean;
   userName?: string;
+  initialWorkingWindow?: WorkingWindow;
 }
+
+const DEFAULT_DRAFT_WINDOW: WorkingWindow = {
+  startTime: '09:00',
+  endTime: '19:00',
+  timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
+  activeDays: [1, 2, 3, 4, 5],
+};
 
 const slideVariants = {
   enter: (direction: number) => ({
@@ -108,9 +116,14 @@ export function StoryOnboardingOverlay({
   onCloseReplay,
   isSaving = false,
   userName,
+  initialWorkingWindow,
 }: StoryOnboardingOverlayProps) {
   const [mounted, setMounted] = useState(false);
   const [direction, setDirection] = useState<number>(1);
+  const [draftWindow, setDraftWindow] = useState<WorkingWindow>(
+    initialWorkingWindow || DEFAULT_DRAFT_WINDOW
+  );
+  const [windowEdited, setWindowEdited] = useState(false);
   const touchStartXRef = useRef<number | null>(null);
 
   const totalChapters = STORY_CHAPTERS.length;
@@ -122,6 +135,13 @@ export function StoryOnboardingOverlay({
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (isOpen && initialWorkingWindow) {
+      setDraftWindow(initialWorkingWindow);
+      setWindowEdited(false);
+    }
+  }, [isOpen, initialWorkingWindow]);
 
   // Lock background scroll while story overlay is active
   useEffect(() => {
@@ -144,14 +164,23 @@ export function StoryOnboardingOverlay({
     [isSaving, totalChapters, safeChapterIndex, onChapterChange]
   );
 
+  const handleWindowChange = useCallback((nextWindow: WorkingWindow) => {
+    setDraftWindow(nextWindow);
+    setWindowEdited(true);
+  }, []);
+
   const handleNext = useCallback(() => {
     if (isSaving) return;
     if (isLastChapter) {
-      onComplete();
+      if (!isReplaying || windowEdited) {
+        onComplete({ workingWindow: draftWindow });
+      } else {
+        onComplete();
+      }
     } else {
       goToChapter(safeChapterIndex + 1);
     }
-  }, [isSaving, isLastChapter, onComplete, goToChapter, safeChapterIndex]);
+  }, [isSaving, isLastChapter, isReplaying, windowEdited, onComplete, draftWindow, goToChapter, safeChapterIndex]);
 
   const handlePrev = useCallback(() => {
     if (isSaving || safeChapterIndex === 0) return;
@@ -216,7 +245,7 @@ export function StoryOnboardingOverlay({
 
   if (!mounted || !isOpen) return null;
 
-  // Modular stage preview renderer (Steps 3-5 will replace each case with dedicated animated components)
+  // Modular stage renderer for all 5 onboarding chapters
   const renderChapterStage = (index: number) => {
     switch (index) {
       case 0:
@@ -230,17 +259,12 @@ export function StoryOnboardingOverlay({
       case 4:
       default:
         return (
-          <div className="flex flex-col items-center justify-center rounded-2xl border border-sage/30 bg-sage-wash/40 p-6 sm:p-8 text-center">
-            <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-surface text-sage-deep border border-sage/30 shadow-xs">
-              <Compass className="h-6 w-6" />
-            </div>
-            <p className="text-xs font-mono uppercase tracking-widest text-sage-deep">
-              Ready to Begin
-            </p>
-            <p className="mt-2 max-w-sm text-xs sm:text-sm text-muted leading-relaxed">
-              Launchpad controls coming in Step 5: optional quick window tune &amp; enter dashboard.
-            </p>
-          </div>
+          <ChapterLaunchpad
+            firstName={firstName}
+            workingWindow={draftWindow}
+            onWindowChange={handleWindowChange}
+            isReplaying={isReplaying}
+          />
         );
     }
   };

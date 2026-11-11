@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
 import { Layout } from '../../components/Layout';
 import { WorkingWindow } from '../../components/dashboard/WorkingWindow';
@@ -17,7 +17,8 @@ import { useAuth } from '../../context/AuthContext';
 import { useHabits } from '../../hooks/useHabits';
 import { useSprint } from '../../hooks/useSprint';
 import { useYesterdayCheckin } from '../../hooks/useYesterdayCheckin';
-import { OnboardingModal } from '../../components/auth/OnboardingModal';
+import { useFirstTimeStory } from '../../hooks/useFirstTimeStory';
+import { StoryOnboardingOverlay } from '../../components/onboarding/StoryOnboardingOverlay';
 import { YesterdayCheckinModal } from '../../components/habits/YesterdayCheckinModal';
 import { AlertCircle } from 'lucide-react';
 
@@ -49,13 +50,16 @@ export default function DashboardPage() {
     resolveYesterdayCheckin,
   } = useYesterdayCheckin(habits, refreshHabits);
 
-  const [showOnboarding, setShowOnboarding] = useState(false);
-
-  useEffect(() => {
-    if (user && !user.onboarded) {
-      setShowOnboarding(true);
-    }
-  }, [user]);
+  const {
+    shouldShowStory,
+    isReplaying,
+    isSaving: isSavingStory,
+    currentChapter,
+    setCurrentChapter,
+    completeStory,
+    skipStory,
+    closeReplay,
+  } = useFirstTimeStory();
 
   const firstName = user?.fullName?.trim() ? user.fullName.trim().split(' ')[0] : '';
 
@@ -86,10 +90,18 @@ export default function DashboardPage() {
 
   return (
     <Layout>
-      {/* Onboarding Modal for New Users */}
-      <OnboardingModal
-        isOpen={showOnboarding}
-        onComplete={() => setShowOnboarding(false)}
+      {/* First-Time Animated Storytelling Onboarding */}
+      <StoryOnboardingOverlay
+        isOpen={shouldShowStory}
+        currentChapter={currentChapter}
+        onChapterChange={setCurrentChapter}
+        onComplete={completeStory}
+        onSkip={skipStory}
+        isReplaying={isReplaying}
+        onCloseReplay={closeReplay}
+        isSaving={isSavingStory}
+        userName={user?.fullName}
+        initialWorkingWindow={user?.workingWindow}
       />
 
       {/* Sprint Modals */}
@@ -310,7 +322,7 @@ export default function DashboardPage() {
 
         {/* Morning Yesterday Reconciliation Modal */}
         <YesterdayCheckinModal
-          isOpen={isYesterdayCheckinOpen}
+          isOpen={isYesterdayCheckinOpen && !shouldShowStory}
           yesterdayLabel={yesterdayLabel}
           unloggedHabits={unloggedYesterdayHabits}
           onResolve={resolveYesterdayCheckin}
