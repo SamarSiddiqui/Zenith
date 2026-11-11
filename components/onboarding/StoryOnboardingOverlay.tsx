@@ -9,13 +9,13 @@ import {
   Sparkles,
   X,
   Compass,
-  Clock,
   Zap,
   TreePine,
-  ShieldCheck,
   Loader2,
 } from 'lucide-react';
 import type { ZenithUserProfile } from '../../types/auth';
+import { ChapterPhilosophy } from './chapters/ChapterPhilosophy';
+import { ChapterWorkingWindow } from './chapters/ChapterWorkingWindow';
 
 export interface StoryChapterMeta {
   id: string;
@@ -220,34 +220,9 @@ export function StoryOnboardingOverlay({
   const renderChapterStage = (index: number) => {
     switch (index) {
       case 0:
-        return (
-          <div className="flex flex-col items-center justify-center rounded-2xl border border-line bg-canvas/80 p-6 sm:p-8 text-center">
-            <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-sage-wash text-sage-deep border border-sage/30">
-              <ShieldCheck className="h-6 w-6" />
-            </div>
-            <p className="text-xs font-mono uppercase tracking-widest text-sage-deep">
-              Zero-Guilt Momentum
-            </p>
-            <p className="mt-2 max-w-sm text-xs sm:text-sm text-muted leading-relaxed">
-              {firstName ? `Welcome, ${firstName}. ` : ''}
-              Visual scene coming in Step 3: brittle streak vs. resilient recovery wave.
-            </p>
-          </div>
-        );
+        return <ChapterPhilosophy firstName={firstName} />;
       case 1:
-        return (
-          <div className="flex flex-col items-center justify-center rounded-2xl border border-line bg-canvas/80 p-6 sm:p-8 text-center">
-            <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600 border border-amber-500/25">
-              <Clock className="h-6 w-6" />
-            </div>
-            <p className="text-xs font-mono uppercase tracking-widest text-amber-700">
-              Daily Working Window
-            </p>
-            <p className="mt-2 max-w-sm text-xs sm:text-sm text-muted leading-relaxed">
-              Visual scene coming in Step 3: interactive sunrise-to-sunset energy arc.
-            </p>
-          </div>
-        );
+        return <ChapterWorkingWindow />;
       case 2:
         return (
           <div className="flex flex-col items-center justify-center rounded-2xl border border-line bg-canvas/80 p-6 sm:p-8 text-center">
@@ -339,9 +314,8 @@ export function StoryOnboardingOverlay({
                 >
                   <div className="h-1.5 w-full overflow-hidden rounded-full bg-line/80">
                     <motion.div
-                      className={`h-full rounded-full transition-colors ${
-                        isCurrent ? 'bg-sage-deep' : isCompleted ? 'bg-sage' : 'bg-transparent'
-                      }`}
+                      className={`h-full rounded-full transition-colors ${isCurrent ? 'bg-sage-deep' : isCompleted ? 'bg-sage' : 'bg-transparent'
+                        }`}
                       initial={false}
                       animate={{
                         width: isCompleted || isCurrent ? '100%' : '0%',
