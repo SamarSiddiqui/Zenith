@@ -31,7 +31,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const configured = isSupabaseConfigured();
 
   // Helper to fetch/format profile
-  const fetchProfile = useCallback(async (userId: string, email: string, fallbackName?: string) => {
+  const fetchProfile = useCallback(async (
+    userId: string,
+    email: string,
+    fallbackName?: string,
+    userMetadata?: Record<string, unknown>
+  ) => {
     if (!supabase) return null;
 
     try {
@@ -52,7 +57,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           fullName: profile.full_name || fallbackName || '',
           avatarUrl: profile.avatar_url,
           workingWindow: profile.working_window || DEFAULT_WORKING_WINDOW,
-          onboarded: profile.onboarded ?? false,
+          onboarded: profile.onboarded ?? Boolean(userMetadata?.story_completed),
           themePreference: profile.theme_preference,
           mindfulReminders: profile.mindful_reminders,
           telegramChatId: profile.telegram_chat_id,
@@ -65,12 +70,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } as ZenithUserProfile;
       }
 
+      // Fallback if profiles row does not yet exist: preserve birth state unless metadata marks story completed
       return {
         id: userId,
         email: email,
         fullName: fallbackName || '',
         workingWindow: DEFAULT_WORKING_WINDOW,
-        onboarded: false,
+        onboarded: Boolean(userMetadata?.story_completed),
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       } as ZenithUserProfile;
@@ -98,7 +104,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const profile = await fetchProfile(
             session.user.id,
             session.user.email || '',
-            session.user.user_metadata?.full_name
+            session.user.user_metadata?.full_name,
+            session.user.user_metadata
           );
           if (isMounted) {
             setUser(profile);
@@ -124,7 +131,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const profile = await fetchProfile(
             session.user.id,
             session.user.email || '',
-            session.user.user_metadata?.full_name
+            session.user.user_metadata?.full_name,
+            session.user.user_metadata
           );
           if (isMounted) {
             setUser(profile);
@@ -177,7 +185,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const profile = await fetchProfile(
           data.user.id,
           data.user.email || email,
-          data.user.user_metadata?.full_name
+          data.user.user_metadata?.full_name,
+          data.user.user_metadata
         );
         setUser(profile);
       }
@@ -211,6 +220,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         options: {
           data: {
             full_name: fullName,
+            story_completed: false,
           },
         },
       });
@@ -222,7 +232,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       if (data.user) {
-        const profile = await fetchProfile(data.user.id, email, fullName);
+        // Ensure birth state profile row exists when an active session is created immediately on signup
+        if (data.session) {
+          await supabase
+            .from('profiles')
+            .upsert(
+              {
+                id: data.user.id,
+                email,
+                full_name: fullName,
+                working_window: DEFAULT_WORKING_WINDOW,
+                onboarded: false,
+              },
+              { onConflict: 'id', ignoreDuplicates: true }
+            );
+        }
+
+        const profile = await fetchProfile(
+          data.user.id,
+          email,
+          fullName,
+          data.user.user_metadata
+        );
         setUser(profile);
       }
 
@@ -245,24 +276,37 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     try {
+      const nextOnboarded = updates.onboarded !== undefined ? updates.onboarded : user.onboarded;
+
       const { error: dbError } = await supabase
         .from('profiles')
-        .update({
-          full_name: updates.fullName !== undefined ? updates.fullName : user.fullName,
-          avatar_url: updates.avatarUrl !== undefined ? updates.avatarUrl : user.avatarUrl,
-          working_window: updates.workingWindow !== undefined ? updates.workingWindow : user.workingWindow,
-          onboarded: updates.onboarded !== undefined ? updates.onboarded : user.onboarded,
-          theme_preference: updates.themePreference !== undefined ? updates.themePreference : user.themePreference,
-          mindful_reminders: updates.mindfulReminders !== undefined ? updates.mindfulReminders : user.mindfulReminders,
-          telegram_chat_id: updates.telegramChatId !== undefined ? updates.telegramChatId : user.telegramChatId,
-          telegram_username: updates.telegramUsername !== undefined ? updates.telegramUsername : user.telegramUsername,
-          telegram_link_token: updates.telegramLinkToken !== undefined ? updates.telegramLinkToken : user.telegramLinkToken,
-          telegram_reminders_enabled: updates.telegramRemindersEnabled !== undefined ? updates.telegramRemindersEnabled : user.telegramRemindersEnabled,
-          telegram_eod_time: updates.telegramEodTime !== undefined ? updates.telegramEodTime : user.telegramEodTime,
-        })
-        .eq('id', user.id);
+        .upsert(
+          {
+            id: user.id,
+            email: user.email,
+            full_name: updates.fullName !== undefined ? updates.fullName : user.fullName,
+            avatar_url: updates.avatarUrl !== undefined ? updates.avatarUrl : user.avatarUrl,
+            working_window: updates.workingWindow !== undefined ? updates.workingWindow : user.workingWindow,
+            onboarded: nextOnboarded,
+            theme_preference: updates.themePreference !== undefined ? updates.themePreference : user.themePreference,
+            mindful_reminders: updates.mindfulReminders !== undefined ? updates.mindfulReminders : user.mindfulReminders,
+            telegram_chat_id: updates.telegramChatId !== undefined ? updates.telegramChatId : user.telegramChatId,
+            telegram_username: updates.telegramUsername !== undefined ? updates.telegramUsername : user.telegramUsername,
+            telegram_link_token: updates.telegramLinkToken !== undefined ? updates.telegramLinkToken : user.telegramLinkToken,
+            telegram_reminders_enabled: updates.telegramRemindersEnabled !== undefined ? updates.telegramRemindersEnabled : user.telegramRemindersEnabled,
+            telegram_eod_time: updates.telegramEodTime !== undefined ? updates.telegramEodTime : user.telegramEodTime,
+          },
+          { onConflict: 'id' }
+        );
 
       if (dbError) throw dbError;
+
+      // Mirror onboarding completion into auth user_metadata as a resilient backup
+      if (updates.onboarded !== undefined) {
+        supabase.auth
+          .updateUser({ data: { story_completed: nextOnboarded } })
+          .catch((metaErr: unknown) => console.warn('Auth metadata sync skipped:', metaErr));
+      }
 
       setUser((prev) => (prev ? { ...prev, ...updates, updatedAt: new Date().toISOString() } : null));
       return { success: true };

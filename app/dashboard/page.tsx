@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
 import { Layout } from '../../components/Layout';
 import { WorkingWindow } from '../../components/dashboard/WorkingWindow';
@@ -17,11 +17,12 @@ import { useAuth } from '../../context/AuthContext';
 import { useHabits } from '../../hooks/useHabits';
 import { useSprint } from '../../hooks/useSprint';
 import { useYesterdayCheckin } from '../../hooks/useYesterdayCheckin';
-import { OnboardingModal } from '../../components/auth/OnboardingModal';
+import { useFirstTimeStory } from '../../hooks/useFirstTimeStory';
+import { StoryOnboardingOverlay } from '../../components/onboarding/StoryOnboardingOverlay';
 import { YesterdayCheckinModal } from '../../components/habits/YesterdayCheckinModal';
 import { AlertCircle } from 'lucide-react';
 
-const card = 'flex flex-col h-full rounded-2xl border border-line bg-surface p-5 shadow-calm justify-between';
+const card = 'flex flex-col h-full rounded-2xl border border-line bg-surface p-3.5 sm:p-5 shadow-calm justify-between';
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -49,13 +50,16 @@ export default function DashboardPage() {
     resolveYesterdayCheckin,
   } = useYesterdayCheckin(habits, refreshHabits);
 
-  const [showOnboarding, setShowOnboarding] = useState(false);
-
-  useEffect(() => {
-    if (user && !user.onboarded) {
-      setShowOnboarding(true);
-    }
-  }, [user]);
+  const {
+    shouldShowStory,
+    isReplaying,
+    isSaving: isSavingStory,
+    currentChapter,
+    setCurrentChapter,
+    completeStory,
+    skipStory,
+    closeReplay,
+  } = useFirstTimeStory();
 
   const firstName = user?.fullName?.trim() ? user.fullName.trim().split(' ')[0] : '';
 
@@ -86,10 +90,18 @@ export default function DashboardPage() {
 
   return (
     <Layout>
-      {/* Onboarding Modal for New Users */}
-      <OnboardingModal
-        isOpen={showOnboarding}
-        onComplete={() => setShowOnboarding(false)}
+      {/* First-Time Animated Storytelling Onboarding */}
+      <StoryOnboardingOverlay
+        isOpen={shouldShowStory}
+        currentChapter={currentChapter}
+        onChapterChange={setCurrentChapter}
+        onComplete={completeStory}
+        onSkip={skipStory}
+        isReplaying={isReplaying}
+        onCloseReplay={closeReplay}
+        isSaving={isSavingStory}
+        userName={user?.fullName}
+        initialWorkingWindow={user?.workingWindow}
       />
 
       {/* Sprint Modals */}
@@ -119,16 +131,16 @@ export default function DashboardPage() {
       />
 
       <div className="flex flex-col gap-8">
-        <header className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+        <header className="flex flex-col gap-4 sm:gap-6 lg:flex-row lg:items-end lg:justify-between">
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.28, ease: [0.23, 1, 0.32, 1] }}
           >
-            <p className="text-sm text-muted">
+            <p className="text-xs sm:text-sm text-muted font-medium">
               {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
             </p>
-            <h1 className="mt-1.5 font-serif text-4xl text-ink md:text-5xl">
+            <h1 className="mt-1 font-serif text-2xl sm:text-3xl md:text-4xl lg:text-5xl text-ink tracking-tight">
               Good day{firstName ? `, ${firstName}` : ''}
             </h1>
           </motion.div>
@@ -167,10 +179,10 @@ export default function DashboardPage() {
 
         <RiskBanner currentDayIndex={currentDayIndex} />
 
-        {/* 4 Equal-Dimension Key Metric Cards */}
+        {/* 4 Equal-Dimension Key Metric Cards (2x2 on Mobile, 4-col on Desktop) */}
         <motion.section
           aria-label="Key metrics"
-          className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 items-stretch"
+          className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3 items-stretch"
           initial="hidden"
           animate="visible"
           variants={{ visible: { transition: { staggerChildren: 0.05 } } }}
@@ -179,18 +191,20 @@ export default function DashboardPage() {
             // Card 1: Active Rituals
             <div key="total" className={card}>
               <div>
-                <p className="text-xs font-mono uppercase tracking-[0.14em] text-faint">Active Rituals</p>
-                <p className="mt-2.5 font-serif text-3xl text-ink">
+                <p className="text-[10px] sm:text-xs font-mono uppercase tracking-[0.1em] sm:tracking-[0.14em] text-faint truncate">
+                  Active Rituals
+                </p>
+                <p className="mt-1.5 sm:mt-2.5 font-serif text-2xl sm:text-3xl text-ink leading-tight">
                   <CountUp value={metrics.total} />
                 </p>
               </div>
-              <div className="mt-4 pt-2 border-t border-line/40">
-                <div className="flex items-center gap-1.5">
+              <div className="mt-3 sm:mt-4 pt-1.5 sm:pt-2 border-t border-line/40">
+                <div className="flex items-center gap-1 sm:gap-1.5">
                   {metrics.total > 0 ? (
                     Array.from({ length: Math.min(metrics.total, 8) }).map((_, i) => (
                       <motion.span
                         key={i}
-                        className="h-1.5 flex-1 rounded-full bg-sage/70"
+                        className="h-1 sm:h-1.5 flex-1 rounded-full bg-sage/70 min-w-[3px]"
                         initial={{ scaleX: 0 }}
                         animate={{ scaleX: 1 }}
                         style={{ transformOrigin: 'left' }}
@@ -198,11 +212,11 @@ export default function DashboardPage() {
                       />
                     ))
                   ) : (
-                    <span className="h-1.5 w-full rounded-full bg-canvas border border-line" />
+                    <span className="h-1 sm:h-1.5 w-full rounded-full bg-canvas border border-line" />
                   )}
                 </div>
-                <p className="mt-2 text-xs text-muted truncate">
-                  {metrics.total > 0 ? `${metrics.total} rituals anchored` : 'No rituals anchored'}
+                <p className="mt-1.5 sm:mt-2 text-[10px] sm:text-xs text-muted truncate">
+                  {metrics.total > 0 ? `${metrics.total} anchored` : 'None anchored'}
                 </p>
               </div>
             </div>,
@@ -210,13 +224,15 @@ export default function DashboardPage() {
             // Card 2: Today's Completion
             <div key="completion" className={card}>
               <div>
-                <p className="text-xs font-mono uppercase tracking-[0.14em] text-faint">Today&apos;s Completion</p>
-                <p className="mt-2.5 font-serif text-3xl text-ink">
+                <p className="text-[10px] sm:text-xs font-mono uppercase tracking-[0.1em] sm:tracking-[0.14em] text-faint truncate">
+                  Today&apos;s Done
+                </p>
+                <p className="mt-1.5 sm:mt-2.5 font-serif text-2xl sm:text-3xl text-ink leading-tight">
                   {completedToday}/{metrics.total}
                 </p>
               </div>
-              <div className="mt-4 pt-2 border-t border-line/40">
-                <div className="h-1.5 overflow-hidden rounded-full bg-canvas border border-line/50">
+              <div className="mt-3 sm:mt-4 pt-1.5 sm:pt-2 border-t border-line/40">
+                <div className="h-1 sm:h-1.5 overflow-hidden rounded-full bg-canvas border border-line/50">
                   <motion.div
                     className="h-full rounded-full bg-sage"
                     initial={{ width: 0 }}
@@ -224,8 +240,8 @@ export default function DashboardPage() {
                     transition={{ duration: 0.6, ease: [0.23, 1, 0.32, 1] }}
                   />
                 </div>
-                <p className="mt-2 text-xs text-muted truncate">
-                  <CountUp value={todayCompletionRate} suffix="%" /> logged today
+                <p className="mt-1.5 sm:mt-2 text-[10px] sm:text-xs text-muted truncate">
+                  <CountUp value={todayCompletionRate} suffix="%" /> logged
                 </p>
               </div>
             </div>,
@@ -233,16 +249,20 @@ export default function DashboardPage() {
             // Card 3: Average Habit Health
             <div key="health" className={card}>
               <div>
-                <div className="flex items-center justify-between">
-                  <p className="text-xs font-mono uppercase tracking-[0.14em] text-faint">Habit Health</p>
-                  <span className={`text-[11px] font-mono font-medium ${healthColor}`}>{healthLabel}</span>
+                <div className="flex items-center justify-between gap-1">
+                  <p className="text-[10px] sm:text-xs font-mono uppercase tracking-[0.1em] sm:tracking-[0.14em] text-faint truncate">
+                    Health
+                  </p>
+                  <span className={`text-[9px] sm:text-[11px] font-mono font-medium shrink-0 ${healthColor}`}>
+                    {healthLabel}
+                  </span>
                 </div>
-                <p className="mt-2.5 font-serif text-3xl text-ink">
+                <p className="mt-1.5 sm:mt-2.5 font-serif text-2xl sm:text-3xl text-ink leading-tight">
                   <CountUp value={metrics.averageHealth} suffix="%" />
                 </p>
               </div>
-              <div className="mt-4 pt-2 border-t border-line/40">
-                <div className="h-1.5 overflow-hidden rounded-full bg-canvas border border-line/50">
+              <div className="mt-3 sm:mt-4 pt-1.5 sm:pt-2 border-t border-line/40">
+                <div className="h-1 sm:h-1.5 overflow-hidden rounded-full bg-canvas border border-line/50">
                   <motion.div
                     className={`h-full rounded-full ${metrics.averageHealth >= 65 ? 'bg-sage' : 'bg-clay'}`}
                     initial={{ width: 0 }}
@@ -250,8 +270,8 @@ export default function DashboardPage() {
                     transition={{ duration: 0.6, ease: [0.23, 1, 0.32, 1] }}
                   />
                 </div>
-                <p className="mt-2 text-xs text-muted truncate">
-                  {healthLabel} circadian rhythm
+                <p className="mt-1.5 sm:mt-2 text-[10px] sm:text-xs text-muted truncate">
+                  {healthLabel} rhythm
                 </p>
               </div>
             </div>,
@@ -259,13 +279,15 @@ export default function DashboardPage() {
             // Card 4: Sprint Show-up Rate
             <div key="consistency" className={card}>
               <div>
-                <p className="text-xs font-mono uppercase tracking-[0.14em] text-faint">Sprint Show-up</p>
-                <p className="mt-2.5 font-serif text-3xl text-ink">
+                <p className="text-[10px] sm:text-xs font-mono uppercase tracking-[0.1em] sm:tracking-[0.14em] text-faint truncate">
+                  Show-up
+                </p>
+                <p className="mt-1.5 sm:mt-2.5 font-serif text-2xl sm:text-3xl text-ink leading-tight">
                   <CountUp value={analytics ? analytics.overallShowUpRate : 100} suffix="%" />
                 </p>
               </div>
-              <div className="mt-4 pt-2 border-t border-line/40">
-                <div className="h-1.5 overflow-hidden rounded-full bg-canvas border border-line/50">
+              <div className="mt-3 sm:mt-4 pt-1.5 sm:pt-2 border-t border-line/40">
+                <div className="h-1 sm:h-1.5 overflow-hidden rounded-full bg-canvas border border-line/50">
                   <motion.div
                     className="h-full rounded-full bg-sage-deep"
                     initial={{ width: 0 }}
@@ -273,10 +295,10 @@ export default function DashboardPage() {
                     transition={{ duration: 0.6, ease: [0.23, 1, 0.32, 1] }}
                   />
                 </div>
-                <p className="mt-2 text-xs text-muted truncate">
+                <p className="mt-1.5 sm:mt-2 text-[10px] sm:text-xs text-muted truncate">
                   {analytics
-                    ? `${analytics.totalCompletedEvents}/${analytics.totalTargetEvents} rituals sustained`
-                    : 'Sustaining momentum'}
+                    ? `${analytics.totalCompletedEvents}/${analytics.totalTargetEvents} sustained`
+                    : 'Sustained'}
                 </p>
               </div>
             </div>
@@ -286,9 +308,9 @@ export default function DashboardPage() {
               variants={{ hidden: { opacity: 0, y: 12 }, visible: { opacity: 1, y: 0 } }}
               transition={{ duration: 0.26, ease: [0.23, 1, 0.32, 1] }}
               whileHover={{ y: -3 }}
-              className="flex h-full"
+              className="flex h-full min-w-0"
             >
-              <div className="w-full h-full">{child}</div>
+              <div className="w-full h-full min-w-0">{child}</div>
             </motion.div>
           ))}
         </motion.section>
@@ -300,7 +322,7 @@ export default function DashboardPage() {
 
         {/* Morning Yesterday Reconciliation Modal */}
         <YesterdayCheckinModal
-          isOpen={isYesterdayCheckinOpen}
+          isOpen={isYesterdayCheckinOpen && !shouldShowStory}
           yesterdayLabel={yesterdayLabel}
           unloggedHabits={unloggedYesterdayHabits}
           onResolve={resolveYesterdayCheckin}
