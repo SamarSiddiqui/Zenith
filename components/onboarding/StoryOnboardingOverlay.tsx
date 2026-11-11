@@ -9,13 +9,13 @@ import {
   Sparkles,
   X,
   Compass,
-  Zap,
-  TreePine,
   Loader2,
 } from 'lucide-react';
 import type { ZenithUserProfile } from '../../types/auth';
 import { ChapterPhilosophy } from './chapters/ChapterPhilosophy';
 import { ChapterWorkingWindow } from './chapters/ChapterWorkingWindow';
+import { ChapterMicroFallback } from './chapters/ChapterMicroFallback';
+import { ChapterEcosystem } from './chapters/ChapterEcosystem';
 
 export interface StoryChapterMeta {
   id: string;
@@ -224,33 +224,9 @@ export function StoryOnboardingOverlay({
       case 1:
         return <ChapterWorkingWindow />;
       case 2:
-        return (
-          <div className="flex flex-col items-center justify-center rounded-2xl border border-line bg-canvas/80 p-6 sm:p-8 text-center">
-            <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-clay-wash text-clay border border-clay/25">
-              <Zap className="h-6 w-6" />
-            </div>
-            <p className="text-xs font-mono uppercase tracking-widest text-clay">
-              5-Minute Micro-Fallback
-            </p>
-            <p className="mt-2 max-w-sm text-xs sm:text-sm text-muted leading-relaxed">
-              Visual scene coming in Step 4: interactive 45m to 5m ritual shrink card.
-            </p>
-          </div>
-        );
+        return <ChapterMicroFallback />;
       case 3:
-        return (
-          <div className="flex flex-col items-center justify-center rounded-2xl border border-line bg-canvas/80 p-6 sm:p-8 text-center">
-            <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-sage-wash text-sage-deep border border-sage/30">
-              <TreePine className="h-6 w-6" />
-            </div>
-            <p className="text-xs font-mono uppercase tracking-widest text-sage-deep">
-              Zen Grove, AI &amp; Nudges
-            </p>
-            <p className="mt-2 max-w-sm text-xs sm:text-sm text-muted leading-relaxed">
-              Visual scene coming in Step 4: growing focus tree, AI diagnosis &amp; Telegram check-ins.
-            </p>
-          </div>
-        );
+        return <ChapterEcosystem />;
       case 4:
       default:
         return (
