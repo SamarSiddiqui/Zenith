@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import type { Habit, HabitStatus } from '../types/zenith';
 import { updateHabit, calculateHabitHealth } from '../lib/services/habits';
-import { getMondayOfWeek, calculateSprintDayInfo } from '../lib/utils/sprintDate';
+import { getMondayOfWeek, calculateSprintDayInfo, getHabitActiveStartDayIndex, getLocalDateKey } from '../lib/utils/sprintDate';
 
 const YESTERDAY_CHECKIN_STORAGE_KEY = 'zenith_last_yesterday_checkin_date';
 
@@ -37,15 +37,21 @@ export function useYesterdayCheckin(
     });
   }, []);
 
-  // Filter habits that were unlogged on yesterday's day index
+  // Filter habits that existed yesterday and were left unlogged on yesterday's day index
   const unloggedYesterdayHabits = useMemo(() => {
     if (habits.length === 0 || yesterdayIndex < 0) return [];
 
     return habits.filter((h) => {
+      const activeStartIndex = getHabitActiveStartDayIndex(h.createdAt, currentMonday);
+      // Do not ask about yesterday if this habit was created today (or later)
+      if (activeStartIndex > yesterdayIndex) {
+        return false;
+      }
+
       const status = h.week?.[yesterdayIndex];
       return status === 'unlogged' || status === undefined;
     });
-  }, [habits, yesterdayIndex]);
+  }, [habits, yesterdayIndex, currentMonday]);
 
   // Check on mount if we should prompt the user
   useEffect(() => {
@@ -54,7 +60,7 @@ export function useYesterdayCheckin(
       return;
     }
 
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = getLocalDateKey();
     const lastPrompted = typeof window !== 'undefined' ? localStorage.getItem(YESTERDAY_CHECKIN_STORAGE_KEY) : null;
 
     if (lastPrompted !== todayStr) {
@@ -67,7 +73,7 @@ export function useYesterdayCheckin(
   }, [unloggedYesterdayHabits.length, yesterdayIndex]);
 
   const closeCheckin = useCallback(() => {
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = getLocalDateKey();
     if (typeof window !== 'undefined') {
       localStorage.setItem(YESTERDAY_CHECKIN_STORAGE_KEY, todayStr);
     }
@@ -103,7 +109,7 @@ export function useYesterdayCheckin(
 
       await Promise.all(promises);
 
-      const todayStr = new Date().toISOString().split('T')[0];
+      const todayStr = getLocalDateKey();
       if (typeof window !== 'undefined') {
         localStorage.setItem(YESTERDAY_CHECKIN_STORAGE_KEY, todayStr);
         window.dispatchEvent(new CustomEvent('zenith_habits_sync'));
