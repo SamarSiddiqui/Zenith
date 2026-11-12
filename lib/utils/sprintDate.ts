@@ -290,4 +290,40 @@ export function getShiftedWeekInfo(
   };
 }
 
+/**
+ * Returns local YYYY-MM-DD date key (avoids UTC midnight drift).
+ */
+export function getLocalDateKey(date: Date = new Date()): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
 
+/**
+ * Returns the 0-indexed day within the active sprint when a habit first existed.
+ * Prevents prompting for or penalizing days prior to a habit's creation date.
+ */
+export function getHabitActiveStartDayIndex(
+  createdAt?: string,
+  sprintStartDate?: string | Date,
+  durationDays: number = 7
+): number {
+  if (!createdAt) return 0;
+
+  const created = new Date(createdAt);
+  if (Number.isNaN(created.getTime())) return 0;
+  created.setHours(0, 0, 0, 0);
+
+  const start = sprintStartDate
+    ? new Date(sprintStartDate)
+    : getMondayOfWeek(new Date());
+  start.setHours(0, 0, 0, 0);
+
+  const diffDays = Math.floor(
+    (created.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)
+  );
+
+  if (diffDays <= 0) return 0;
+  return Math.min(durationDays, diffDays);
+}

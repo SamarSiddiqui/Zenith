@@ -73,20 +73,23 @@ export default function DashboardPage() {
   const todayCompletionRate =
     metrics.total > 0 ? Math.round((completedToday / metrics.total) * 100) : 0;
 
-  // Derive health label
-  const healthLabel =
-    metrics.averageHealth >= 80
+  // Derive health label (neutral empty state when no habits exist yet)
+  const hasHabits = metrics.total > 0;
+  const healthLabel = !hasHabits
+    ? 'Ready'
+    : metrics.averageHealth >= 80
       ? 'Thriving'
       : metrics.averageHealth >= 65
-      ? 'Stable'
-      : 'Needs Care';
+        ? 'Stable'
+        : 'Needs Care';
 
-  const healthColor =
-    metrics.averageHealth >= 80
+  const healthColor = !hasHabits
+    ? 'text-faint'
+    : metrics.averageHealth >= 80
       ? 'text-sage-deep'
       : metrics.averageHealth >= 65
-      ? 'text-muted'
-      : 'text-clay';
+        ? 'text-muted'
+        : 'text-clay';
 
   return (
     <Layout>
@@ -258,20 +261,20 @@ export default function DashboardPage() {
                   </span>
                 </div>
                 <p className="mt-1.5 sm:mt-2.5 font-serif text-2xl sm:text-3xl text-ink leading-tight">
-                  <CountUp value={metrics.averageHealth} suffix="%" />
+                  {hasHabits ? <CountUp value={metrics.averageHealth} suffix="%" /> : '0%'}
                 </p>
               </div>
               <div className="mt-3 sm:mt-4 pt-1.5 sm:pt-2 border-t border-line/40">
                 <div className="h-1 sm:h-1.5 overflow-hidden rounded-full bg-canvas border border-line/50">
                   <motion.div
-                    className={`h-full rounded-full ${metrics.averageHealth >= 65 ? 'bg-sage' : 'bg-clay'}`}
+                    className={`h-full rounded-full ${!hasHabits ? 'bg-line' : metrics.averageHealth >= 65 ? 'bg-sage' : 'bg-clay'}`}
                     initial={{ width: 0 }}
-                    animate={{ width: `${metrics.averageHealth}%` }}
+                    animate={{ width: `${hasHabits ? metrics.averageHealth : 0}%` }}
                     transition={{ duration: 0.6, ease: [0.23, 1, 0.32, 1] }}
                   />
                 </div>
                 <p className="mt-1.5 sm:mt-2 text-[10px] sm:text-xs text-muted truncate">
-                  {healthLabel} rhythm
+                  {hasHabits ? `${healthLabel} rhythm` : 'No rituals yet'}
                 </p>
               </div>
             </div>,
@@ -283,7 +286,7 @@ export default function DashboardPage() {
                   Show-up
                 </p>
                 <p className="mt-1.5 sm:mt-2.5 font-serif text-2xl sm:text-3xl text-ink leading-tight">
-                  <CountUp value={analytics ? analytics.overallShowUpRate : 100} suffix="%" />
+                  <CountUp value={hasHabits && analytics ? analytics.overallShowUpRate : 0} suffix="%" />
                 </p>
               </div>
               <div className="mt-3 sm:mt-4 pt-1.5 sm:pt-2 border-t border-line/40">
@@ -291,14 +294,14 @@ export default function DashboardPage() {
                   <motion.div
                     className="h-full rounded-full bg-sage-deep"
                     initial={{ width: 0 }}
-                    animate={{ width: `${analytics ? analytics.overallShowUpRate : 100}%` }}
+                    animate={{ width: `${hasHabits && analytics ? analytics.overallShowUpRate : 0}%` }}
                     transition={{ duration: 0.6, ease: [0.23, 1, 0.32, 1] }}
                   />
                 </div>
                 <p className="mt-1.5 sm:mt-2 text-[10px] sm:text-xs text-muted truncate">
-                  {analytics
+                  {hasHabits && analytics
                     ? `${analytics.totalCompletedEvents}/${analytics.totalTargetEvents} sustained`
-                    : 'Sustained'}
+                    : 'Awaiting first ritual'}
                 </p>
               </div>
             </div>

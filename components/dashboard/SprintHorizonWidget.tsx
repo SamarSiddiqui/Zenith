@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { motion } from 'framer-motion';
-import { Compass, Calendar, ArrowUpRight, Sparkles, Award, Clock, CheckCircle2, Info } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Compass, Calendar, ArrowUpRight, Award, Clock, Info, HelpCircle, X } from 'lucide-react';
 import Link from 'next/link';
 import type { SprintSession } from '../../types/sprint';
 import { getSprintDateRangeLabel } from '../../lib/utils/sprintDate';
@@ -35,6 +35,7 @@ export function SprintHorizonWidget({
 
   // Live local clock state (updates every 30s)
   const [now, setNow] = useState<Date>(() => new Date());
+  const [showDayExplain, setShowDayExplain] = useState<boolean>(false);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -114,6 +115,31 @@ export function SprintHorizonWidget({
     durationDays
   );
 
+  const todayWeekdayShort = now.toLocaleDateString('en-US', { weekday: 'short' });
+  const todayFullLabel = now.toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'short',
+    day: 'numeric',
+  });
+  const startWeekdayShort = startDate.toLocaleDateString('en-US', { weekday: 'short' });
+  const endWeekdayShort = endDate.toLocaleDateString('en-US', { weekday: 'short' });
+
+  const horizonDaysRibbon = useMemo(() => {
+    return Array.from({ length: durationDays }).map((_, i) => {
+      const d = new Date(startDate);
+      d.setDate(startDate.getDate() + i);
+      return {
+        index: i,
+        dayNumber: i + 1,
+        weekday: d.toLocaleDateString('en-US', { weekday: 'short' }),
+        dateNum: d.getDate(),
+        shortDate: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        isPast: i < currentDayIndex,
+        isToday: i === currentDayIndex && !isPastMidnightEnd,
+      };
+    });
+  }, [durationDays, startDate.getTime(), currentDayIndex, isPastMidnightEnd]);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -181,7 +207,28 @@ export function SprintHorizonWidget({
           <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
             <span className="font-bold text-ink text-xs sm:text-sm">
               Day {currentDayNumber} of {durationDays}
+              {!isPastMidnightEnd && (
+                <span className="ml-1 font-normal text-muted">({todayWeekdayShort})</span>
+              )}
             </span>
+
+            {currentDayNumber > 1 && !isPastMidnightEnd && (
+              <button
+                type="button"
+                onClick={() => setShowDayExplain((prev) => !prev)}
+                aria-expanded={showDayExplain}
+                className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-mono transition-colors cursor-pointer ${
+                  showDayExplain
+                    ? 'border-sage bg-sage-wash text-sage-deep font-semibold'
+                    : 'border-line bg-canvas text-muted hover:border-sage/50 hover:text-sage-deep'
+                }`}
+                title="Why does my sprint start mid-week?"
+              >
+                <HelpCircle className="h-3 w-3 shrink-0" />
+                <span>Why Day {currentDayNumber}?</span>
+              </button>
+            )}
+
             <span className="text-faint">·</span>
             <span className="text-muted flex items-center gap-1.5 text-[11px] sm:text-xs">
               <Clock className="h-3.5 w-3.5 text-sage-deep inline-block shrink-0" />
@@ -248,27 +295,103 @@ export function SprintHorizonWidget({
           </div>
         </div>
 
+        {/* Creative Calendar-Aligned Horizon Info Card */}
+        <AnimatePresence>
+          {showDayExplain && (
+            <motion.div
+              initial={{ opacity: 0, height: 0, y: -4 }}
+              animate={{ opacity: 1, height: 'auto', y: 0 }}
+              exit={{ opacity: 0, height: 0, y: -4 }}
+              transition={{ duration: 0.24, ease: [0.23, 1, 0.32, 1] }}
+              className="overflow-hidden"
+            >
+              <div className="rounded-2xl border border-sage/30 bg-sage-wash/45 p-3.5 sm:p-4 space-y-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-2.5">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-surface text-sage-deep border border-sage/30 shrink-0 mt-0.5">
+                      <Calendar className="h-3.5 w-3.5" />
+                    </div>
+                    <div className="space-y-0.5">
+                      <p className="text-xs font-semibold text-ink">
+                        {durationDays === 7
+                          ? 'Synced to the Real Mon–Sun Calendar Week'
+                          : `Calendar-Anchored ${durationDays}-Day Horizon`}
+                      </p>
+                      <p className="text-[11px] sm:text-xs text-muted leading-relaxed">
+                        {durationDays === 7 ? (
+                          <>
+                            Your sprint flows with the real week (<strong className="text-ink font-medium">{startWeekdayShort} – {endWeekdayShort}</strong>), so{' '}
+                            <strong className="text-sage-deep font-semibold">{todayFullLabel}</strong> is naturally{' '}
+                            <strong className="text-ink font-medium">Day {currentDayNumber}</strong>. Earlier days aren&apos;t missed—you&apos;re stepping cleanly into today&apos;s flow!
+                          </>
+                        ) : (
+                          <>
+                            This horizon began on <strong className="text-ink font-medium">{horizonDaysRibbon[0]?.shortDate}</strong>, making{' '}
+                            <strong className="text-sage-deep font-semibold">{todayFullLabel}</strong> Day {currentDayNumber}. Past calendar days never penalize you.
+                          </>
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowDayExplain(false)}
+                    aria-label="Close calendar explanation"
+                    className="rounded-lg p-1 text-muted hover:text-ink hover:bg-surface/80 transition-colors cursor-pointer shrink-0"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+
+                {/* Mini 7-day / Horizon Weekday Ribbon */}
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
+                  {horizonDaysRibbon.map((item) => (
+                    <div
+                      key={item.index}
+                      className={`flex flex-col items-center justify-center rounded-xl border px-2 py-1.5 min-w-[44px] flex-1 text-center font-mono transition-colors ${
+                        item.isToday
+                          ? 'border-sage-deep bg-sage-deep text-white shadow-xs'
+                          : item.isPast
+                            ? 'border-line/70 bg-surface/60 text-faint'
+                            : 'border-line bg-surface text-muted'
+                      }`}
+                    >
+                      <span className="text-[9px] uppercase tracking-wider">{item.weekday}</span>
+                      <span className="text-[11px] font-bold leading-tight">{item.dateNum}</span>
+                      {item.isToday && (
+                        <span className="mt-0.5 text-[8px] uppercase tracking-widest opacity-90">
+                          Today
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* Dynamic Segmented Days Track */}
         <div className="flex items-center gap-1 sm:gap-1.5 pt-1">
-          {Array.from({ length: durationDays }).map((_, i) => {
-            const isCompletedDay = i < currentDayIndex;
-            const isToday = i === currentDayIndex;
+          {horizonDaysRibbon.map((item) => {
+            const isCompletedDay = item.isPast;
+            const isToday = item.index === currentDayIndex;
 
             return (
               <div
-                key={i}
+                key={item.index}
                 className="relative flex-1 group min-w-[8px]"
-                title={`Day ${i + 1} of ${durationDays}${isToday ? ` (Today: ${todayPercent}%)` : isCompletedDay ? ' (Completed)' : ''}`}
+                title={`Day ${item.dayNumber} (${item.weekday} ${item.shortDate})${isToday ? ` · Today (${todayPercent}%)` : isCompletedDay ? ' · Elapsed this week' : ''}`}
               >
                 {/* Segment Bar Container */}
                 <div className="h-2 sm:h-2.5 w-full rounded-full bg-canvas border border-line overflow-hidden">
                   {isCompletedDay || isPastMidnightEnd ? (
                     <motion.div
-                      className="h-full w-full bg-sage"
+                      className={`h-full w-full ${isPastMidnightEnd ? 'bg-sage' : 'bg-sage/55'}`}
                       initial={{ scaleX: 0 }}
                       animate={{ scaleX: 1 }}
                       style={{ transformOrigin: 'left' }}
-                      transition={{ duration: 0.3, delay: i * 0.03, ease: 'easeOut' }}
+                      transition={{ duration: 0.3, delay: item.index * 0.03, ease: 'easeOut' }}
                     />
                   ) : isToday ? (
                     <div className="relative h-full w-full bg-sage-wash/40">
@@ -288,13 +411,13 @@ export function SprintHorizonWidget({
 
         {/* Sub-track horizon label indicators */}
         <div className="flex items-center justify-between text-[9px] sm:text-[10px] font-mono text-faint px-0.5">
-          <span className="shrink-0">Day 1</span>
+          <span className="shrink-0">{startWeekdayShort} · Day 1</span>
           <span className="text-center text-muted font-medium truncate px-2">
             {isPastMidnightEnd
               ? 'Sprint Concluded'
-              : `Day ${currentDayNumber} in progress (${todayPercent}% today)`}
+              : `${todayWeekdayShort} · Day ${currentDayNumber} in progress (${todayPercent}% today)`}
           </span>
-          <span className="shrink-0">Day {durationDays}</span>
+          <span className="shrink-0">{endWeekdayShort} · Day {durationDays}</span>
         </div>
       </div>
     </motion.div>

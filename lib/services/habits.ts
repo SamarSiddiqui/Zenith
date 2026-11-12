@@ -1,5 +1,6 @@
 import { createClient } from '../supabase/client';
 import { isSupabaseConfigured } from '../supabase/env';
+import { getHabitActiveStartDayIndex, getMondayOfWeek } from '../utils/sprintDate';
 import type { Habit, HabitDbRow, CreateHabitInput, UpdateHabitInput, HabitStatus } from '../../types/zenith';
 
 const LOCAL_STORAGE_HABITS_KEY = 'zenith_local_habits';
@@ -94,9 +95,10 @@ export function rolloverPastUnloggedDays(
   let changed = false;
   const newWeek: HabitStatus[] = [...habit.week];
 
-  // Only rollover days strictly before yesterday (< currentDayIndex - 1)
+  // Only rollover days from when the habit actually existed up to yesterday (< currentDayIndex - 1)
+  const startIndex = getHabitActiveStartDayIndex(habit.createdAt, getMondayOfWeek(new Date()));
   const cutoffIndex = currentDayIndex - 1;
-  for (let i = 0; i < cutoffIndex && i < newWeek.length; i++) {
+  for (let i = startIndex; i < cutoffIndex && i < newWeek.length; i++) {
     if (newWeek[i] === 'unlogged') {
       newWeek[i] = 'missed';
       changed = true;

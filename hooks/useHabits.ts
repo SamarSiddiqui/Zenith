@@ -121,7 +121,7 @@ export function useHabits() {
       (h) => (h.week?.[currentDayIndex] || 'unlogged') === 'completed'
     ).length;
     const totalHealth = habits.reduce((acc, h) => acc + (h.health || 80), 0);
-    const averageHealth = total > 0 ? Math.round(totalHealth / total) : 80;
+    const averageHealth = total > 0 ? Math.round(totalHealth / total) : 0;
 
     return {
       total,
