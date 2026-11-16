@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import type { Habit, CircadianSlot } from '../types/zenith';
 import type { DiagnosisResult, DiagnosisRequest, RecoveryProtocol } from '../types/diagnosis';
 import type { SprintSession } from '../types/sprint';
 import type { WorkingWindow } from '../types/auth';
 import { updateHabit } from '../lib/services/habits';
 import { useAuth } from '../context/AuthContext';
+import { hashHabitsState } from '../lib/utils/habitHash';
 
 const CACHE_KEY_PREFIX = 'zenith_diagnosis_cache_';
 const APPLIED_ACTIONS_KEY = 'zenith_diagnosis_applied_actions';
@@ -15,6 +16,38 @@ const CACHE_TTL_MS = 4 * 60 * 60 * 1000; // 4 Hours cache validity
 interface CachePayload {
   data: DiagnosisResult;
   timestamp: number;
+  stateHash?: string;
+}
+
+/**
+ * Instantly removes references to habits that have been deleted from the user's planner
+ * so stale deleted habits never flash on screen during background revalidation.
+ */
+function pruneDeletedHabits(diag: DiagnosisResult, activeHabits: Habit[]): DiagnosisResult {
+  const activeIds = new Set(activeHabits.map((h) => h.id));
+  const activeNames = new Set(activeHabits.map((h) => h.name.trim().toLowerCase()));
+
+  const isActive = (habitId?: string, habitName?: string) => {
+    if (habitId && activeIds.has(habitId)) return true;
+    if (habitName && activeNames.has(habitName.trim().toLowerCase())) return true;
+    return false;
+  };
+
+  return {
+    ...diag,
+    habitOptimizations: (diag.habitOptimizations || []).filter((opt) =>
+      isActive(opt.habitId, opt.habitName)
+    ),
+    frictionAutopsy: {
+      ...diag.frictionAutopsy,
+      scheduleCollisions: (diag.frictionAutopsy?.scheduleCollisions || []).filter((col) =>
+        isActive(col.habitId, col.habitName)
+      ),
+    },
+    recoveryProtocols: (diag.recoveryProtocols || []).filter((prot) =>
+      isActive(prot.habitId, prot.habitName)
+    ),
+  };
 }
 
 export function useDiagnosis(
@@ -36,53 +69,74 @@ export function useDiagnosis(
   const [lastAnalyzedAt, setLastAnalyzedAt] = useState<Date | null>(null);
   const [appliedActions, setAppliedActions] = useState<Record<string, boolean>>({});
 
-  // 1. Initial synchronous cache hydration from localStorage on mount (Instant 0ms UI)
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const stored = localStorage.getItem(APPLIED_ACTIONS_KEY);
-        if (stored) {
-          setAppliedActions(JSON.parse(stored));
-        }
+  const lastRequestedHashRef = useRef<string | null>(null);
 
-        const cached = localStorage.getItem(cacheKey);
-        if (cached) {
-          const parsed = JSON.parse(cached) as CachePayload;
-          if (parsed.data) {
+  const effectiveWorkingWindow = useMemo(
+    () => ({
+      startTime: workingWindow?.startTime || user?.workingWindow?.startTime || '09:00',
+      endTime: workingWindow?.endTime || user?.workingWindow?.endTime || '19:00',
+      timezone: workingWindow?.timezone || user?.workingWindow?.timezone || 'UTC',
+      activeDays: workingWindow?.activeDays || user?.workingWindow?.activeDays || [1, 2, 3, 4, 5],
+    }),
+    [workingWindow, user?.workingWindow]
+  );
+
+  const currentDayIndex = sprintSession?.currentDayIndex ?? 0;
+
+  // Exact deterministic hash matching the server Redis key
+  const currentStateHash = useMemo(() => {
+    if (!habits || habits.length === 0) return 'empty';
+    return hashHabitsState(habits, currentDayIndex, effectiveWorkingWindow);
+  }, [habits, currentDayIndex, effectiveWorkingWindow]);
+
+  // 1. Initial synchronous applied-actions + exact-or-pruned cache hydration from localStorage
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const stored = localStorage.getItem(APPLIED_ACTIONS_KEY);
+      if (stored) {
+        setAppliedActions(JSON.parse(stored));
+      }
+
+      if (!isHabitsLoading && habits.length === 0) {
+        setDiagnosis(null);
+        setLastAnalyzedAt(null);
+        localStorage.removeItem(cacheKey);
+        setIsLoading(false);
+        return;
+      }
+
+      const cached = localStorage.getItem(cacheKey);
+      if (cached) {
+        const parsed = JSON.parse(cached) as CachePayload;
+        if (parsed.data) {
+          const isExpired = Date.now() - parsed.timestamp >= CACHE_TTL_MS;
+          if (!isHabitsLoading && habits.length > 0) {
+            if (parsed.stateHash === currentStateHash && !isExpired) {
+              setDiagnosis(parsed.data);
+              setLastAnalyzedAt(new Date(parsed.timestamp));
+              setIsLoading(false);
+            } else {
+              // Immediately strip any deleted habits from screen while revalidating
+              const pruned = pruneDeletedHabits(parsed.data, habits);
+              if (pruned.habitOptimizations.length > 0) {
+                setDiagnosis(pruned);
+                setLastAnalyzedAt(new Date(parsed.timestamp));
+                setIsLoading(false);
+              }
+            }
+          } else if (isHabitsLoading) {
             setDiagnosis(parsed.data);
             setLastAnalyzedAt(new Date(parsed.timestamp));
             setIsLoading(false);
           }
         }
-      } catch (err) {
-        console.error('Failed to load diagnosis cache from localStorage:', err);
       }
+    } catch (err) {
+      console.error('Failed to load diagnosis cache from localStorage:', err);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cacheKey]);
-
-  // 2. Fast Redis Hydration fallback if localStorage was empty
-  useEffect(() => {
-    if (!diagnosis && typeof window !== 'undefined') {
-      let isMounted = true;
-      fetch(`/api/diagnosis?userId=${encodeURIComponent(userId)}`)
-        .then((res) => (res.ok ? res.json() : null))
-        .then((data: DiagnosisResult | null) => {
-          if (isMounted && data && !diagnosis) {
-            setDiagnosis(data);
-            if (data.generatedAt) {
-              setLastAnalyzedAt(new Date(data.generatedAt));
-            }
-            setIsLoading(false);
-          }
-        })
-        .catch(() => {
-          // Non-blocking fallback
-        });
-      return () => {
-        isMounted = false;
-      };
-    }
-  }, [diagnosis, userId]);
 
   const markActionApplied = useCallback((actionKey: string) => {
     setAppliedActions((prev) => {
@@ -94,41 +148,43 @@ export function useDiagnosis(
     });
   }, []);
 
-  // Run Gemini Diagnosis (Background or Foreground)
+  // Run Gemini Diagnosis (Checks exact Redis hash first, falls back to Gemini only on cache miss)
   const runDiagnosis = useCallback(
     async (forceFresh: boolean = false): Promise<DiagnosisResult | null> => {
       if (!habits || habits.length === 0) {
+        setDiagnosis(null);
+        setLastAnalyzedAt(null);
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.removeItem(cacheKey);
+          } catch {}
+        }
         if (!isHabitsLoading) {
           setIsLoading(false);
         }
         return null;
       }
 
-      // If we already have a diagnosis on screen, background revalidate without blocking full screen
-      if (diagnosis && !forceFresh) {
+      const hasUsableDiagnosis = Boolean(diagnosis && diagnosis.habitOptimizations?.length > 0);
+      if (hasUsableDiagnosis && !forceFresh) {
         setIsRevalidating(true);
       } else {
         setIsAnalyzing(true);
-        if (!diagnosis) setIsLoading(true);
+        if (!hasUsableDiagnosis) setIsLoading(true);
       }
       setError(null);
 
       try {
         const requestPayload: DiagnosisRequest = {
           habits,
-          userId: user?.id || 'local-user',
+          userId,
           forceRefresh: forceFresh,
-          allowStale: true,
-          workingWindow: {
-            startTime: workingWindow?.startTime || user?.workingWindow?.startTime || '09:00',
-            endTime: workingWindow?.endTime || user?.workingWindow?.endTime || '19:00',
-            timezone: workingWindow?.timezone || user?.workingWindow?.timezone || 'UTC',
-            activeDays: workingWindow?.activeDays || user?.workingWindow?.activeDays || [1, 2, 3, 4, 5],
-          },
+          allowStale: false,
+          workingWindow: effectiveWorkingWindow,
           userName: user?.fullName || 'Practitioner',
           sprintGoal: sprintSession?.config.sprintGoal || 'Sustain daily rhythm & momentum',
           sprintDuration: sprintSession?.config.durationDays || 7,
-          currentDayIndex: sprintSession?.currentDayIndex ?? 0,
+          currentDayIndex,
         };
 
         const res = await fetch('/api/diagnosis', {
@@ -143,26 +199,26 @@ export function useDiagnosis(
         }
 
         const data = (await res.json()) as DiagnosisResult;
-        setDiagnosis(data);
+        const cleanData = pruneDeletedHabits(data, habits);
+        setDiagnosis(cleanData);
         const now = new Date();
         setLastAnalyzedAt(now);
         setIsFreshlyUpdated(true);
 
-        // Flash freshly updated badge for 4 seconds
         setTimeout(() => {
           setIsFreshlyUpdated(false);
         }, 4000);
 
-        // Store to localStorage
         if (typeof window !== 'undefined') {
           const cachePayload: CachePayload = {
-            data,
+            data: cleanData,
             timestamp: now.getTime(),
+            stateHash: currentStateHash,
           };
           localStorage.setItem(cacheKey, JSON.stringify(cachePayload));
         }
 
-        return data;
+        return cleanData;
       } catch (err: any) {
         console.error('[useDiagnosis] Execution error:', err);
         setError(err.message || 'Failed to generate AI diagnosis. Please try again.');
@@ -173,20 +229,72 @@ export function useDiagnosis(
         setIsRevalidating(false);
       }
     },
-    [habits, workingWindow, user, sprintSession, cacheKey, isHabitsLoading, diagnosis]
+    [
+      habits,
+      userId,
+      effectiveWorkingWindow,
+      user?.fullName,
+      sprintSession?.config.sprintGoal,
+      sprintSession?.config.durationDays,
+      currentDayIndex,
+      cacheKey,
+      isHabitsLoading,
+      diagnosis,
+      currentStateHash,
+    ]
   );
 
-  // Auto-trigger background revalidation when habits load
+  // Sync diagnosis when habits finish loading OR whenever habit state hash changes (add/delete/edit/log)
   useEffect(() => {
-    if (!isHabitsLoading && habits.length > 0 && !isAnalyzing && !isRevalidating) {
-      // If no diagnosis at all -> run immediately
-      // If stale diagnosis present -> revalidate in background
-      runDiagnosis(false);
-    } else if (!isHabitsLoading && habits.length === 0) {
+    if (isHabitsLoading) return;
+
+    if (habits.length === 0) {
+      lastRequestedHashRef.current = 'empty';
+      setDiagnosis(null);
+      setLastAnalyzedAt(null);
       setIsLoading(false);
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.removeItem(cacheKey);
+        } catch {}
+      }
+      return;
+    }
+
+    // 1. Check 0ms localStorage exact hash hit before making ANY network/API call
+    if (typeof window !== 'undefined') {
+      try {
+        const cached = localStorage.getItem(cacheKey);
+        if (cached) {
+          const parsed = JSON.parse(cached) as CachePayload;
+          const isFresh = Date.now() - parsed.timestamp < CACHE_TTL_MS;
+          if (parsed.data && parsed.stateHash === currentStateHash && isFresh) {
+            setDiagnosis(parsed.data);
+            setLastAnalyzedAt(new Date(parsed.timestamp));
+            setIsLoading(false);
+            lastRequestedHashRef.current = currentStateHash;
+            return; // 0ms hit — zero network or Gemini calls needed!
+          }
+        }
+      } catch {
+        // Ignore corrupt localStorage entry
+      }
+    }
+
+    // 2. Scrub any deleted habits immediately from visible UI before background fetch
+    setDiagnosis((prev) => {
+      if (!prev) return null;
+      const pruned = pruneDeletedHabits(prev, habits);
+      return pruned.habitOptimizations.length > 0 ? pruned : null;
+    });
+
+    // 3. Deduplicate requests for the exact same stateHash
+    if (lastRequestedHashRef.current !== currentStateHash && !isAnalyzing && !isRevalidating) {
+      lastRequestedHashRef.current = currentStateHash;
+      runDiagnosis(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isHabitsLoading, habits.length]);
+  }, [isHabitsLoading, currentStateHash]);
 
   // 1-Click Action 1: Re-anchor Circadian Slot
   const applySlotRecommendation = useCallback(

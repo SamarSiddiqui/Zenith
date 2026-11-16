@@ -226,45 +226,18 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 1. Sliding-Window Rate Limiting Check (10 reqs / 10 mins)
-    const rateLimit = await checkDiagnosisRateLimit(userId);
-    if (!rateLimit.success) {
-      // If rate limited but user allows stale fallback, serve stale rather than erroring out!
-      const fallbackLatest = await getCached<DiagnosisResult>(latestCacheKey);
-      if (fallbackLatest) {
-        fallbackLatest.isCached = true;
-        fallbackLatest.isStale = true;
-        return NextResponse.json(fallbackLatest, {
-          status: 200,
-          headers: {
-            'x-cache': 'RATE_LIMITED_STALE_FALLBACK',
-            'x-cache-key': latestCacheKey,
-            'x-response-time-ms': String(Date.now() - startTime),
-          },
-        });
-      }
-
-      // If no stale cache exists, serve deterministic heuristic reflection with 200 rather than blocking user
-      const heuristic = generateHeuristicDiagnosis(body);
-      return NextResponse.json(heuristic, {
-        status: 200,
-        headers: {
-          'x-cache': 'RATE_LIMIT_HEURISTIC_FALLBACK',
-          'x-response-time-ms': String(Date.now() - startTime),
-        },
-      });
-    }
-
-    // 2. Exact Habit State Cache Key Construction
+    // 1. Exact Habit State Cache Key Construction
     const stateHash = hashHabitsState(body.habits, body.currentDayIndex, body.workingWindow);
     const exactCacheKey = `zenith:diag:${userId}:${stateHash}`;
 
-    // 3. Exact Cache-Aside Check (if not force-refreshed)
+    // 2. Exact Cache-Aside Check BEFORE rate-limiting (unlimited ~10ms Redis hits, 0 Gemini calls)
     if (!body.forceRefresh) {
       const cachedDiagnosis = await getCached<DiagnosisResult>(exactCacheKey);
       if (cachedDiagnosis) {
         cachedDiagnosis.isCached = true;
         cachedDiagnosis.isStale = false;
+        // Refresh latest pointer so GET fallback stays aligned with active habits
+        setCached(latestCacheKey, cachedDiagnosis, LATEST_CACHE_TTL_SECONDS).catch(() => {});
         const duration = Date.now() - startTime;
         return NextResponse.json(cachedDiagnosis, {
           status: 200,
@@ -275,6 +248,20 @@ export async function POST(req: NextRequest) {
           },
         });
       }
+    }
+
+    // 3. Sliding-Window Rate Limiting Check (10 Gemini calls / 10 mins)
+    const rateLimit = await checkDiagnosisRateLimit(userId);
+    if (!rateLimit.success) {
+      // Serve deterministic heuristic reflection for the exact active habits rather than stale deleted habits
+      const heuristic = generateHeuristicDiagnosis(body);
+      return NextResponse.json(heuristic, {
+        status: 200,
+        headers: {
+          'x-cache': 'RATE_LIMIT_HEURISTIC_FALLBACK',
+          'x-response-time-ms': String(Date.now() - startTime),
+        },
+      });
     }
 
     // 4. Cache Miss / Force Fresh -> Call Gemini AI with Automatic Offline Resilience Fallback

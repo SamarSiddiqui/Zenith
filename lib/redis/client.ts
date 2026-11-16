@@ -121,33 +121,4 @@ export async function deleteByPattern(pattern: string): Promise<number> {
   }
 }
 
-/**
- * Computes a fast, deterministic hash string from habits array and sprint context
- * to use as a cache invalidation key.
- */
-export function hashHabitsState(habits: any[], sprintDay: number = 0, workingWindow?: any): string {
-  try {
-    const signature = habits
-      .map((h) => {
-        const id = h.id || '';
-        const weekStr = (h.week || []).join('');
-        const slot = h.circadianSlot || '';
-        const minutes = h.minutes || 0;
-        return `${id}:${weekStr}:${slot}:${minutes}`;
-      })
-      .sort()
-      .join('|');
-
-    const fullSignature = `${signature}#day:${sprintDay}#win:${workingWindow?.startTime || ''}-${workingWindow?.endTime || ''}`;
-
-    // Fast 32-bit FNV-1a string hash
-    let hash = 2166136261;
-    for (let i = 0; i < fullSignature.length; i++) {
-      hash ^= fullSignature.charCodeAt(i);
-      hash = Math.imul(hash, 16777619);
-    }
-    return (hash >>> 0).toString(36);
-  } catch {
-    return String(Date.now());
-  }
-}
+export { hashHabitsState } from '../utils/habitHash';
