@@ -301,7 +301,16 @@ export function useHabits() {
   // Remove Habit
   const removeHabit = useCallback(
     async (habitId: string): Promise<boolean> => {
-      setHabits((prev) => prev.filter((h) => h.id !== habitId));
+      setHabits((prev) => {
+        const remaining = prev.filter((h) => h.id !== habitId);
+        if (remaining.length === 0 && typeof window !== 'undefined') {
+          try {
+            localStorage.removeItem(`zenith_diagnosis_cache_${user?.id || 'local-user'}`);
+            localStorage.removeItem('zenith_diagnosis_cache_local-user');
+          } catch {}
+        }
+        return remaining;
+      });
       const ok = await deleteHabit(habitId, user?.id);
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('zenith_habits_sync'));
@@ -315,6 +324,12 @@ export function useHabits() {
   const clearAllHabits = useCallback(
     async (): Promise<boolean> => {
       setHabits([]);
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.removeItem(`zenith_diagnosis_cache_${user?.id || 'local-user'}`);
+          localStorage.removeItem('zenith_diagnosis_cache_local-user');
+        } catch {}
+      }
       const ok = await deleteAllHabits(user?.id);
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('zenith_habits_sync'));

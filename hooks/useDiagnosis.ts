@@ -89,7 +89,7 @@ export function useDiagnosis(
     return hashHabitsState(habits, currentDayIndex, effectiveWorkingWindow);
   }, [habits, currentDayIndex, effectiveWorkingWindow]);
 
-  // 1. Initial synchronous applied-actions + exact-or-pruned cache hydration from localStorage
+  // 1. Synchronous applied-actions + exact-or-pruned cache hydration from localStorage
   useEffect(() => {
     if (typeof window === 'undefined') return;
     try {
@@ -98,11 +98,21 @@ export function useDiagnosis(
         setAppliedActions(JSON.parse(stored));
       }
 
-      if (!isHabitsLoading && habits.length === 0) {
+      // Do NOT hydrate stale diagnosis while habits are actively loading from DB.
+      // Hydrating early causes deleted habits (e.g. "Reading") to flash on screen before we know the true habit set.
+      if (isHabitsLoading) {
+        return;
+      }
+
+      // If habits have loaded and the user has 0 habits, purge all diagnosis state immediately.
+      if (habits.length === 0) {
         setDiagnosis(null);
         setLastAnalyzedAt(null);
-        localStorage.removeItem(cacheKey);
         setIsLoading(false);
+        try {
+          localStorage.removeItem(cacheKey);
+          localStorage.removeItem(`${CACHE_KEY_PREFIX}local-user`);
+        } catch {}
         return;
       }
 
@@ -111,32 +121,27 @@ export function useDiagnosis(
         const parsed = JSON.parse(cached) as CachePayload;
         if (parsed.data) {
           const isExpired = Date.now() - parsed.timestamp >= CACHE_TTL_MS;
-          if (!isHabitsLoading && habits.length > 0) {
-            if (parsed.stateHash === currentStateHash && !isExpired) {
-              setDiagnosis(parsed.data);
-              setLastAnalyzedAt(new Date(parsed.timestamp));
-              setIsLoading(false);
-            } else {
-              // Immediately strip any deleted habits from screen while revalidating
-              const pruned = pruneDeletedHabits(parsed.data, habits);
-              if (pruned.habitOptimizations.length > 0) {
-                setDiagnosis(pruned);
-                setLastAnalyzedAt(new Date(parsed.timestamp));
-                setIsLoading(false);
-              }
-            }
-          } else if (isHabitsLoading) {
+          if (parsed.stateHash === currentStateHash && !isExpired) {
             setDiagnosis(parsed.data);
             setLastAnalyzedAt(new Date(parsed.timestamp));
             setIsLoading(false);
+          } else {
+            // Immediately strip any deleted habits from screen while revalidating
+            const pruned = pruneDeletedHabits(parsed.data, habits);
+            if (pruned.habitOptimizations.length > 0) {
+              setDiagnosis(pruned);
+              setLastAnalyzedAt(new Date(parsed.timestamp));
+              setIsLoading(false);
+            }
           }
         }
+      } else {
+        setIsLoading(false);
       }
     } catch (err) {
       console.error('Failed to load diagnosis cache from localStorage:', err);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cacheKey]);
+  }, [cacheKey, isHabitsLoading, habits, currentStateHash]);
 
   const markActionApplied = useCallback((actionKey: string) => {
     setAppliedActions((prev) => {
@@ -256,6 +261,7 @@ export function useDiagnosis(
       if (typeof window !== 'undefined') {
         try {
           localStorage.removeItem(cacheKey);
+          localStorage.removeItem(`${CACHE_KEY_PREFIX}local-user`);
         } catch {}
       }
       return;
