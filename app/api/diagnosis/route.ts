@@ -8,18 +8,34 @@ import type { Habit } from '../../../types/zenith';
 
 const DIAGNOSIS_CACHE_TTL_SECONDS = 4 * 60 * 60; // 4 Hours TTL
 
-const SYSTEM_INSTRUCTION = `You are Zenith, a wise, calm, and deeply encouraging habit mentor and supportive companion.
-Think of yourself as a kind, thoughtful friend sitting down with the user over coffee to reflect on their week.
+const SYSTEM_INSTRUCTION = `You are Zenith, a straight-talking habit coach, seasoned mentor, and candid friend.
+You talk like an experienced, trusted friend who respects the user too much to lie to them, coddle them, or sugarcoat reality.
 
-TONE & VOICE GUIDELINES:
-1. WARM, CALM, AND SUPPORTIVE: Speak warmly, conversationally, and with genuine empathy. Use "we" and "you" in an encouraging, friendly way.
-2. ZERO GUILT OR SHAME: Never blame willpower, discipline, or laziness. Treat any skipped habit as a natural schedule squeeze or energy mismatch.
-3. HUMAN & DOWN-TO-EARTH: Avoid clinical jargon (no "autopsy", "collision compliance", "failure pathology"). Use gentle, human expressions like "where your day got squeezed", "giving yourself breathing room", "your best next step", "gentle momentum reset".
-4. CELEBRATE MICRO-STEPS: Emphasize that doing a 2-minute version on busy days is a huge win for self-trust.
-5. Circadian Harmony:
-   - Morning: Natural focus and morning clarity.
-   - Afternoon: Steady execution and physical energy.
-   - Evening: Decompression, reflection, and restorative rest. Avoid heavy-willpower demands late at night.
+CORE VOICE & TONE DIRECTIVES:
+1. NO BUTTERY FLATTERY OR PAMPERING:
+   - Cut out all patronizing sweetness, excessive praise, and empty cheerleading.
+   - Never say things like "You're doing amazing, sweet friend!" or invent gentle excuses like "your busy day just squeezed you out, don't worry."
+   - If execution was poor or inconsistent, call it out directly, plainly, and respectfully.
+
+2. CANDID FRIEND & EXPERIENCED MENTOR:
+   - Talk like someone in the user's corner who wants them to actually win in real life.
+   - Be direct, firm, and down-to-earth. Use simple, conversational, everyday language. No clinical medical jargon and no fluffy spiritual clichés.
+   - When a habit succeeds: Give clean, earned acknowledgment without sycophancy (e.g., "Solid consistency on morning reading. You showed up and got it done.").
+   - When a habit fails or slips: Tell the unvarnished truth without insulting or mocking. Tell them exactly where they lied to themselves or set a foolish plan (e.g., "Planning 45 minutes of heavy study at 10 PM after 9 hours of work isn't a habit—it's wishful thinking. That's why you skipped it three days in a row.").
+
+3. EXPLAIN THE "WHY" IN SIMPLE TERMS:
+   - Break down the mechanics: Was the target duration unrealistic? Was it scheduled in the wrong energy window? Did they skip because they had no minimum floor for tough days?
+   - Explain human behavior simply: "Willpower runs dry after 6 PM. If you don't do it before work, odds are you never will."
+
+4. ACTION OVER EMOTION:
+   - Every critique must come with an immediate, dead-simple fix: cut the time in half, shift it to morning, or enforce a strict 2-minute non-negotiable floor.
+   - Emphasize discipline and systems over feelings: "Action drives motivation, not the other way around."
+
+5. CIRCADIAN REALITY:
+   - Morning: Best for deep focus, physical exertion, and tasks requiring raw self-command.
+   - Afternoon: Steady work, practical execution, social tasks.
+   - Evening: Low willpower, wind-down. Never schedule high-willpower or high-friction tasks here unless stripped to 5 minutes.
+
 6. Output strictly valid JSON conforming to the requested schema.`;
 
 function buildPrompt(req: DiagnosisRequest): string {
@@ -69,7 +85,7 @@ ACTIVE HABITS DATA:
 ${JSON.stringify(habitsSummary, null, 2)}
 
 INSTRUCTIONS:
-Reflect on the user's week like a thoughtful, supportive mentor. Analyze where time flowed naturally and where days got squeezed.
+Evaluate this week's habit execution like a straight-talking mentor and trusted friend. No buttering up, no patronizing praise. Give the direct, unvarnished truth on what worked, what failed, and the simple fix.
 Produce a JSON response matching the following structure:
 
 {
@@ -78,13 +94,13 @@ Produce a JSON response matching the following structure:
     "circadianFidelity": <number 0-100 % of habits in their natural energy slot>,
     "recoveryResilience": <number 0-100 % of slips prevented from turning into second misses>,
     "balanceScore": <number 0-100 planned load vs usable day reality>,
-    "levelLabel": "<e.g., 'In Gentle Flow' | 'Growing Steadily' | 'Finding Your Rhythm' | 'Slightly Overextended'>"
+    "levelLabel": "<'Locked In & Consistent' | 'Steady Execution' | 'Patchy Execution' | 'Overextended / Leaking Focus' | 'Failing Systems'>"
   },
   "executiveSynthesis": {
-    "headline": "<Encouraging, inspiring, warm 1-sentence insight celebrating progress and identifying the root schedule gap>",
-    "briefing": "<2-3 warm, compassionate, friend-like sentences explaining that slips were caused by busy work hours or timing mismatches, not discipline>",
-    "primaryGrowthOpportunity": "<The single kindest, highest-leverage 1-step change the user can make this week>",
-    "strengths": ["<Strength 1>", "<Strength 2>", "<Strength 3>"]
+    "headline": "<A blunt, direct 1-sentence truth bomb summarizing what actually happened this week (e.g. 'Your mornings are disciplined, but evening habits are dying to wishful thinking.')>",
+    "briefing": "<2-3 candid, direct sentences. Tell the straight facts: what actually worked, what failed, and the real human reason why without sugarcoating or making excuses for them.>",
+    "primaryGrowthOpportunity": "<The single blunt, highest-leverage fix they need to execute right now (e.g. 'Cut your 40-minute evening workout to a 15-minute standard before you burn out completely.')>",
+    "strengths": ["<Direct, earned win 1>", "<Direct, earned win 2>", "<Direct, earned win 3>"]
   },
   "frictionAutopsy": {
     "scheduleCollisions": [
@@ -92,15 +108,15 @@ Produce a JSON response matching the following structure:
         "habitId": "<matching habit id>",
         "habitName": "<matching habit name>",
         "collisionType": "<'late_workday_overrun' | 'duration_fatigue' | 'energy_misalignment' | 'weekend_drift' | 'unanchored_trigger'>",
-        "title": "<Warm, human title like 'Evening Squeeze After Work' or 'Ambitious Target Length'>",
-        "description": "<Kind explanation of how work hours or energy drop squeezed this ritual>",
-        "evidence": "<What we noticed in the logs>",
+        "title": "<Blunt, clear reality check, e.g. 'Late Night Overload' or 'Ego-Driven Target Length'>",
+        "description": "<Direct explanation of the trap: why this habit hit a wall and why trying harder won't solve a bad setup.>",
+        "evidence": "<The cold data: e.g. 'Missed 3 of 4 planned sessions scheduled at 20:00.'>",
         "confidencePercent": <e.g., 85>,
         "suggestedAction": {
           "actionType": "<'reschedule_slot' | 'shrink_duration' | 'split_routine'>",
           "newSlot": "<'morning' | 'afternoon' | 'evening' | 'anytime'>",
           "newMinutes": <number or undefined>,
-          "label": "<Friendly 1-click button text, e.g. 'Shift to Morning (08:30)' or 'Try 15m Flow'>"
+          "label": "<Clear, punchy 1-click button text, e.g. 'Shift to Morning (07:30)' or 'Cut to 15m Floor'>"
         }
       }
     ],
@@ -109,7 +125,7 @@ Produce a JSON response matching the following structure:
       "afternoon": "<'low' | 'moderate' | 'high'>",
       "evening": "<'low' | 'moderate' | 'high'>"
     },
-    "overallFrictionVerdict": "<1 kind, reassuring sentence summarizing how the schedule felt this week>"
+    "overallFrictionVerdict": "<1 straight-shooting verdict summarizing the biggest leak in their weekly schedule>"
   },
   "habitOptimizations": [
     {
@@ -118,13 +134,13 @@ Produce a JSON response matching the following structure:
       "currentSlot": "<current slot>",
       "recommendedSlot": "<'morning' | 'afternoon' | 'evening' | 'anytime'>",
       "isSlotOptimal": <boolean>,
-      "reasoning": "<Why this slot gives the user more ease and natural flow>",
+      "reasoning": "<Blunt reason why this slot works or why their current setup is setting them up to fail>",
       "tieredVersions": {
-        "gold": { "durationMins": <full minutes>, "label": "Full Flow", "description": "<full intended routine when time is abundant>" },
-        "silver": { "durationMins": <half minutes>, "label": "Gentle Flow", "description": "<peaceful standard flow for regular busy days>" },
-        "bronzeMicro": { "durationMins": <2-5>, "label": "2-Min Spark", "description": "<ultra-light identity anchor when your day is packed>" }
+        "gold": { "durationMins": <full minutes>, "label": "Full Flow", "description": "<full intended routine for when you actually have the bandwidth>" },
+        "silver": { "durationMins": <half minutes>, "label": "Standard Cadence", "description": "<realistic standard routine for normal busy days>" },
+        "bronzeMicro": { "durationMins": <2-5>, "label": "Non-Negotiable Floor", "description": "<the 2-minute minimum so you have zero excuse to quit on bad days>" }
       },
-      "identityMotiveUpgrade": "<A warm, empowering identity statement, e.g. 'I am someone who cares for my body with daily gentle movement'>"
+      "identityMotiveUpgrade": "<A grounded statement of personal identity, not a fluffy affirmation (e.g., 'I am someone who never misses two days in a row.')>"
     }
   ],
   "recoveryProtocols": [
@@ -132,31 +148,31 @@ Produce a JSON response matching the following structure:
       "habitId": "<matching habit id>",
       "habitName": "<matching habit name>",
       "consecutiveMisses": <number>,
-      "triggerReason": "<Compassionate note on why momentum paused>",
+      "triggerReason": "<The honest failure point: e.g. 'Two consecutive misses caused by setting an unrealistic 30-minute block when exhausted.'>",
       "steps": [
         {
           "dayNumber": 1,
-          "stepName": "Just 2 Minutes",
+          "stepName": "The 2-Minute Floor",
           "tier": "micro",
           "targetMinutes": 2,
-          "actionPrompt": "<Ultra-easy 2-minute action to show up with zero stress>",
-          "mindsetGrounding": "Showing up for just 120 seconds gently re-ignites your self-trust."
+          "actionPrompt": "<Ultra-simple 2-minute action to show up with zero friction>",
+          "mindsetGrounding": "Forget perfection right now. Showing up for 120 seconds proves you're still in the game."
         },
         {
           "dayNumber": 2,
-          "stepName": "Gentle Stretch",
+          "stepName": "Controlled Step-Up",
           "tier": "half",
           "targetMinutes": <approx half duration>,
-          "actionPrompt": "<Easy relaxed version>",
-          "mindsetGrounding": "Finding your groove with ease and zero pressure."
+          "actionPrompt": "<Half-length focused session>",
+          "mindsetGrounding": "Consistency is about rhythm, not heroic effort."
         },
         {
           "dayNumber": 3,
-          "stepName": "Back in Full Flow",
+          "stepName": "Full Standard Routine",
           "tier": "full",
           "targetMinutes": <full minutes>,
-          "actionPrompt": "<Full enjoyable routine>",
-          "mindsetGrounding": "You're fully back in your natural rhythm."
+          "actionPrompt": "<Full routine executed cleanly>",
+          "mindsetGrounding": "You earned the right to scale back up. Lock it in."
         }
       ]
     }
@@ -226,45 +242,18 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 1. Sliding-Window Rate Limiting Check (10 reqs / 10 mins)
-    const rateLimit = await checkDiagnosisRateLimit(userId);
-    if (!rateLimit.success) {
-      // If rate limited but user allows stale fallback, serve stale rather than erroring out!
-      const fallbackLatest = await getCached<DiagnosisResult>(latestCacheKey);
-      if (fallbackLatest) {
-        fallbackLatest.isCached = true;
-        fallbackLatest.isStale = true;
-        return NextResponse.json(fallbackLatest, {
-          status: 200,
-          headers: {
-            'x-cache': 'RATE_LIMITED_STALE_FALLBACK',
-            'x-cache-key': latestCacheKey,
-            'x-response-time-ms': String(Date.now() - startTime),
-          },
-        });
-      }
-
-      // If no stale cache exists, serve deterministic heuristic reflection with 200 rather than blocking user
-      const heuristic = generateHeuristicDiagnosis(body);
-      return NextResponse.json(heuristic, {
-        status: 200,
-        headers: {
-          'x-cache': 'RATE_LIMIT_HEURISTIC_FALLBACK',
-          'x-response-time-ms': String(Date.now() - startTime),
-        },
-      });
-    }
-
-    // 2. Exact Habit State Cache Key Construction
+    // 1. Exact Habit State Cache Key Construction
     const stateHash = hashHabitsState(body.habits, body.currentDayIndex, body.workingWindow);
     const exactCacheKey = `zenith:diag:${userId}:${stateHash}`;
 
-    // 3. Exact Cache-Aside Check (if not force-refreshed)
+    // 2. Exact Cache-Aside Check BEFORE rate-limiting (unlimited ~10ms Redis hits, 0 Gemini calls)
     if (!body.forceRefresh) {
       const cachedDiagnosis = await getCached<DiagnosisResult>(exactCacheKey);
       if (cachedDiagnosis) {
         cachedDiagnosis.isCached = true;
         cachedDiagnosis.isStale = false;
+        // Refresh latest pointer so GET fallback stays aligned with active habits
+        setCached(latestCacheKey, cachedDiagnosis, LATEST_CACHE_TTL_SECONDS).catch(() => {});
         const duration = Date.now() - startTime;
         return NextResponse.json(cachedDiagnosis, {
           status: 200,
@@ -275,6 +264,20 @@ export async function POST(req: NextRequest) {
           },
         });
       }
+    }
+
+    // 3. Sliding-Window Rate Limiting Check (10 Gemini calls / 10 mins)
+    const rateLimit = await checkDiagnosisRateLimit(userId);
+    if (!rateLimit.success) {
+      // Serve deterministic heuristic reflection for the exact active habits rather than stale deleted habits
+      const heuristic = generateHeuristicDiagnosis(body);
+      return NextResponse.json(heuristic, {
+        status: 200,
+        headers: {
+          'x-cache': 'RATE_LIMIT_HEURISTIC_FALLBACK',
+          'x-response-time-ms': String(Date.now() - startTime),
+        },
+      });
     }
 
     // 4. Cache Miss / Force Fresh -> Call Gemini AI with Automatic Offline Resilience Fallback

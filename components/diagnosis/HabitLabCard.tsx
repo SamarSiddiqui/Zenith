@@ -21,25 +21,25 @@ export function HabitLabCard({
   onApplyDuration,
 }: HabitLabCardProps) {
   return (
-    <div className="space-y-6 rounded-3xl border border-line bg-surface p-6 sm:p-7 shadow-calm">
+    <div className="space-y-6 rounded-3xl border border-line bg-surface p-4 sm:p-6 md:p-7 shadow-calm w-full">
       {/* Header */}
       <div className="border-b border-line/60 pb-4">
         <div className="flex items-center gap-2">
           <span className="font-mono text-xs font-semibold uppercase tracking-wider text-sage-deep flex items-center gap-1">
             <Sparkles className="h-3.5 w-3.5" />
-            Habit Playground & Easy Fallbacks
+            Habit Tiers & Fallbacks
           </span>
         </div>
-        <h3 className="font-serif text-2xl font-bold text-ink mt-0.5">
+        <h3 className="font-serif text-xl sm:text-2xl font-bold text-ink mt-0.5">
           Flexible Habit Tiers for Real Life
         </h3>
         <p className="text-xs sm:text-sm text-muted font-light mt-1">
-          Make every habit flexible so you never have to skip completely when life gets busy. On tough days, even 2 minutes keeps your self-trust alive.
+          Never drop the chain completely on chaotic days. A 2-minute non-negotiable floor keeps your identity and consistency alive.
         </p>
       </div>
 
       {/* Optimizations List */}
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         {optimizations.map((opt, idx) => {
           const slotKey = `slot_${opt.habitId}_${opt.recommendedSlot}`;
           const isSlotApplied = appliedActions[slotKey] || opt.isSlotOptimal;
@@ -51,12 +51,12 @@ export function HabitLabCard({
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: idx * 0.06 }}
-              className="rounded-2xl border border-line bg-canvas/60 p-5 space-y-4 shadow-xs"
+              className="rounded-2xl border border-line bg-canvas/60 p-4 sm:p-5 space-y-4 shadow-xs"
             >
               {/* Top Row: Habit Name & Slot Alignment */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-line/60 pb-3">
                 <div>
-                  <h4 className="font-serif text-lg font-bold text-ink">
+                  <h4 className="font-serif text-base sm:text-lg font-bold text-ink">
                     {opt.habitName}
                   </h4>
                   <p className="text-xs text-muted font-light mt-0.5">
@@ -65,7 +65,7 @@ export function HabitLabCard({
                 </div>
 
                 {/* Slot Adjustment Pill */}
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex flex-wrap items-center gap-2 shrink-0">
                   <span className="text-[11px] font-mono text-faint">
                     Slot: <span className="uppercase text-muted">{opt.currentSlot}</span>
                   </span>
@@ -106,24 +106,24 @@ export function HabitLabCard({
                     </span>
                   </div>
                   <p className="text-xs text-muted font-light leading-snug">
-                    {opt.tieredVersions?.gold?.description || 'Full intended ritual when time is abundant.'}
+                    {opt.tieredVersions?.gold?.description || 'Full intended routine for when you have dedicated time.'}
                   </p>
                 </div>
 
-                {/* Tier 2: Gentle Flow */}
+                {/* Tier 2: Standard Cadence */}
                 <div className="rounded-xl border border-line bg-surface p-3.5 space-y-1.5 shadow-xs flex flex-col justify-between">
                   <div>
                     <div className="flex items-center justify-between">
                       <span className="inline-flex items-center gap-1 text-xs font-mono font-bold text-sky-600 dark:text-sky-400 uppercase">
                         <Zap className="h-3.5 w-3.5" />
-                        Gentle Flow
+                        Standard Cadence
                       </span>
                       <span className="text-xs font-mono font-bold text-ink">
                         {opt.tieredVersions?.silver?.durationMins || 15}m
                       </span>
                     </div>
                     <p className="text-xs text-muted font-light leading-snug mt-1">
-                      {opt.tieredVersions?.silver?.description || 'Peaceful standard flow for regular busy days.'}
+                      {opt.tieredVersions?.silver?.description || 'Standard realistic version for normal workdays.'}
                     </p>
                   </div>
 
@@ -139,28 +139,29 @@ export function HabitLabCard({
                         onClick={() =>
                           onApplyDuration?.(opt.habitId, opt.tieredVersions?.silver?.durationMins || 15)
                         }
-                        className="text-[11px] font-mono text-sage-deep hover:text-ink font-semibold transition-colors cursor-pointer"
+                        className="inline-flex items-center gap-1 text-[11px] font-mono text-sage-deep hover:text-ink font-semibold transition-colors cursor-pointer py-1"
                       >
-                        Set as Target ({opt.tieredVersions?.silver?.durationMins}m) →
+                        <span>Set as Target ({opt.tieredVersions?.silver?.durationMins}m)</span>
+                        <ArrowRight className="h-3 w-3" />
                       </button>
                     )}
                   </div>
                 </div>
 
-                {/* Tier 3: 2-Min Spark */}
+                {/* Tier 3: Non-Negotiable Floor */}
                 <div className="rounded-xl border border-sage/30 bg-sage-wash/40 p-3.5 space-y-1.5 shadow-xs flex flex-col justify-between">
                   <div>
                     <div className="flex items-center justify-between">
                       <span className="inline-flex items-center gap-1 text-xs font-mono font-bold text-sage-deep uppercase">
                         <ShieldCheck className="h-3.5 w-3.5" />
-                        2-Min Spark
+                        2-Min Floor
                       </span>
                       <span className="text-xs font-mono font-bold text-sage-deep">
                         {opt.tieredVersions?.bronzeMicro?.durationMins || 3}m
                       </span>
                     </div>
                     <p className="text-xs text-ink font-medium leading-snug mt-1">
-                      {opt.tieredVersions?.bronzeMicro?.description || 'Ultra-light identity anchor when your day is packed.'}
+                      {opt.tieredVersions?.bronzeMicro?.description || '2-minute minimum so you have zero excuse to skip on bad days.'}
                     </p>
                   </div>
 
@@ -168,7 +169,7 @@ export function HabitLabCard({
                     {isMicroApplied ? (
                       <span className="inline-flex items-center gap-1 text-[11px] font-mono text-sage-deep font-bold">
                         <Check className="h-3 w-3 stroke-[2.5]" />
-                        <span>2-Min Spark Saved</span>
+                        <span>2-Min Floor Saved</span>
                       </span>
                     ) : (
                       <button
@@ -179,9 +180,9 @@ export function HabitLabCard({
                             opt.tieredVersions?.bronzeMicro?.description || '3-min micro-step'
                           )
                         }
-                        className="inline-flex items-center gap-1 text-[11px] font-mono font-bold text-sage-deep hover:text-ink transition-colors cursor-pointer"
+                        className="inline-flex items-center gap-1 text-[11px] font-mono font-bold text-sage-deep hover:text-ink transition-colors cursor-pointer py-1"
                       >
-                        <span>Use as 2-Min Spark</span>
+                        <span>Save as 2-Min Floor</span>
                         <ArrowRight className="h-3 w-3" />
                       </button>
                     )}
@@ -191,8 +192,8 @@ export function HabitLabCard({
 
               {/* Identity Motive Statement */}
               {opt.identityMotiveUpgrade && (
-                <div className="rounded-xl border border-line/60 bg-surface/80 px-3.5 py-2 text-xs font-mono text-muted flex items-center gap-2">
-                  <span className="text-sage-deep font-bold shrink-0">Your Daily Identity Anchor:</span>
+                <div className="rounded-xl border border-line/60 bg-surface/80 px-3.5 py-2.5 text-xs font-mono text-muted flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                  <span className="text-sage-deep font-bold shrink-0">Daily Identity Anchor:</span>
                   <span className="italic text-ink font-serif text-sm">&ldquo;{opt.identityMotiveUpgrade}&rdquo;</span>
                 </div>
               )}

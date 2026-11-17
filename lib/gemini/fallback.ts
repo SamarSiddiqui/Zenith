@@ -43,11 +43,11 @@ export function generateHeuristicDiagnosis(req: DiagnosisRequest): DiagnosisResu
   const balanceScore = Math.max(50, Math.min(95, 100 - Math.abs(habits.length - 4) * 5));
   const overall = Math.round((circadianFidelity * 0.4) + (recoveryResilience * 0.4) + (balanceScore * 0.2));
 
-  let levelLabel = 'Sustained Ascendance';
-  if (overall >= 88) levelLabel = 'Peak Circadian Flow';
-  else if (overall >= 75) levelLabel = 'Sustained Ascendance';
-  else if (overall >= 60) levelLabel = 'Steady Rhythm Baseline';
-  else levelLabel = 'Gentle Recovery Arc';
+  let levelLabel = 'Steady Execution';
+  if (overall >= 88) levelLabel = 'Locked In & Consistent';
+  else if (overall >= 75) levelLabel = 'Steady Execution';
+  else if (overall >= 60) levelLabel = 'Patchy Execution';
+  else levelLabel = 'Overextended / Leaking Focus';
 
   // 4. Identify schedule collisions
   const scheduleCollisions: DiagnosisResult['frictionAutopsy']['scheduleCollisions'] = [];
@@ -62,14 +62,14 @@ export function generateHeuristicDiagnosis(req: DiagnosisRequest): DiagnosisResu
         habitId: h.id,
         habitName: h.name,
         collisionType: 'late_workday_overrun',
-        title: `${h.name}: Evening Willpower Squeeze`,
-        description: `Carrying a ${minutes}-minute demanding routine into the evening often collides with natural post-work cognitive fatigue.`,
+        title: `${h.name}: Evening Willpower Depletion`,
+        description: `Planning a ${minutes}-minute demanding routine late in the day is setting yourself up to fail. Willpower runs dry after work.`,
         evidence: `Scheduled in evening with ${minutes}m target duration.`,
         confidencePercent: 88,
         suggestedAction: {
           actionType: 'shrink_duration',
           newMinutes: Math.min(15, Math.max(5, Math.round(minutes / 2))),
-          label: `Downscale to ${Math.min(15, Math.max(5, Math.round(minutes / 2)))}m evening decompression`,
+          label: `Cut to ${Math.min(15, Math.max(5, Math.round(minutes / 2)))}m non-negotiable floor`,
         },
       });
     } else if (recentMisses >= 2) {
@@ -77,14 +77,14 @@ export function generateHeuristicDiagnosis(req: DiagnosisRequest): DiagnosisResu
         habitId: h.id,
         habitName: h.name,
         collisionType: 'duration_fatigue',
-        title: `${h.name}: Friction Accumulation`,
-        description: `This ritual encountered resistance on ${recentMisses} days this week. Micro-version activations can preserve consistency without strain.`,
+        title: `${h.name}: Execution Resistance`,
+        description: `You skipped this habit on ${recentMisses} days this week. Don't rely on willpower—drop to the 5-minute floor to preserve the chain.`,
         evidence: `${recentMisses} missed sessions logged in active sprint.`,
         confidencePercent: 82,
         suggestedAction: {
           actionType: 'shrink_duration',
           newMinutes: 5,
-          label: 'Adopt 5-Minute Micro Fallback for 3 days',
+          label: 'Adopt 5-Minute Floor for 3 days',
         },
       });
     }
@@ -175,15 +175,15 @@ export function generateHeuristicDiagnosis(req: DiagnosisRequest): DiagnosisResu
       levelLabel,
     },
     executiveSynthesis: {
-      headline: `${userName}'s Weekly Rhythm: ${levelLabel}`,
-      briefing: `You've preserved a ${completionPct}% show-up cadence across your active horizon. Your morning rituals show high resilience, while evening routines benefit from micro-fallbacks to prevent late-day friction.`,
+      headline: `${userName}'s Reality Check: ${levelLabel}`,
+      briefing: `You executed on ${totalCompleted} of ${totalOpportunities} scheduled windows (${completionPct}% execution rate). ${eveningMisses > 1 ? 'Your evening routines are breaking down because willpower is depleted after work—stop relying on late-night discipline.' : 'Your consistency is holding, but protecting your primary morning blocks is what will prevent drift.'}`,
       primaryGrowthOpportunity: eveningMisses > 1
-        ? 'Protect evening decompression by reducing duration on demanding routines.'
-        : 'Deepen morning focus blocks before opening external communication channels.',
+        ? 'Cut evening duration in half or shift to morning—willpower is dead by 8 PM.'
+        : 'Lock in your morning habit before opening notifications or work messages.',
       strengths: [
         `Maintained an average ritual health score of ${avgHealth}%.`,
-        `Successfully logged ${totalCompleted} mindful rituals in the active sprint horizon.`,
-        'Active zero-guilt micro-step versions available for high-friction days.',
+        `Logged ${totalCompleted} solid completions in the active sprint horizon.`,
+        'Non-negotiable minimal floor available for high-friction days.',
       ],
     },
     frictionAutopsy: {
@@ -194,8 +194,8 @@ export function generateHeuristicDiagnosis(req: DiagnosisRequest): DiagnosisResu
         evening: eveningFriction,
       },
       overallFrictionVerdict: scheduleCollisions.length > 0
-        ? `Identified ${scheduleCollisions.length} schedule friction points. Micro-downscaling resolves 90% of observed fatigue.`
-        : 'Your schedule aligns cleanly with natural circadian energy curves.',
+        ? `Identified ${scheduleCollisions.length} habits fighting your schedule reality. Fix the slots and establish a minimal floor.`
+        : 'Your schedule setup is realistic and free of obvious friction traps.',
     },
     habitOptimizations,
     recoveryProtocols,

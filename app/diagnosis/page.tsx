@@ -93,26 +93,29 @@ export default function DiagnosisPage() {
               {isFreshlyUpdated && !isRevalidating && (
                 <div className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-[11px] font-mono text-emerald-600 shadow-xs">
                   <CheckCircle2 className="h-3 w-3 text-emerald-500" />
-                  <span>Updated with latest habit data</span>
+                  <span>Fresh AI reflection generated</span>
                 </div>
               )}
 
               {isHeuristicFallback && !isRevalidating && (
-                <div className="inline-flex items-center gap-1.5 rounded-full border border-sage/40 bg-sage-wash px-3 py-1 text-[11px] font-mono text-sage-deep shadow-xs" title="Computed by Zenith Heuristic Engine">
+                <div className="inline-flex items-center gap-1.5 rounded-full border border-sage/40 bg-sage-wash px-3 py-1 text-[11px] font-mono text-sage-deep shadow-xs" title="Computed by Zenith Heuristic Engine (Rate limit cooldown active or offline)">
                   <Cpu className="h-3 w-3 text-sage-deep" />
-                  <span>Offline Heuristic Engine</span>
+                  <span>Resilient Heuristic Engine</span>
                 </div>
               )}
 
               {formattedAnalysisTime && !isRevalidating && !isFreshlyUpdated && !isHeuristicFallback && (
-                <div className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface px-3 py-1 text-[11px] font-mono text-muted shadow-xs">
+                <div
+                  className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface px-3 py-1 text-[11px] font-mono text-muted shadow-xs"
+                  title="Cached for up to 4 hours unless habits or logs change. Click 'Refresh Reflections' to re-analyze with Gemini."
+                >
                   <Clock className="h-3 w-3 text-faint" />
                   <span>Reflected at: {formattedAnalysisTime} (AI Mentor)</span>
                 </div>
               )}
             </div>
 
-            <h1 className="font-serif text-3xl sm:text-4xl text-ink tracking-tight">
+            <h1 className="font-serif text-2xl sm:text-3xl md:text-4xl text-ink tracking-tight">
               Weekly Mindful Check-in
             </h1>
             <p className="mt-1 text-xs sm:text-sm text-muted font-light max-w-2xl">
@@ -121,34 +124,49 @@ export default function DiagnosisPage() {
           </div>
 
           {/* Action Trigger Buttons */}
-          <div className="flex items-center gap-2.5 self-start lg:self-auto flex-wrap">
-            <motion.button
-              type="button"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              disabled={isAnalyzing || habits.length === 0}
-              onClick={() => reAnalyze()}
-              className={`group relative inline-flex items-center gap-2 rounded-2xl border px-4 py-2.5 text-xs font-mono font-semibold transition-all shadow-calm cursor-pointer ${isAnalyzing
-                ? 'border-sage/40 bg-sage-wash text-sage-deep animate-pulse'
-                : 'border-line bg-surface text-ink hover:border-sage/50 hover:bg-sage-wash/30 hover:text-sage-deep hover:shadow-md'
-                }`}
-              title="Click to reflect on your latest habit logs"
-            >
-              <RotateCcw
-                className={`h-3.5 w-3.5 text-sage-deep transition-transform duration-300 ${isAnalyzing ? 'animate-spin' : 'group-hover:rotate-45'}`}
-              />
-              <span>{isAnalyzing ? 'Reflecting on your week...' : 'Refresh Reflections'}</span>
-            </motion.button>
-
-            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-              <Link
-                href="/habits"
-                className="inline-flex items-center gap-1.5 rounded-2xl bg-sage px-4 py-2.5 text-xs font-mono font-medium text-white shadow-xs hover:bg-sage-deep hover:shadow-md transition-all"
+          <div className="flex flex-col items-start lg:items-end gap-1.5 w-full lg:w-auto">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full sm:w-auto">
+              <motion.button
+                type="button"
+                whileHover={{ scale: habits.length > 0 && !isAnalyzing ? 1.02 : 1 }}
+                whileTap={{ scale: habits.length > 0 && !isAnalyzing ? 0.98 : 1 }}
+                disabled={isAnalyzing || habits.length === 0}
+                onClick={() => reAnalyze()}
+                className={`group relative inline-flex items-center justify-center gap-2 rounded-2xl border px-4 py-2.5 text-xs font-mono font-semibold transition-all shadow-calm w-full sm:w-auto ${habits.length === 0
+                    ? 'border-line/60 bg-surface/50 text-faint cursor-not-allowed opacity-60'
+                    : isAnalyzing
+                      ? 'border-sage/40 bg-sage-wash text-sage-deep animate-pulse cursor-wait'
+                      : 'border-line bg-surface text-ink hover:border-sage/50 hover:bg-sage-wash/30 hover:text-sage-deep hover:shadow-md cursor-pointer'
+                  }`}
+                title={
+                  habits.length === 0
+                    ? 'Add at least one habit in the planner to enable reflections'
+                    : 'Re-analyzes your latest habit logs using Gemini AI (limit: 5 refreshes per 15 mins)'
+                }
               >
-                <span>Habits Planner</span>
-                <CalendarRange className="h-3.5 w-3.5" />
-              </Link>
-            </motion.div>
+                <RotateCcw
+                  className={`h-3.5 w-3.5 text-sage-deep transition-transform duration-300 ${isAnalyzing ? 'animate-spin' : 'group-hover:rotate-45'}`}
+                />
+                <span>{isAnalyzing ? 'Reflecting on your week...' : 'Refresh Reflections'}</span>
+              </motion.button>
+
+              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="w-full sm:w-auto">
+                <Link
+                  href="/habits"
+                  className="inline-flex items-center justify-center gap-1.5 rounded-2xl bg-sage px-4 py-2.5 text-xs font-mono font-medium text-white shadow-xs hover:bg-sage-deep hover:shadow-md transition-all w-full sm:w-auto"
+                >
+                  <span>Habits Planner</span>
+                  <CalendarRange className="h-3.5 w-3.5" />
+                </Link>
+              </motion.div>
+            </div>
+
+            {/* Helper subtitle explaining sync cadence and time bounds */}
+            <p className="text-[11px] font-mono text-muted/80 max-w-xs text-left lg:text-right">
+              {habits.length === 0
+                ? 'Plant habits in your planner to unlock AI reflections'
+                : 'Auto-syncs on habit changes • 4h cache • 5 AI refreshes / 15m'}
+            </p>
           </div>
         </div>
 
@@ -204,8 +222,8 @@ export default function DiagnosisPage() {
           </div>
         )}
 
-        {/* Main Flagship Diagnostic Grid */}
-        {!isLoading && diagnosis && (
+        {/* Main Flagship Diagnostic Grid - ONLY rendered when active habits exist and diagnosis is loaded */}
+        {!isLoading && habits.length > 0 && diagnosis && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}

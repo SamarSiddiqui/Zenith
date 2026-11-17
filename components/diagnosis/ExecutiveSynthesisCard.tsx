@@ -15,7 +15,7 @@ export function ExecutiveSynthesisCard({
   onExploreOptimizations,
 }: ExecutiveSynthesisCardProps) {
   return (
-    <div className="space-y-4 rounded-3xl border border-line bg-surface p-6 sm:p-7 shadow-calm">
+    <div className="space-y-4 rounded-3xl border border-line bg-surface p-4 sm:p-6 md:p-7 shadow-calm w-full">
       {/* Editorial Headline & AI Quote */}
       <div className="space-y-2">
         <div className="flex items-center gap-2">
@@ -27,23 +27,23 @@ export function ExecutiveSynthesisCard({
           </span>
         </div>
 
-        <h2 className="font-serif text-2xl sm:text-3xl text-ink leading-tight">
+        <h2 className="font-serif text-xl sm:text-2xl md:text-3xl text-ink leading-tight">
           &ldquo;{synthesis.headline}&rdquo;
         </h2>
 
-        <p className="text-sm text-muted font-light leading-relaxed pt-1">
+        <p className="text-xs sm:text-sm text-muted font-light leading-relaxed pt-1">
           {synthesis.briefing}
         </p>
       </div>
 
       {/* Primary Breakthrough Opportunity Card */}
       {synthesis.primaryGrowthOpportunity && (
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl border border-sage/30 bg-sage-wash/50 p-4 shadow-xs">
-          <div className="flex items-start gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-sage text-white shrink-0 shadow-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl border border-sage/30 bg-sage-wash/50 p-3.5 sm:p-4 shadow-xs">
+          <div className="flex items-start gap-3 min-w-0">
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-sage text-white shrink-0 shadow-xs mt-0.5">
               <Lightbulb className="h-4 w-4" />
             </div>
-            <div>
+            <div className="min-w-0">
               <span className="block text-[11px] font-mono font-bold uppercase tracking-wider text-sage-deep">
                 Your Best Next Step
               </span>
@@ -57,9 +57,9 @@ export function ExecutiveSynthesisCard({
             <button
               type="button"
               onClick={onExploreOptimizations}
-              className="inline-flex items-center gap-1.5 self-start sm:self-center rounded-xl bg-sage px-3.5 py-1.5 text-xs font-mono font-medium text-white shadow-xs hover:bg-sage-deep transition-all cursor-pointer shrink-0"
+              className="inline-flex items-center justify-center gap-1.5 self-stretch sm:self-center rounded-xl bg-sage px-3.5 py-2 text-xs font-mono font-medium text-white shadow-xs hover:bg-sage-deep transition-all cursor-pointer shrink-0 w-full sm:w-auto"
             >
-              <span>Explore Gentle Adjustments</span>
+              <span>Explore Adjustments</span>
               <ArrowRight className="h-3 w-3" />
             </button>
           )}
