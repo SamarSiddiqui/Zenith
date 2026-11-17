@@ -92,7 +92,7 @@ export function ZenithGrowthRadar({ score }: ZenithGrowthRadarProps) {
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
-      className="relative flex flex-col justify-between overflow-hidden rounded-3xl border border-line bg-surface p-6 sm:p-7 shadow-calm transition-all duration-300 hover:border-sage/40 hover:shadow-md w-full gap-5"
+      className="relative flex flex-col justify-between overflow-hidden rounded-3xl border border-line bg-surface p-4 sm:p-6 md:p-7 shadow-calm transition-all duration-300 hover:border-sage/40 hover:shadow-md w-full gap-5"
     >
       {/* Ambient glowing backdrop */}
       <div className="absolute -top-20 -right-20 h-44 w-44 rounded-full bg-sage/10 blur-3xl pointer-events-none" />
@@ -321,9 +321,9 @@ export function ZenithGrowthRadar({ score }: ZenithGrowthRadarProps) {
       </div>
 
       {/* Bottom Mini-Quest: Today's Low-Pressure Quest */}
-      <div className="relative z-10 rounded-2xl border border-sage/30 bg-sage-wash/40 p-3.5 flex items-center justify-between gap-3 shadow-xs">
+      <div className="relative z-10 rounded-2xl border border-sage/30 bg-sage-wash/40 p-3 sm:p-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
         <div className="flex items-start gap-2.5 min-w-0">
-          <span className="text-base select-none shrink-0">🌱</span>
+          <span className="text-base select-none shrink-0 mt-0.5">🌱</span>
           <div className="min-w-0">
             <span className="block text-[10px] font-mono font-bold uppercase tracking-wider text-sage-deep">
               Today&apos;s Low-Pressure Quest
@@ -337,7 +337,7 @@ export function ZenithGrowthRadar({ score }: ZenithGrowthRadarProps) {
         <button
           type="button"
           onClick={() => setQuestCompleted(!questCompleted)}
-          className={`shrink-0 inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-mono font-semibold transition-all cursor-pointer shadow-xs ${
+          className={`shrink-0 inline-flex items-center justify-center gap-1.5 rounded-xl px-3.5 py-1.5 text-xs font-mono font-semibold transition-all cursor-pointer shadow-xs w-full sm:w-auto ${
             questCompleted
               ? 'bg-sage-deep text-white border border-sage-deep'
               : 'border border-sage/40 bg-surface text-sage-deep hover:bg-sage hover:text-white'

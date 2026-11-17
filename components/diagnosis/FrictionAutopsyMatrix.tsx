@@ -39,48 +39,48 @@ export function FrictionAutopsyMatrix({
   };
 
   return (
-    <div className="space-y-6 rounded-3xl border border-line bg-surface p-6 sm:p-7 shadow-calm">
+    <div className="space-y-6 rounded-3xl border border-line bg-surface p-4 sm:p-6 md:p-7 shadow-calm w-full">
       {/* Header & Circadian Heat Map */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-line/60 pb-5">
         <div>
           <div className="flex items-center gap-2">
             <span className="font-mono text-xs font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400 flex items-center gap-1">
               <Zap className="h-3.5 w-3.5" />
-              Schedule Reflections
+              Schedule Friction Analysis
             </span>
           </div>
-          <h3 className="font-serif text-2xl font-bold text-ink mt-0.5">
-            Where Life & Habits Collided (And Why It&apos;s Okay)
+          <h3 className="font-serif text-xl sm:text-2xl font-bold text-ink mt-0.5">
+            Where Habits Hit Schedule Friction
           </h3>
           <p className="text-xs sm:text-sm text-muted font-light mt-1 max-w-xl">
             {overallVerdict ||
-              'When habits slip, it is almost always because your day got squeezed or energy dipped — never a lack of willpower.'}
+              'When habits slip, it is usually because energy dipped or work hours ran late. Fix the setup instead of blaming willpower.'}
           </p>
         </div>
 
         {/* Circadian Energy Slots Heat Pills */}
-        <div className="flex items-center gap-2 bg-canvas p-2 rounded-2xl border border-line shrink-0">
-          <div className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono">
-            <Sun className="h-3.5 w-3.5 text-amber-500" />
-            <span className="text-muted text-[11px]">Morning</span>
-            <span className={`text-[10px] rounded-md px-1.5 py-0.5 uppercase border ${getSeverityBadge(zoneFriction.morning)}`}>
-              {zoneFriction.morning === 'low' ? 'Gentle' : zoneFriction.morning === 'moderate' ? 'Moderate' : 'Squeezed'}
+        <div className="grid grid-cols-3 sm:flex items-center gap-1.5 sm:gap-2 bg-canvas p-1.5 sm:p-2 rounded-2xl border border-line w-full sm:w-auto">
+          <div className="flex items-center justify-center gap-1 sm:gap-1.5 px-1.5 sm:px-2.5 py-1 text-xs font-mono">
+            <Sun className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+            <span className="text-muted text-[10px] sm:text-[11px]">Morning</span>
+            <span className={`text-[9px] sm:text-[10px] rounded-md px-1.5 py-0.5 uppercase border ${getSeverityBadge(zoneFriction.morning)}`}>
+              {zoneFriction.morning === 'low' ? 'Clear' : zoneFriction.morning === 'moderate' ? 'Tight' : 'Blocked'}
             </span>
           </div>
 
-          <div className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono border-x border-line/60">
-            <Sunset className="h-3.5 w-3.5 text-sky-500" />
-            <span className="text-muted text-[11px]">Afternoon</span>
-            <span className={`text-[10px] rounded-md px-1.5 py-0.5 uppercase border ${getSeverityBadge(zoneFriction.afternoon)}`}>
-              {zoneFriction.afternoon === 'low' ? 'Gentle' : zoneFriction.afternoon === 'moderate' ? 'Moderate' : 'Squeezed'}
+          <div className="flex items-center justify-center gap-1 sm:gap-1.5 px-1.5 sm:px-2.5 py-1 text-xs font-mono sm:border-x border-line/60">
+            <Sunset className="h-3.5 w-3.5 text-sky-500 shrink-0" />
+            <span className="text-muted text-[10px] sm:text-[11px]">Afternoon</span>
+            <span className={`text-[9px] sm:text-[10px] rounded-md px-1.5 py-0.5 uppercase border ${getSeverityBadge(zoneFriction.afternoon)}`}>
+              {zoneFriction.afternoon === 'low' ? 'Clear' : zoneFriction.afternoon === 'moderate' ? 'Tight' : 'Blocked'}
             </span>
           </div>
 
-          <div className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono">
-            <Moon className="h-3.5 w-3.5 text-indigo-500" />
-            <span className="text-muted text-[11px]">Evening</span>
-            <span className={`text-[10px] rounded-md px-1.5 py-0.5 uppercase border ${getSeverityBadge(zoneFriction.evening)}`}>
-              {zoneFriction.evening === 'low' ? 'Gentle' : zoneFriction.evening === 'moderate' ? 'Moderate' : 'Squeezed'}
+          <div className="flex items-center justify-center gap-1 sm:gap-1.5 px-1.5 sm:px-2.5 py-1 text-xs font-mono">
+            <Moon className="h-3.5 w-3.5 text-indigo-500 shrink-0" />
+            <span className="text-muted text-[10px] sm:text-[11px]">Evening</span>
+            <span className={`text-[9px] sm:text-[10px] rounded-md px-1.5 py-0.5 uppercase border ${getSeverityBadge(zoneFriction.evening)}`}>
+              {zoneFriction.evening === 'low' ? 'Clear' : zoneFriction.evening === 'moderate' ? 'Tight' : 'Blocked'}
             </span>
           </div>
         </div>
@@ -90,7 +90,7 @@ export function FrictionAutopsyMatrix({
       {collisions.length === 0 ? (
         <div className="py-8 text-center text-muted font-light">
           <p className="text-sm text-ink font-serif">No schedule friction noticed this week!</p>
-          <p className="text-xs font-mono text-muted mt-1">Your habits are flowing in wonderful harmony with your daily schedule.</p>
+          <p className="text-xs font-mono text-muted mt-1">Your habits are flowing in clean harmony with your daily schedule.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -104,7 +104,7 @@ export function FrictionAutopsyMatrix({
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: idx * 0.05 }}
-                className="flex flex-col justify-between rounded-2xl border border-line bg-canvas/60 p-5 shadow-xs hover:border-sage/40 transition-colors"
+                className="flex flex-col justify-between rounded-2xl border border-line bg-canvas/60 p-4 sm:p-5 shadow-xs hover:border-sage/40 transition-colors"
               >
                 <div>
                   {/* Top Collision Metadata */}
@@ -112,7 +112,7 @@ export function FrictionAutopsyMatrix({
                     <span className="text-sm font-semibold text-ink font-serif">
                       {collision.habitName}
                     </span>
-                    <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[10px] font-mono text-amber-700 dark:text-amber-400 font-semibold">
+                    <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[10px] font-mono text-amber-700 dark:text-amber-400 font-semibold shrink-0">
                       Pattern Noticed ({collision.confidencePercent}%)
                     </span>
                   </div>
@@ -135,15 +135,15 @@ export function FrictionAutopsyMatrix({
 
                 {/* 1-Click Action Resolution Button */}
                 {collision.suggestedAction && (
-                  <div className="mt-4 pt-3 border-t border-line/60 flex items-center justify-between gap-3">
+                  <div className="mt-4 pt-3 border-t border-line/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
                     <span className="text-[11px] font-mono text-muted">
-                      Gentle Suggestion:
+                      Recommended Fix:
                     </span>
 
                     {isApplied ? (
-                      <span className="inline-flex items-center gap-1 rounded-xl border border-sage/40 bg-sage-wash px-3 py-1.5 text-xs font-mono font-bold text-sage-deep">
+                      <span className="inline-flex items-center justify-center gap-1 rounded-xl border border-sage/40 bg-sage-wash px-3 py-1.5 text-xs font-mono font-bold text-sage-deep w-full sm:w-auto">
                         <Check className="h-3.5 w-3.5 stroke-[2.5]" />
-                        <span>Applied with Ease</span>
+                        <span>Adjustment Applied</span>
                       </span>
                     ) : (
                       <button
@@ -155,9 +155,9 @@ export function FrictionAutopsyMatrix({
                             onApplyDuration?.(collision.habitId, collision.suggestedAction.newMinutes);
                           }
                         }}
-                        className="inline-flex items-center gap-1.5 rounded-xl bg-sage px-3 py-1.5 text-xs font-mono font-semibold text-white shadow-xs hover:bg-sage-deep transition-all cursor-pointer"
+                        className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-sage px-3.5 py-2 text-xs font-mono font-semibold text-white shadow-xs hover:bg-sage-deep transition-all cursor-pointer w-full sm:w-auto"
                       >
-                        <span>{collision.suggestedAction.label || 'Try This Adjustment'}</span>
+                        <span>{collision.suggestedAction.label || 'Apply Fix'}</span>
                         <ArrowRight className="h-3 w-3" />
                       </button>
                     )}
